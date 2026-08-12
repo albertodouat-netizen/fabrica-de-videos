@@ -1,0 +1,323 @@
+# 🤖 Fábrica de Videos de YouTube — Equipo de Agentes IA (100% Gratis)
+
+Sistema multiagente que automatiza el proceso completo descrito en el video
+"Cómo Monetizar un Canal de YouTube en 5 Días", pero **sin pagar ninguna
+herramienta** (Viralyt, ElevenLabs, CapCut Pro, Canva Pro, etc. quedan
+reemplazadas por alternativas gratuitas equivalentes).
+
+```
+TrendScout → Guionista (+ EstrategaViral) → Narrador → VisualScout → EditorVideo → Packaging → Publicador → Analista
+ (nicho)      (guion en beats, IA)           (voz)     (1 clip real   (ffmpeg,      (miniatura)  (YouTube +   (métricas)
+                                                        por beat)      cortes rápidos)             índice)
+```
+
+## 🧩 Qué agente reemplaza a qué herramienta de pago
+
+| Herramienta de pago (video original) | Reemplazo 100% gratis usado aquí            |
+|---------------------------------------|------------------------------------------------|
+| Viralyt (buscar nichos/ideas)         | `agents/trend_scout.py` con YouTube Data API (capa gratuita) |
+| ChatGPT Plus (guion)                  | `agents/scriptwriter.py` con Gemini/Groq (capas gratuitas) o plantilla local sin IA |
+| ElevenLabs (voz)                      | `agents/voice.py` con **edge-tts** (gratis, sin cuenta) |
+| Stock de video de pago                | `agents/visuals.py` con Pexels/Pixabay (gratis), un recurso real por CADA beat |
+| CapCut (edición)                      | `agents/video_editor.py` con MoviePy + FFmpeg (gratis, open source) |
+| Canva (miniatura)                     | `agents/thumbnail.py` con Pillow (gratis, local) |
+| Editor de retención / consultor viral | `agents/viral_strategist.py` (reglas basadas en investigación real de edición YouTube) |
+| Subida manual                         | `agents/publisher.py` con YouTube Data API (gratis) |
+| VidIQ/TubeBuddy (métricas)            | `agents/analytics.py` con YouTube Analytics API (gratis) |
+
+### 🎬 Agente 9: Estratega Viral (retención de audiencia)
+Encapsula reglas reales de edición y guionismo de YouTube (no improvisadas):
+- El gancho debe prometer valor concreto en los primeros 5-15 segundos, sin
+  muletillas de relleno ("hola a todos, bienvenidos de nuevo...").
+- El guion se estructura en **beats** cortos (1-2 frases + 1 palabra clave
+  visual específica y filmable cada uno), lo que permite cortes visuales
+  cada 3-9 segundos en vez de sostener un mismo plano aburrido por minutos.
+- El texto narrable es 100% texto plano (solo letras, puntos y comas): nada
+  de asteriscos, guiones, numerales ni marcas de tiempo que el sintetizador
+  de voz pudiera leer en voz alta por error.
+- Nunca se repite el mismo recurso visual dos veces en el mismo video.
+- Se prioriza siempre metraje/foto REAL (nunca ilustraciones ni dibujos);
+  si el guion pide por error algo tipo "diagrama" o "animación", un filtro
+  de seguridad lo detecta y lo reemplaza automáticamente.
+- Al publicar, arma una descripción con resumen llamativo + índice de
+  capítulos con tiempos REALES (calculados de la duración del audio, no
+  inventados) + hashtags + disclaimer.
+
+### 🔎 Agente 10: Verificador de Coherencia (QA)
+Después de que VisualScout elige un recurso para cada beat, este agente
+extrae un fotograma real y le pregunta a Gemini Vision (gratis) qué tan
+bien representa la frase que se está narrando en ese momento (0-10). Si la
+coincidencia es baja, pide automáticamente un recurso alternativo. Nunca
+bloquea el pipeline: si se agota la cuota gratuita de verificación a mitad
+de un video, se detiene con seguridad y conserva los recursos ya elegidos.
+
+### 📱 Agente 11: Creador de Shorts
+Genera un YouTube Short vertical (9:16, ~45-60s) a partir del gancho y los
+primeros beats más atractivos del video largo, con subtítulos incrustados
+grandes (los Shorts se ven mayormente sin sonido) y una tarjeta final de
+llamada a la acción hacia el video completo. Se publica por separado, con
+su propio título/descripción enlazando al video largo.
+
+### 📝 Agente 12: Subtítulos
+Genera un archivo .srt con los tiempos EXACTOS de cada beat (reconstruidos
+igual que el video final) y lo sube como closed-caption oficial vía la
+YouTube Data API. Mejora el SEO (YouTube indexa cada palabra hablada) y la
+retención (mucha gente ve con el sonido apagado).
+
+### 📚 Agente 13: Gestor de Playlists
+Agrupa automáticamente cada video nuevo en una playlist del mismo nicho.
+Cuando termina un video, YouTube sugiere el siguiente de la misma playlist,
+lo que aumenta el watch time de sesión (una señal que el algoritmo premia).
+
+### 🎵 Agente 14: Música de fondo
+Agrega una pista instrumental de fondo (volumen bajo) usando Jamendo,
+filtrando automáticamente solo licencias que permiten uso comercial (nunca
+usa pistas "No Comercial", ya que el canal se va a monetizar), y agrega el
+crédito correspondiente en la descripción.
+
+### 🧠 Resiliencia: cascada de proveedores de IA
+El Guionista ya no depende de un solo proveedor: si Gemini falla o se
+satura (cuota agotada, sobrecarga temporal), prueba automáticamente con
+Groq, luego con Ollama local, y solo si todos fallan usa la plantilla local
+sin IA. Así un límite temporal de un solo proveedor gratuito no baja la
+calidad de todo el video.
+
+**Costo total en dinero: $0.** Lo único que "cuesta" es tu tiempo de configurar
+llaves gratuitas una sola vez (15-20 minutos) y la autorización única de
+YouTube (obligatoria por seguridad de la plataforma, no se puede evitar).
+
+---
+
+## ✅ Ya probado y funcionando en este entorno
+
+Ya ejecuté el pipeline completo de punta a punta **con llaves reales** (YouTube
+Data API + Gemini + Pexels): generó un guion 100% original de 9 capítulos con
+IA, lo narró con voz real, descargó video de stock real, lo editó y produjo
+un video final de ~9 minutos con audio (`output/video/EJEMPLO_video_real_con_tus_APIs.mp4`)
+y su miniatura (`output/thumbnails/EJEMPLO_real_miniatura.png`) con un
+fotograma real extraído del propio video. Todo sin publicarlo (modo prueba),
+para que lo revises antes de conectarlo a tu canal real.
+
+### Notas técnicas de esta puesta a punto (por si corres esto en una máquina modesta)
+- El editor de video renderiza **capítulo por capítulo** y cierra cada clip
+  antes de pasar al siguiente, para no agotar la memoria RAM en videos largos
+  con muchos clips de stock (probado y corregido en un entorno con solo 2GB
+  de RAM). Si tu máquina tiene más RAM, no necesitas cambiar nada.
+- Los clips de Pexels se piden en resolución moderada (~960-1280px de ancho)
+  a propósito: 1080p no mejora el RPM y sí duplica el tiempo/memoria de render.
+- El modelo de Gemini usado es `gemini-2.5-flash` (rápido y dentro de la capa
+  gratuita). Si en el futuro Google libera un modelo nuevo, actualízalo en
+  `agents/scriptwriter.py`.
+
+---
+
+## 🔑 Paso 1: Consigue tus llaves gratuitas (una sola vez)
+
+### 1. YouTube Data API (para investigar nichos y publicar)
+1. Ve a https://console.cloud.google.com/ → crea un proyecto nuevo (gratis).
+2. "APIs & Services" → "Library" → busca **YouTube Data API v3** → Enable.
+3. "Credentials" → "Create Credentials" → **API key** → cópiala.
+4. Pégala en `config/config.yaml` en `apis.youtube_api_key`.
+5. Cuota gratuita: 10,000 unidades/día → de sobra para 4 videos/semana.
+
+### 2. Guion con IA (elige una, ambas son gratis)
+- **Gemini** (recomendado): https://aistudio.google.com/app/apikey → copiar key → `apis.gemini_api_key`.
+- **Groq** (Llama 3, muy rápido): https://console.groq.com/keys → `apis.groq_api_key`.
+- Si no configuras ninguna, el sistema usa una plantilla local automática (sin IA) para que nunca se rompa el proceso.
+
+### 3. Voz — **no requiere nada**, ya funciona (Microsoft Edge TTS gratis).
+
+### 4. Banco de video/imágenes gratis
+- Pexels: https://www.pexels.com/api/ → `apis.pexels_api_key`.
+- Pixabay (respaldo): https://pixabay.com/api/docs/ → `apis.pixabay_api_key`.
+- Si no configuras ninguna, se generan fondos automáticos localmente (funciona, pero es menos vistoso).
+
+### 4.b Respaldo de IA para el guion (opcional pero recomendado)
+- Groq (Llama 3, gratis): https://console.groq.com/keys → `apis.groq_api_key`.
+- Si Gemini se satura o agota su cuota gratuita del día, el sistema prueba
+  automáticamente con Groq antes de usar la plantilla local sin IA.
+
+### 4.c Música de fondo (opcional)
+- Jamendo: https://devportal.jamendo.com/ → crea una cuenta → crea una
+  "aplicación" → copia el "Client ID" → `apis.jamendo_client_id`.
+- Solo se usan pistas con licencia que permite uso comercial (se filtra
+  automáticamente). Si no la configuras, el video se genera igual, sin música.
+
+### 5. Autorización de tu canal de YouTube (para publicar automáticamente)
+1. En Google Cloud Console: "Credentials" → "Create Credentials" → **OAuth client ID** → tipo **Desktop app**.
+2. Descarga el JSON → guárdalo como `config/client_secret.json`.
+3. En tu computadora (no en la nube) ejecuta una sola vez:
+   ```bash
+   pip install -r requirements.txt
+   python3 setup_youtube_auth.py
+   ```
+4. Se abrirá tu navegador, inicias sesión con la cuenta dueña del canal y aceptas.
+5. Se genera `config/token.json`. Esa es la llave que el robot reutilizará **para siempre**, sin volver a pedirte nada.
+
+> ⚠️ Esta autorización manual y única **no es una limitación del sistema**: es
+> el único punto de verificación humana que exige la propia plataforma para
+> evitar bots maliciosos. Después de este paso, todo el resto es 100% automático.
+
+> 🔁 **Si ya habías autorizado tu canal antes de la versión con subtítulos**,
+> los permisos cambiaron (se agregó el scope `youtube.force-ssl`, necesario
+> para subir subtítulos). Vuelve a ejecutar `python3 setup_youtube_auth.py`
+> una sola vez más para renovar el permiso; de lo contrario todo sigue
+> funcionando igual, solo que sin subir subtítulos automáticamente.
+
+---
+
+## ▶️ Paso 2: Probarlo localmente
+
+```bash
+cd yt_agent_system
+pip install -r requirements.txt
+
+# Genera 1 video completo pero SIN subirlo (modo seguro de prueba)
+python3 orchestrator.py --videos 1 --no-publicar
+
+# Cuando confíes en el resultado, publícalo también (queda como "privado" por defecto)
+python3 orchestrator.py --videos 1
+```
+
+Los videos quedan en `output/video/`, miniaturas en `output/thumbnails/`.
+Revisa el primero MANUALMENTE antes de pasar a automatización 100% desatendida.
+
+---
+
+## ☁️ Paso 3: Automatización 100% en la nube y gratis (sin tu PC encendida)
+
+Se incluye un workflow listo de **GitHub Actions** (gratis: ~2,000 min/mes en
+repos privados, ilimitado en públicos) en
+`.github/workflows/fabrica_videos.yml`. Corre automáticamente **4 veces por
+semana** (Lunes, Miércoles, Viernes y Domingo) sin que tengas que hacer nada:
+genera el video largo, lo publica, sube subtítulos, lo agrega a una playlist,
+y genera + publica el Short.
+
+### Cómo activarlo (sin usar la terminal, con la web de GitHub)
+
+**1. Crea una cuenta y un repositorio en GitHub** (gratis)
+   - Ve a https://github.com/ → crea una cuenta si no tienes.
+   - Click en el botón verde **"New"** (o el "+" arriba a la derecha → "New repository").
+   - Ponle un nombre, por ejemplo `fabrica-de-videos`.
+   - Puede ser **Private** (recomendado) o Public. Click en **"Create repository"**.
+
+**2. Sube los archivos del proyecto**
+   - En la página de tu repo recién creado, click en **"uploading an existing file"**.
+   - Arrastra ahí TODA la carpeta `yt_agent_system` que descargaste (todos los
+     archivos y subcarpetas).
+   - ⚠️ **Verifica que NO se suban estos 3 archivos** (no deberían aparecer si
+     usaste la carpeta tal cual te la entregué, porque el `.gitignore` los
+     excluye cuando usas git normal; pero si subes por arrastre manual en la
+     web, revisa tú mismo que NO estén: `config/client_secret.json`,
+     `config/token.json`, `config/config.yaml` con tus llaves reales dentro).
+     Sí debe subirse `config/config.example.yaml` (ese no tiene llaves reales).
+   - Click en **"Commit changes"**.
+
+**3. Configura los "Secrets" (las llaves, pero guardadas de forma segura)**
+   - En tu repo → pestaña **Settings** → menú izquierdo **Secrets and
+     variables → Actions** → botón **"New repository secret"**.
+   - Crea uno por uno estos secretos (nombre exacto a la izquierda, valor a la derecha):
+
+   | Nombre del secreto | Valor |
+   |---|---|
+   | `YOUTUBE_API_KEY` | tu llave de YouTube Data API |
+   | `GEMINI_API_KEY` | tu llave de Gemini |
+   | `GROQ_API_KEY` | tu llave de Groq (si la tienes) |
+   | `PEXELS_API_KEY` | tu llave de Pexels |
+   | `PIXABAY_API_KEY` | tu llave de Pixabay (si la tienes) |
+   | `JAMENDO_CLIENT_ID` | tu client_id de Jamendo (si lo tienes) |
+   | `CLIENT_SECRET_B64` | resultado de `base64 -w0 config/client_secret.json` |
+   | `TOKEN_JSON_B64` | resultado de `base64 -w0 config/token.json` |
+
+   Para los últimos dos, en tu computadora con esos archivos, corre en la terminal:
+   ```bash
+   base64 -w0 config/client_secret.json
+   base64 -w0 config/token.json
+   ```
+   Copia todo el texto que aparece (es largo, una sola línea) y pégalo como
+   el valor del secreto correspondiente.
+
+**4. Actívalo**
+   - Ve a la pestaña **"Actions"** de tu repo.
+   - Si aparece un botón para habilitar Actions, dale click.
+   - Busca el workflow **"Fabrica de Videos YouTube"** → botón **"Run workflow"**
+     para probarlo ya mismo, o simplemente espera: el cron programado lo hará
+     solo Lunes/Miércoles/Viernes/Domingo.
+
+El robot recuerda automáticamente qué ideas ya usó (`data/estado.json`, se
+actualiza con un commit automático) para no repetir contenido.
+
+> 🔁 Recuerda: si acabas de agregar el permiso de subtítulos
+> (`youtube.force-ssl`), vuelve a ejecutar `setup_youtube_auth.py` en tu
+> computadora, y actualiza el secreto `TOKEN_JSON_B64` en GitHub con el nuevo
+> resultado de `base64 -w0 config/token.json`.
+
+---
+
+## 🧠 Cómo decide qué video hacer (resume la estrategia del video analizado)
+
+1. **Nicho**: definido una vez en `config/config.yaml` (por defecto: salud y
+   bienestar, el mismo nicho de ejemplo que mencionaron en el video).
+2. **TrendScout** busca en YouTube (mercado en inglés = más datos) videos de
+   canales pequeños (<250k subs) con muchas más vistas que suscriptores
+   (el "outlier score" — exactamente el criterio que explicaba Eric con Viralyt).
+3. **Guionista** toma el ángulo/tema (NO el texto) del video ganador y escribe
+   un guion 100% original en español, evitando así el "copy-paste" que puede
+   generar strikes de derechos de autor o penalización de YouTube por
+   contenido duplicado/reciclado.
+4. **Narrador + VisualScout + EditorVideo** arman el video final (10-18 min,
+   igual que recomendaba el video para maximizar RPM).
+5. **Packaging** genera título llamativo + miniatura de alto contraste.
+6. **Publicador** sube el video (por defecto como "privado" para que tú
+   revises antes — puedes cambiarlo a "public" en `config.yaml` cuando confíes
+   en la calidad del sistema).
+7. **Analista** (opcional, una vez tengas videos publicados) consulta qué
+   ideas funcionaron mejor para retroalimentar futuras elecciones de tema.
+
+---
+
+## ⚠️ Límites reales que debes conocer (para que "automático" no te sorprenda)
+
+1. **YouTube exige monetizar con reglas humanas**: 1,000 suscriptores + 4,000
+   horas de reproducción (o 10M vistas en Shorts en 90 días). Ningún sistema,
+   de pago o gratis, puede saltarse ese requisito — solo acelerar cómo se
+   llega ahí con buen contenido y constancia.
+2. **Política de "contenido repetitivo/reciclado"**: desde 2023 YouTube
+   desmonetiza canales que solo reempaquetan contenido ajeno sin aporte
+   propio. Por eso el Guionista genera texto original y no traduce/copia — pero
+   la responsabilidad de mantener valor añadido real es tuya como operador
+   del canal.
+3. **Los recursos "gratis" tienen límites de cuota** (ej. YouTube API: 10,000
+   unidades/día, Gemini/Groq: límites de peticiones por minuto). Para 4
+   videos/semana sobra por mucho, pero no sirve para publicar 50 videos/día.
+4. **Calidad vs. costo $0**: sin pagar herramientas premium, el video se ve
+   bien pero no idéntico a producciones con IA de pago (voces más
+   expresivas, b-roll más específico, avatares con rostro). Es un excelente
+   punto de partida gratuito, escalable después si genera ingresos.
+5. **Nunca compartas tus llaves ni `token.json` públicamente.**
+6. Revisa los **Términos de Servicio de YouTube** y las leyes de tu país sobre
+   contenido generado por IA y monetización antes de operar a gran escala.
+
+---
+
+## 📁 Estructura del proyecto
+
+```
+yt_agent_system/
+├── config/
+│   ├── config.yaml            <- tu configuración y llaves (NO subir con datos reales)
+│   └── config.example.yaml    <- plantilla de referencia
+├── agents/
+│   ├── trend_scout.py         <- Agente 1: investigación de nicho/ideas
+│   ├── scriptwriter.py        <- Agente 2: guion con IA gratuita
+│   ├── voice.py                <- Agente 3: narración (edge-tts, gratis)
+│   ├── visuals.py              <- Agente 4: banco de video/imágenes gratis
+│   ├── video_editor.py         <- Agente 5: ensamblado final (moviepy/ffmpeg)
+│   ├── thumbnail.py            <- Agente 6: miniatura (pillow)
+│   ├── publisher.py            <- Agente 7: subida a YouTube
+│   └── analytics.py            <- Agente 8: métricas para mejorar
+├── orchestrator.py              <- El "jefe" que ejecuta todo el flujo
+├── setup_youtube_auth.py        <- Autorización única de tu canal
+├── requirements.txt
+└── .github/workflows/fabrica_videos.yml   <- automatización 100% gratis en la nube
+```

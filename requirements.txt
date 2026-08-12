@@ -1,0 +1,11 @@
+PyYAML
+requests
+edge-tts
+moviepy==2.1.2
+pillow
+google-api-python-client
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+isodate
+mutagen

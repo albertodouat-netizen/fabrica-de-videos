@@ -1,0 +1,64 @@
+# ============================================================
+# CONFIGURACIÓN CENTRAL DEL EQUIPO DE AGENTES
+# Todo lo que necesitas rellenar está marcado con "OBTENER GRATIS AQUÍ"
+# ============================================================
+
+canal:
+  nombre: "Salud Natural Diaria"   # <- cámbialo por el nombre real que le pongas a tu canal
+  idioma_destino: "es"          # idioma en el que se publica
+  idioma_investigacion: "en"    # idioma donde se buscan ideas ganadoras (mercado más grande = más datos)
+  nicho: "salud y bienestar natural"
+  palabras_clave:
+    - "healthy habits"
+    - "natural remedies"
+    - "morning routine health"
+    - "gut health tips"
+    - "how to reduce inflammation"
+
+estrategia:
+  videos_por_semana: 4          # igual que recomienda el video analizado
+  duracion_minima_min: 8        # minutos mínimos por video (RPM más alto con videos largos)
+  duracion_objetivo_min: 15
+  max_suscriptores_referencia: 250000   # canales de referencia con <250k subs = nicho "joven"/viral
+  dias_publicado_max: 365               # solo mirar contenido de los últimos 12 meses
+  ratio_minimo_vistas_subs: 3           # vistas >= 3x suscriptores => señal de nicho potente
+
+apis:
+  # --- YouTube Data API (GRATIS, cuota diaria gratuita generosa) ---
+  # Obtener en: https://console.cloud.google.com/apis/library/youtube.googleapis.com
+  youtube_api_key: "OBTENER_GRATIS_AQUI"
+  # OAuth client (para poder SUBIR videos a TU canal) -> mismo Google Cloud Console
+  # APIs & Services > Credentials > Create OAuth client ID > Desktop App
+  # Descargar el JSON y ponerlo en config/client_secret.json
+  oauth_client_secret_path: "config/client_secret.json"
+  oauth_token_path: "config/token.json"
+
+  # --- LLM gratuito para redactar guiones (elige UNO) ---
+  # Opción recomendada: Google Gemini (capa gratuita generosa)
+  #   Obtener en: https://aistudio.google.com/app/apikey
+  llm_provider: "gemini"   # gemini | groq | ollama | none (usa plantilla local sin IA)
+  gemini_api_key: "OBTENER_GRATIS_AQUI"
+  # Alternativa gratuita: Groq (Llama 3 gratis, muy rápido)
+  #   Obtener en: https://console.groq.com/keys
+  groq_api_key: "OBTENER_GRATIS_AQUI"
+  # Alternativa 100% local y gratuita, sin internet: Ollama (https://ollama.com)
+  ollama_model: "llama3.1"
+
+  # --- Banco de video/imágenes gratuito libre de derechos ---
+  # Pexels: https://www.pexels.com/api/  (gratis, sin límite práctico)
+  pexels_api_key: "OBTENER_GRATIS_AQUI"
+  # Pixabay: https://pixabay.com/api/docs/ (gratis, backup si Pexels no tiene resultados)
+  pixabay_api_key: "OBTENER_GRATIS_AQUI"
+
+  # --- Música de fondo con licencia libre (opcional) ---
+  # Jamendo: https://devportal.jamendo.com/ (gratis, registro de 2 min, sin tarjeta)
+  # Solo se usan pistas con licencia que permite uso comercial (se filtra automáticamente).
+  jamendo_client_id: "OBTENER_GRATIS_AQUI"
+
+  # --- Voz (100% gratis, no requiere key: Microsoft Edge TTS) ---
+  voz_narrador: "es-MX-JorgeNeural"   # otras: es-ES-AlvaroNeural, es-US-AlonsoNeural
+
+publicacion:
+  privacidad_default: "private"   # sube como privado/programado por seguridad; cambia a "public" cuando lo revises
+  categoria_youtube: "22"         # People & Blogs (ver docs para otros IDs)
+  programar_hora_utc: "14:00"     # hora sugerida de publicación
