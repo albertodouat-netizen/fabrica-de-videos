@@ -1,0 +1,73 @@
+name: Fabrica de Videos YouTube (100% gratis y automatico)
+
+# Se ejecuta solo, sin que toques nada, según el horario definido abajo.
+# GitHub Actions da GRATIS ~2000 minutos/mes en repos privados (e ilimitado
+# en repos públicos), más que suficiente para 4 videos/semana (~15-25 min
+# cada corrida: guion, voz, ~80 clips de stock, verificación de coherencia,
+# edición, miniatura, subtítulos, playlist, video largo + Short).
+on:
+  schedule:
+    # Lunes, Miércoles, Viernes y Domingo a las 14:00 UTC (4 videos/semana,
+    # igual que recomienda la estrategia). Ajusta a tu gusto: https://crontab.guru
+    - cron: "0 14 * * 1,3,5,0"
+  workflow_dispatch: {}   # también puedes lanzarlo manualmente desde la pestaña "Actions"
+
+permissions:
+  contents: write   # necesario para que el robot recuerde qué ideas ya usó (commit automático)
+
+jobs:
+  generar_y_publicar_video:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+          pip install -r requirements.txt
+
+      - name: Restaurar credenciales secretas (nunca se suben al repo)
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          JAMENDO_CLIENT_ID: ${{ secrets.JAMENDO_CLIENT_ID }}
+          CLIENT_SECRET_B64: ${{ secrets.CLIENT_SECRET_B64 }}
+          TOKEN_JSON_B64: ${{ secrets.TOKEN_JSON_B64 }}
+        run: |
+          mkdir -p config
+          cp config/config.example.yaml config/config.yaml
+          echo "$CLIENT_SECRET_B64" | base64 -d > config/client_secret.json
+          echo "$TOKEN_JSON_B64" | base64 -d > config/token.json
+          python3 scripts/aplicar_secretos.py
+
+      - name: Ejecutar el equipo de agentes (video largo + Short + publicación)
+        run: python3 orchestrator.py --videos 1
+
+      - name: Guardar video, miniatura y logs como respaldo descargable
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultado-${{ github.run_number }}
+          path: |
+            data/estado.json
+            output/**
+          retention-days: 14
+
+      - name: Recordar ideas ya usadas (commit automático de la memoria)
+        if: always()
+        run: |
+          git config user.name "Robot de YouTube"
+          git config user.email "robot@localhost"
+          git add data/estado.json
+          git diff --cached --quiet || git commit -m "Actualiza memoria del robot [skip ci]"
+          git push
