@@ -79,7 +79,12 @@ def publicar_video(ruta_video: str, ruta_miniatura: str, guion: dict, descripcio
         "status": {
             "privacyStatus": cfg["publicacion"].get("privacidad_default", "private"),
             "selfDeclaredMadeForKids": False,
-
+            # Declaración honesta de contenido sintético/alterado (soportado
+            # por la API desde oct-2024). Nuestro video usa voz IA, guion IA
+            # y (a veces) imágenes generadas por IA, así que lo correcto y lo
+            # que reduce riesgo de sanción por "contenido inauténtico" es
+            # declararlo siempre, no ocultarlo.
+            "containsSyntheticMedia": True,
         },
     }
 

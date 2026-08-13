@@ -38,6 +38,8 @@ from agents.video_editor import construir_video
 from agents.thumbnail import generar_miniatura
 from agents.viral_strategist import construir_descripcion_publicacion
 from agents.musica import obtener_musica_fondo
+from agents.monetizacion import seleccionar_productos, construir_bloque_afiliados
+from agents.promocion_cruzada import obtener_videos_relacionados, construir_bloque_mas_videos
 
 AGENT = "Orquestador"
 
@@ -91,8 +93,25 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
     ruta_miniatura = generar_miniatura(guion, primera_imagen,
                                         f"output/thumbnails/{nombre_base}.png")
 
+    try:
+        productos = seleccionar_productos(guion)
+        bloque_afiliados = construir_bloque_afiliados(productos)
+    except Exception as e:
+        log(AGENT, f"Aviso: no se pudo armar la recomendación de productos ({e}).")
+        bloque_afiliados = ""
+
+    bloque_mas_videos = ""
+    if intentar_publicar:
+        try:
+            relacionados = obtener_videos_relacionados(guion.get("keyword_principal", ""), guion.get("tags", []))
+            bloque_mas_videos = construir_bloque_mas_videos(relacionados)
+        except Exception as e:
+            log(AGENT, f"Aviso: no se pudo armar la sección 'también te puede interesar' ({e}).")
+
     descripcion_final = construir_descripcion_publicacion(guion, timestamps_capitulos, cfg["canal"].get("nombre", ""),
-                                                           url_canal=cfg["canal"].get("url", ""))
+                                                           url_canal=cfg["canal"].get("url", ""),
+                                                           bloque_afiliados=bloque_afiliados,
+                                                           bloque_mas_videos=bloque_mas_videos)
     if musica:
         descripcion_final += f"\n\n🎵 {musica['credito']}"
 

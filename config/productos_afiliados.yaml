@@ -1,0 +1,96 @@
+# ============================================================
+# CATÁLOGO DE PRODUCTOS DE AFILIADOS (Amazon + Mercado Libre)
+# ============================================================
+# Este archivo NO contiene información secreta (los enlaces de afiliado
+# están hechos para compartirse en público), así que se sube tal cual a
+# GitHub. Edítalo cuando quieras agregar, quitar o corregir productos —
+# no hace falta tocar ningún código.
+#
+# CÓMO FUNCIONA:
+# Por cada video, el sistema compara la "keyword_principal" y los "tags"
+# del guion contra la lista de "palabras_clave" de cada producto de aquí
+# abajo, y elige automáticamente el/los que mejor coincidan (máximo
+# "max_productos_por_video"). Si un producto no tiene un enlace real
+# todavía (sigue con el texto "PENDIENTE"), se ignora automáticamente:
+# no se muestra ningún enlace roto ni de ejemplo.
+#
+# CÓMO CONSEGUIR TUS ENLACES:
+#   - Amazon Associates (afiliados.amazon.com o tu país):
+#     1) Regístrate gratis en https://afiliados.amazon.com (o el dominio
+#        de tu país, ej. https://afiliados.amazon.com.mx)
+#     2) Busca el producto en Amazon, usa la barra "SiteStripe" que
+#        aparece arriba de la página del producto una vez con tu cuenta
+#        activa, y copia el "Enlace corto" (algo como https://amzn.to/xxxxx).
+#     3) Pega ese enlace corto en "amazon_url" abajo.
+#   - Mercado Libre Afiliados:
+#     1) Regístrate gratis en https://www.mercadolibre.com.mx/landing/afiliados
+#        (o el dominio de tu país: .com.co, .com.ar, etc.)
+#     2) Busca el producto en Mercado Libre, con tu cuenta de afiliado activa
+#        te va a aparecer un botón para "Generar link" en la página del producto.
+#     3) Pega ese enlace en "mercadolibre_url" abajo.
+#
+# Agrega tantos productos como quieras copiando el bloque de ejemplo.
+# Sugerencia: elige siempre productos con buena calificación (4+ estrellas)
+# y muchas reseñas reales, eso es lo que pide el usuario: productos que
+# de verdad ayuden y tengan buen puntaje/testimonios, no cualquier cosa.
+
+productos:
+  - nombre: "Cúrcuma con pimienta negra (cápsulas)"
+    palabras_clave: ["inflamación", "antiinflamatorio", "articulaciones", "dolor articular", "cúrcuma"]
+    nota: "Ej: 4.5+ estrellas, revisa reseñas reales antes de agregarlo"
+    amazon_url: "PENDIENTE"
+    mercadolibre_url: "PENDIENTE"
+
+  - nombre: "Magnesio bisglicinato (cápsulas)"
+    palabras_clave: ["sueño", "insomnio", "estrés", "ansiedad", "descanso", "magnesio", "relajación muscular"]
+    nota: ""
+    amazon_url: "PENDIENTE"
+    mercadolibre_url: "PENDIENTE"
+
+  - nombre: "Botella de agua con marcador de tiempo (motivacional)"
+    palabras_clave: ["hidratación", "agua", "hidratarse", "beber agua"]
+    nota: ""
+    amazon_url: "PENDIENTE"
+    mercadolibre_url: "PENDIENTE"
+
+  - nombre: "Esterilla de yoga antideslizante"
+    palabras_clave: ["ejercicio", "yoga", "estiramiento", "movimiento", "actividad física", "rutina de ejercicio"]
+    nota: ""
+    amazon_url: "PENDIENTE"
+    mercadolibre_url: "PENDIENTE"
+
+  - nombre: "Probiótico multi-cepa (cápsulas)"
+    palabras_clave: ["intestino", "digestión", "microbiota", "salud intestinal", "probiótico", "hinchazón"]
+    nota: ""
+    amazon_url: "PENDIENTE"
+    mercadolibre_url: "PENDIENTE"
+
+  - nombre: "Difusor de aceites esenciales"
+    palabras_clave: ["relajación", "aromaterapia", "estrés", "ambiente", "aceites esenciales"]
+    nota: ""
+    amazon_url: "PENDIENTE"
+    mercadolibre_url: "PENDIENTE"
+
+  - nombre: "Báscula de cocina digital"
+    palabras_clave: ["nutrición", "alimentación", "porciones", "dieta", "control de peso", "cocina saludable"]
+    nota: ""
+    amazon_url: "PENDIENTE"
+    mercadolibre_url: "PENDIENTE"
+
+configuracion:
+  # Cuántos productos como máximo se recomiendan por video (2-3 es lo ideal,
+  # más que eso se ve como spam y baja la confianza del espectador).
+  max_productos_por_video: 2
+
+  # Puntaje mínimo de coincidencia (0 a 1) para recomendar un producto.
+  # Si ningún producto del catálogo coincide lo suficiente con el tema del
+  # video, es preferible NO mostrar nada a mostrar algo forzado/irrelevante.
+  umbral_relevancia_minima: 0.15
+
+  # Texto EXACTO que exige Amazon Associates en su "Operating Agreement"
+  # (sección 5, "Identifying Yourself as an Associate"). Amazon muestra el
+  # texto exacto para tu país dentro de tu cuenta -> "Cumplimiento normativo"
+  # / "Compliance". Si el tuyo es distinto, reemplázalo aquí tal cual.
+  amazon_disclosure_text: "Como Afiliado de Amazon, obtengo ingresos por las compras adscritas que cumplen los requisitos aplicables."
+
+  mercadolibre_disclosure_text: "Como afiliado de Mercado Libre, puedo recibir una comisión por las compras realizadas a través de estos enlaces."
