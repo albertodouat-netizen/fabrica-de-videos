@@ -49,7 +49,8 @@ jobs:
           echo "$CLIENT_SECRET_B64" | base64 -d > config/client_secret.json
           echo "$TOKEN_JSON_B64" | base64 -d > config/token.json
           python3 scripts/aplicar_secretos.py
-
+      - name: Diagnostico - confirmar canal conectado (rapido, antes de gastar tiempo)
+        run: python3 scripts/diagnostico_canal.py
       - name: Ejecutar el equipo de agentes (video largo + Short + publicación)
         run: python3 orchestrator.py --videos 1
 
