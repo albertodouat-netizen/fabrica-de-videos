@@ -18,8 +18,9 @@ Esto evita agotar la RAM en videos largos con muchos clips de stock.
 """
 import os
 import gc
+import random
 from PIL import Image, ImageDraw, ImageFont
-from moviepy import AudioFileClip, ImageClip, VideoFileClip, concatenate_videoclips
+from moviepy import AudioFileClip, ImageClip, VideoFileClip, concatenate_videoclips, CompositeVideoClip
 
 from agents.utils import load_config, log
 from agents.viral_strategist import DURACION_MIN_CORTE_SEG, DURACION_MAX_CORTE_SEG
@@ -109,6 +110,20 @@ def _fondo_respaldo_simple(destino_png, resolucion=RESOLUCION):
     return destino_png
 
 
+def _aplicar_ken_burns(clip_cubierto, resolucion, duracion):
+    """Efecto de zoom lento (estilo documental / 'Ken Burns') para que ninguna
+    imagen se vea estática: el clip ya debe cubrir exactamente 'resolucion' a
+    escala 1.0; se agranda gradualmente y CompositeVideoClip recorta
+    automáticamente lo que se sale del encuadre, sin dejar bordes vacíos."""
+    zoom_final = random.uniform(1.10, 1.16)  # entre 10% y 16% de zoom total, sutil pero notorio
+
+    def escala(t):
+        return 1.0 + (zoom_final - 1.0) * (t / duracion if duracion > 0 else 0)
+
+    clip_zoom = clip_cubierto.resized(escala).with_position("center")
+    return CompositeVideoClip([clip_zoom], size=resolucion).with_duration(duracion)
+
+
 def _clip_desde_visual(visual, duracion, carpeta_tmp, resolucion=RESOLUCION):
     if visual["tipo"] == "video":
         try:
@@ -129,12 +144,14 @@ def _clip_desde_visual(visual, duracion, carpeta_tmp, resolucion=RESOLUCION):
 
     try:
         clip = ImageClip(visual["ruta"]).with_duration(duracion)
-        return _cubrir_resolucion(clip, resolucion)
+        clip_cubierto = _cubrir_resolucion(clip, resolucion)
+        return _aplicar_ken_burns(clip_cubierto, resolucion, duracion)
     except Exception as e:
         log(AGENT, f"Imagen dañada/no legible, generando fondo de respaldo: {e}")
         ruta_fallback = os.path.join(carpeta_tmp, f"_fallback_{os.path.basename(visual['ruta'])}.png")
         _fondo_respaldo_simple(ruta_fallback, resolucion)
         return ImageClip(ruta_fallback).with_duration(duracion)
+
 
 
 def _renderizar_capitulo(cap, audio_cap_info, visuales_cap, carpeta_salida, indice,

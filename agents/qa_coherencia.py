@@ -131,8 +131,9 @@ def verificar_y_corregir(guion: dict, visuales_info: dict, carpeta_salida: str) 
 
             if score < UMBRAL_APROBACION and buscador is not None:
                 log(AGENT, f"Beat {tag}: coincidencia baja ({score}/10) para '{keyword}'. "
-                            f"Buscando un recurso alternativo...")
-                nuevo_visual = buscador.re_obtener_evitando(keyword, carpeta_salida, tag, visual["ruta"])
+                            f"Generando una imagen IA a medida para esta frase exacta...")
+                nuevo_visual = buscador.re_obtener_evitando(keyword, carpeta_salida, tag, visual["ruta"],
+                                                             contexto=beat.get("texto", ""))
                 visuales_cap[j] = nuevo_visual
                 reemplazados += 1
             time.sleep(2.5)  # margen para no exceder el límite gratuito de peticiones por minuto

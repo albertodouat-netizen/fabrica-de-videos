@@ -21,10 +21,14 @@ COHERENTE con lo narrado:
 Fuentes 100% gratuitas (con key gratis, sin tarjeta de crédito):
   - Pexels Video/Photo API   -> https://www.pexels.com/api/
   - Pixabay Video/Photo API  -> https://pixabay.com/api/docs/
+  - Pollinations.ai (imagen IA, sin key, sin límite) -> cuando el stock no
+    tiene la escena exacta que pide el guion, se genera una imagen realista
+    a medida en vez de conformarse con algo "parecido" o un fondo genérico.
 """
 import os
 import random
 import re
+import urllib.parse
 import requests
 from PIL import Image, ImageDraw, ImageFont
 
@@ -37,6 +41,12 @@ _PALABRAS_PROHIBIDAS = [
     "animaciones", "dibujo", "dibujos", "diagrama", "diagramas", "grafico",
     "gráfico", "graficos", "gráficos", "caricatura", "cartoon", "clipart",
     "vector", "icono", "iconos", "infografia", "infografía",
+    # Equivalentes en inglés (los "visual" ahora se piden en inglés para
+    # buscar mejor en Pexels/Pixabay, así que filtramos también en ese idioma):
+    "illustration", "illustrations", "animation", "animations", "drawing",
+    "drawings", "diagram", "diagrams", "graphic", "graphics", "chart",
+    "charts", "icon", "icons", "infographic", "infographics", "sketch",
+    "render", "3d", "painting", "anime", "clip-art",
 ]
 
 
@@ -50,6 +60,27 @@ def _limpiar_palabra_clave(keyword: str) -> str:
     return resultado if resultado else "persona en la vida real, fotografía realista"
 
 
+_CONECTORES_BUSQUEDA = {
+    "de", "del", "la", "el", "los", "las", "para", "con", "en", "y", "a",
+    "un", "una", "que", "su", "sus", "muy", "más", "mas", "al", "es",
+    # Stopwords en inglés (las keywords visuales ahora se generan en inglés):
+    "the", "of", "in", "on", "at", "a", "an", "with", "and", "to", "for",
+    "is", "her", "his", "their", "close", "up", "shot",
+}
+
+
+def _version_amplia_busqueda(keyword: str) -> str:
+    """Devuelve una versión más simple/genérica de la palabra clave (2-3
+    palabras núcleo), usada como segundo intento cuando la frase completa y
+    muy específica no trae ningún resultado de VIDEO real en los bancos
+    gratuitos. Preferimos siempre metraje real (aunque sea de una escena algo
+    más genérica) antes que quedarnos solo con foto o imagen generada."""
+    palabras = [p for p in re.findall(r"[a-záéíóúñ]+", keyword.lower()) if p not in _CONECTORES_BUSQUEDA]
+    if not palabras:
+        return keyword
+    return " ".join(palabras[:3])
+
+
 def _puntaje_relevancia(keyword: str, texto_meta: str) -> float:
     """Puntúa cuánto se parece el texto descriptivo/tags que devuelve la API
     a la palabra clave que pedimos (superposición de palabras). 0 a 1."""
@@ -61,6 +92,17 @@ def _puntaje_relevancia(keyword: str, texto_meta: str) -> float:
         return 0.0
     interseccion = palabras_kw & palabras_meta
     return len(interseccion) / len(palabras_kw)
+
+
+# Puntaje mínimo (0 a 1) para ACEPTAR un resultado de stock (Pexels/Pixabay).
+# Antes de este cambio, el sistema aceptaba "el menos malo" de los candidatos
+# aunque no tuviera casi nada que ver con la palabra clave (Pexels/Pixabay dan
+# muy poco texto descriptivo real, así que el puntaje solía ser bajo de todas
+# formas). Esa era la causa principal de que "las imágenes no tengan nada que
+# ver con el contenido": preferimos SIEMPRE una imagen IA generada a medida
+# para esa frase exacta (ver _generar_imagen_ia) antes que un video/foto de
+# stock que coincide poco o nada.
+UMBRAL_RELEVANCIA_MINIMA_STOCK = 0.34
 
 
 def _buscar_pexels_video(query, api_key, por_pagina=6, orientacion="landscape"):
@@ -139,6 +181,44 @@ def _descargar(url, destino):
     return destino
 
 
+def _generar_imagen_ia(descripcion: str, destino_jpg: str, tamano=(1280, 720),
+                        contexto: str = "") -> bool:
+    """Genera una imagen FOTORREALISTA a medida con Pollinations.ai (100%
+    gratis, sin API key, sin límite de uso razonable). Se usa cuando ningún
+    banco de stock tiene la escena exacta que pide el guion: en vez de
+    conformarnos con algo "parecido" o un fondo de color genérico, se crea
+    una imagen que representa EXACTAMENTE la frase, mejorando mucho la
+    coincidencia entre lo narrado y lo que se ve en pantalla.
+
+    'contexto' (opcional) es la frase completa del beat (lo que se está
+    narrando en ese momento): ayuda al modelo a generar una escena más
+    específica que la sola palabra clave (ej. keyword="manos" + contexto=
+    "corta el ajo justo antes de cocinarlo" da una imagen mucho más precisa
+    que "manos" sola).
+    """
+    base = f"{descripcion}. {contexto}".strip(". ").strip()
+    prompt = (
+        f"{base}, fotografía realista tipo documental, cámara real, luz natural, "
+        f"alta definición, composición cinematográfica, sin texto, sin marca de agua, "
+        f"sin logotipos, persona real (no dibujo, no animación, no 3D)"
+    )
+    prompt_codificado = urllib.parse.quote(prompt)
+    semilla = random.randint(1, 999999)
+    url = (f"https://image.pollinations.ai/prompt/{prompt_codificado}"
+           f"?width={tamano[0]}&height={tamano[1]}&nologo=true&seed={semilla}")
+    try:
+        r = requests.get(url, timeout=40)
+        r.raise_for_status()
+        if len(r.content) < 5000:  # respuesta sospechosamente pequeña (error disfrazado de imagen)
+            return False
+        with open(destino_jpg, "wb") as f:
+            f.write(r.content)
+        return True
+    except Exception as e:
+        log(AGENT, f"No se pudo generar imagen IA para '{descripcion}': {e}")
+        return False
+
+
 def _generar_fondo_local(texto, destino_png, tamano=(1280, 720)):
     """Último recurso: fondo local generado (solo si no hubo NINGÚN resultado
     real disponible en los bancos gratuitos para esa palabra clave)."""
@@ -195,22 +275,50 @@ class BuscadorVisualesUnicos:
         self.urls_usadas = set()
         self.orientacion = orientacion  # "landscape" (16:9) o "portrait" (9:16, para Shorts)
 
-    def _mejor_no_usado(self, candidatos, keyword):
+    def _mejor_no_usado(self, candidatos, keyword, umbral_minimo=0.0):
         """candidatos: lista de (url, texto_meta). Devuelve el de mejor
-        puntaje de relevancia que no se haya usado ya en este video."""
+        puntaje de relevancia que no se haya usado ya en este video, SIEMPRE
+        que supere 'umbral_minimo' (si no, es preferible generar una imagen
+        IA a medida en vez de aceptar algo que casi no tiene relación)."""
         disponibles = [(u, t) for u, t in candidatos if u not in self.urls_usadas]
         if not disponibles:
             return None
         disponibles.sort(key=lambda ut: _puntaje_relevancia(keyword, ut[1]), reverse=True)
-        return disponibles[0][0]
+        mejor_url, mejor_meta = disponibles[0]
+        if umbral_minimo > 0 and _puntaje_relevancia(keyword, mejor_meta) < umbral_minimo:
+            return None
+        return mejor_url
 
-    def obtener(self, keyword: str, carpeta_salida: str, tag: str) -> dict:
+    def obtener(self, keyword: str, carpeta_salida: str, tag: str, contexto: str = "") -> dict:
         orient_pexels = self.orientacion
         intentos = []
+        # Video REAL (no generado) siempre tiene prioridad sobre imagen fija:
+        # se ve más dinámico y "realista" de verdad. Si la keyword completa no
+        # trae resultados de video, probamos una versión más simple (2-3
+        # palabras clave del núcleo) antes de rendirnos e ir a foto/imagen IA:
+        # a veces "manos cortando ajo fresco en tabla de madera" no da nada,
+        # pero "cortando ajo" sí tiene metraje real disponible.
+        variante_amplia = _version_amplia_busqueda(keyword)
+
+        def _video_con_variante(buscar_fn):
+            resultados = []
+            try:
+                resultados = buscar_fn(keyword)
+            except Exception:
+                resultados = []
+            if not resultados and variante_amplia != keyword:
+                try:
+                    resultados = buscar_fn(variante_amplia)
+                except Exception:
+                    resultados = []
+            return resultados
+
         if self.usar_pexels:
-            intentos.append(("video", lambda: _buscar_pexels_video(keyword, self.pexels_key, orientacion=orient_pexels)))
+            intentos.append(("video", lambda: _video_con_variante(
+                lambda q: _buscar_pexels_video(q, self.pexels_key, por_pagina=10, orientacion=orient_pexels))))
         if self.usar_pixabay:
-            intentos.append(("video", lambda: _buscar_pixabay_video(keyword, self.pixabay_key)))
+            intentos.append(("video", lambda: _video_con_variante(
+                lambda q: _buscar_pixabay_video(q, self.pixabay_key, por_pagina=10))))
         if self.usar_pexels:
             intentos.append(("foto", lambda: _buscar_pexels_foto(keyword, self.pexels_key, orientacion=orient_pexels)))
         if self.usar_pixabay:
@@ -222,7 +330,11 @@ class BuscadorVisualesUnicos:
             except Exception as e:
                 log(AGENT, f"Aviso buscando '{keyword}': {e}")
                 continue
-            url = self._mejor_no_usado(candidatos, keyword)
+            # Exigimos un mínimo de coincidencia real: preferimos generar una
+            # imagen IA a medida (ver más abajo) antes que aceptar un
+            # video/foto de stock que no tiene casi relación con la palabra
+            # clave; esa era la causa principal de la incoherencia reportada.
+            url = self._mejor_no_usado(candidatos, keyword, umbral_minimo=UMBRAL_RELEVANCIA_MINIMA_STOCK)
             if not url:
                 continue
             ext = ".mp4" if tipo == "video" else ".jpg"
@@ -235,20 +347,39 @@ class BuscadorVisualesUnicos:
                 log(AGENT, f"No se pudo descargar '{keyword}': {e}")
                 self.urls_usadas.add(url)  # no reintentar la misma URL rota
 
+        # Antes de resignarnos a un fondo genérico: generamos una imagen IA
+        # hecha a medida para ESTA frase exacta (gratis, sin límite). Este es
+        # ahora el camino MÁS FRECUENTE (no solo el último recurso), porque el
+        # stock gratuito casi nunca tiene la escena exacta que pide el guion,
+        # y una imagen mal relacionada es peor que una generada a propósito.
+        destino_ia = os.path.join(carpeta_salida, f"{tag}_{slugify(keyword)}_ia.jpg")
+        if _generar_imagen_ia(keyword, destino_ia, contexto=contexto):
+            log(AGENT, f"'{keyword}': no había stock con buena coincidencia, se generó una imagen IA a medida.")
+            return {"tipo": "imagen", "ruta": destino_ia, "keyword": keyword}
+
         # Último recurso: nada disponible en ningún banco para esta keyword
         destino_png = os.path.join(carpeta_salida, f"{tag}_{slugify(keyword)}_fallback.png")
         _generar_fondo_local(keyword, destino_png)
         return {"tipo": "imagen", "ruta": destino_png, "keyword": keyword}
 
-    def re_obtener_evitando(self, keyword: str, carpeta_salida: str, tag: str, ruta_evitar: str) -> dict:
-        """Usado por el Verificador de Coherencia: pide un candidato distinto
-        al que ya se probó (porque no coincidía con lo narrado)."""
+    def re_obtener_evitando(self, keyword: str, carpeta_salida: str, tag: str, ruta_evitar: str,
+                             contexto: str = "") -> dict:
+        """Usado por el Verificador de Coherencia cuando Gemini Vision ya
+        calificó el recurso actual con baja coincidencia: en vez de repetir
+        otra búsqueda de stock (que ya demostró no tener nada mejor), vamos
+        DIRECTO a generar una imagen IA a medida para esa frase exacta, la
+        forma más confiable de garantizar coherencia real."""
         try:
             if os.path.exists(ruta_evitar):
                 os.remove(ruta_evitar)
         except OSError:
             pass
-        return self.obtener(keyword, carpeta_salida, tag)
+        destino_ia = os.path.join(carpeta_salida, f"{tag}_{slugify(keyword)}_ia_v2.jpg")
+        if _generar_imagen_ia(keyword, destino_ia, contexto=contexto):
+            return {"tipo": "imagen", "ruta": destino_ia, "keyword": keyword}
+        # Si por algún motivo Pollinations falla justo en este momento, como
+        # red de seguridad reintentamos el flujo normal (stock -> IA -> fondo).
+        return self.obtener(keyword, carpeta_salida, tag, contexto=contexto)
 
 
 def obtener_visuales_para_guion(guion: dict, carpeta_salida: str, orientacion="landscape") -> dict:
@@ -267,7 +398,8 @@ def obtener_visuales_para_guion(guion: dict, carpeta_salida: str, orientacion="l
         visuales_cap = []
         for j, beat in enumerate(beats):
             keyword = _limpiar_palabra_clave(beat.get("visual") or cap["nombre"])
-            visual = buscador.obtener(keyword, carpeta_salida, tag=f"cap{i}_b{j}")
+            contexto = beat.get("texto", "")
+            visual = buscador.obtener(keyword, carpeta_salida, tag=f"cap{i}_b{j}", contexto=contexto)
             visuales_cap.append(visual)
             log(AGENT, f"Cap {i+1} beat {j+1}/{len(beats)}: '{keyword}' -> {visual['tipo']}")
         visuales_por_capitulo.append(visuales_cap)

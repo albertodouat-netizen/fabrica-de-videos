@@ -88,10 +88,11 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
 
     log(AGENT, "7/9 Generando miniatura (Packaging)...")
     primera_imagen = visuales_info["visuales_por_capitulo"][0][0]["ruta"]
-    ruta_miniatura = generar_miniatura(guion["titulo"], primera_imagen,
+    ruta_miniatura = generar_miniatura(guion, primera_imagen,
                                         f"output/thumbnails/{nombre_base}.png")
 
-    descripcion_final = construir_descripcion_publicacion(guion, timestamps_capitulos, cfg["canal"].get("nombre", ""))
+    descripcion_final = construir_descripcion_publicacion(guion, timestamps_capitulos, cfg["canal"].get("nombre", ""),
+                                                           url_canal=cfg["canal"].get("url", ""))
     if musica:
         descripcion_final += f"\n\n🎵 {musica['credito']}"
 

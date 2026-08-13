@@ -5,6 +5,7 @@
 
 canal:
   nombre: "Salud Natural Diaria"   # <- cámbialo por el nombre real que le pongas a tu canal
+  url: "https://www.youtube.com/channel/UCp96gCIthtbOAnhFpezcAHg"  # enlace directo a tu canal (para el CTA de suscripción en la descripción)
   idioma_destino: "es"          # idioma en el que se publica
   idioma_investigacion: "en"    # idioma donde se buscan ideas ganadoras (mercado más grande = más datos)
   nicho: "salud y bienestar natural"

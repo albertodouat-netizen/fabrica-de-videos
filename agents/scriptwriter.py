@@ -22,6 +22,7 @@ Proveedores 100% gratuitos soportados (elige uno en config.yaml -> llm_provider)
 import json
 import re
 import time
+import random
 import requests
 
 from agents.utils import load_config, log, limpiar_texto_para_voz
@@ -56,7 +57,15 @@ Instrucciones de formato:
        - "texto": 1-2 frases, SOLO texto narrable puro (ver regla 3 arriba, nada de
          asteriscos, guiones, numerales ni marcas de tiempo).
        - "visual": UNA palabra clave visual específica, real y filmable (nunca dibujos,
-         diagramas ni animaciones).
+         diagramas ni animaciones), escrita EN INGLÉS (aunque todo lo demás del guion
+         esté en español). Motivo: esta palabra clave se usa para buscar en bancos de
+         video/foto gratuitos (Pexels, Pixabay) cuyo catálogo y etiquetas están
+         mayoritariamente en inglés, así que una keyword en inglés encuentra escenas
+         MUCHO más precisas y relacionadas que la misma frase en español. Ejemplos
+         buenos: "hands chopping fresh garlic on wooden cutting board", "person
+         running at sunrise in the park", "woman drinking a glass of water in the
+         kitchen". El espectador NUNCA ve este texto, así que el idioma no importa
+         para él, solo para la búsqueda.
    Pensado para que el conjunto dure entre {dur_min} y {dur_max} minutos hablado en total
    (aprox 140 palabras/min). Menciona la keyword_principal DE FORMA NATURAL y hablada
    dentro de los primeros 60 segundos del guion (primer o segundo beat del capítulo 1):
@@ -67,13 +76,14 @@ Instrucciones de formato:
    variaciones y términos relacionados (sin relleno ni tags que no describan el video).
 5) Un disclaimer breve al final si el tema es de salud, finanzas u otro tema sensible.
 
-Devuélvelo en JSON con esta forma EXACTA (sin texto fuera del JSON):
+Devuélvelo en JSON con esta forma EXACTA (sin texto fuera del JSON; recuerda:
+"visual" siempre en inglés, todo lo demás en español):
 {{
   "keyword_principal": "...",
   "titulo": "...",
   "gancho": "...",
   "capitulos": [
-    {{"nombre": "...", "beats": [{{"texto": "...", "visual": "..."}}, ...]}}
+    {{"nombre": "...", "beats": [{{"texto": "...", "visual": "english visual keyword here"}}, ...]}}
   ],
   "descripcion": "...",
   "tags": ["...","..."],
@@ -158,48 +168,56 @@ def _plantilla_local(idea, cfg):
     Ya usa la estructura de beats para mantener consistencia con el resto
     del sistema."""
     nicho = cfg["canal"]["nicho"]
-    titulo = f"La verdad sobre {idea['titulo'].split('(')[0].strip()}"[:70]
+    titulos_generico = [
+        f"Hábitos Naturales Para Tu {nicho.title()}",
+        f"La Verdad Sobre {nicho.title()}",
+        f"Cambios Simples Para Tu {nicho.title()} Hoy",
+    ]
+    titulo_elegido = random.choice(titulos_generico)
+    if len(titulo_elegido) > 60:
+        titulo_elegido = titulo_elegido[:60].rsplit(" ", 1)[0]  # corta en la última palabra completa
+    titulo = titulo_elegido
     capitulos = [
         {
             "nombre": "Lo que nadie te dice",
             "beats": [
                 {"texto": f"Esto sobre {nicho} está cambiando la vida de miles de personas.",
-                 "visual": "persona sonriendo al aire libre en la mañana"},
+                 "visual": "person smiling outdoors in the morning sunlight"},
                 {"texto": "Y probablemente tú estás cometiendo el mismo error todos los días.",
-                 "visual": "persona revisando el teléfono con cara de cansancio"},
+                 "visual": "tired person looking at phone screen"},
                 {"texto": "Te voy a mostrar exactamente qué hacer, paso a paso.",
-                 "visual": "manos escribiendo en una libreta sobre una mesa de madera"},
+                 "visual": "hands writing in a notebook on a wooden table"},
             ],
         },
         {
             "nombre": "El problema real",
             "beats": [
                 {"texto": "La mayoría de las personas atacan el síntoma, no la causa.",
-                 "visual": "persona sosteniendo pastillas en la mano"},
+                 "visual": "hand holding pills close up"},
                 {"texto": "Por eso el problema siempre regresa.",
-                 "visual": "reloj de pared en una cocina"},
+                 "visual": "wall clock in a kitchen"},
                 {"texto": "Aquí está lo que la evidencia realmente muestra.",
-                 "visual": "doctor hablando con un paciente en consultorio"},
+                 "visual": "doctor talking with a patient in office"},
             ],
         },
         {
             "nombre": "Qué hacer hoy mismo",
             "beats": [
                 {"texto": "Primero, cambia esta rutina en tus mañanas.",
-                 "visual": "persona preparando un desayuno saludable en la cocina"},
+                 "visual": "person preparing a healthy breakfast in the kitchen"},
                 {"texto": "Segundo, elimina este hábito que te está afectando.",
-                 "visual": "persona alejando un vaso de refresco de la mesa"},
+                 "visual": "person pushing away a soda glass on the table"},
                 {"texto": "Tercero, agrega esta costumbre simple antes de dormir.",
-                 "visual": "persona leyendo un libro en la cama con luz cálida"},
+                 "visual": "person reading a book in bed with warm light"},
             ],
         },
         {
             "nombre": "Antes de irte",
             "beats": [
                 {"texto": "Esto es información general y no reemplaza una consulta profesional.",
-                 "visual": "persona caminando en un parque al atardecer"},
+                 "visual": "person walking in a park at sunset"},
                 {"texto": "Si te sirvió este video, suscríbete para más contenido como este.",
-                 "visual": "persona sonriendo directo a la cámara"},
+                 "visual": "person smiling directly at the camera"},
             ],
         },
     ]
@@ -209,12 +227,13 @@ def _plantilla_local(idea, cfg):
         "gancho": f"Esto sobre {nicho} podría estar afectándote sin que lo notes.",
         "capitulos": capitulos,
         "descripcion": (
-            f"Descubre todo sobre {nicho}: en este video te explicamos {idea['titulo']} "
-            f"y cómo aplicarlo hoy mismo, con cambios simples y respaldados por la evidencia "
+            f"Descubre todo sobre {nicho}: en este video te explicamos hábitos simples y prácticos "
+            f"que puedes aplicar hoy mismo, con cambios respaldados por la evidencia "
             f"disponible. Si te interesa {nicho}, este contenido es para ti."
         ),
         "tags": [nicho, "consejos", "hábitos saludables", "bienestar", "rutina diaria"],
         "disclaimer": "Este video es solo informativo y no sustituye una consulta médica o profesional.",
+
     }
 
 

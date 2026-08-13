@@ -138,7 +138,8 @@ def calcular_duraciones_de_corte(num_beats: int, duracion_total_seg: float) -> l
     return [duracion_ajustada * factor for _ in range(num_beats)]
 
 
-def construir_descripcion_publicacion(guion: dict, timestamps_capitulos: list, nombre_canal: str = "") -> str:
+def construir_descripcion_publicacion(guion: dict, timestamps_capitulos: list, nombre_canal: str = "",
+                                       url_canal: str = "") -> str:
     """
     Arma la descripción final de YouTube siguiendo las reglas de SEO 2026
     investigadas (no improvisadas):
@@ -169,12 +170,16 @@ def construir_descripcion_publicacion(guion: dict, timestamps_capitulos: list, n
         lineas.append(resumen)
         lineas.append("")
 
-    lineas.append("📌 ÍNDICE DEL VIDEO:")
+    lineas.append("📌 ÍNDICE DEL VIDEO (haz clic en cualquier minuto para saltar ahí):")
     for nombre, segundos in timestamps_capitulos:
         minutos = int(segundos // 60)
         seg = int(segundos % 60)
         lineas.append(f"{minutos:02d}:{seg:02d} {nombre}")
     lineas.append("")
+
+    if url_canal:
+        lineas.append(f"👉 Suscríbete gratis para más videos: {url_canal}")
+        lineas.append("")
 
     tags = guion.get("tags", [])
     if tags:
