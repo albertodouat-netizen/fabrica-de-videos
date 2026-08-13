@@ -66,6 +66,13 @@ Instrucciones de formato:
          running at sunrise in the park", "woman drinking a glass of water in the
          kitchen". El espectador NUNCA ve este texto, así que el idioma no importa
          para él, solo para la búsqueda.
+         IMPORTANTE: el "visual" no debe pensarse solo para esa frase aislada, sino
+         que debe encajar con el TEMA GENERAL del video (la keyword_principal). Por
+         ejemplo, en un video sobre salud intestinal, si un beat menciona "estrés",
+         mejor usa "person meditating calmly at home" que "stressed businessman in
+         office" (la oficina no encaja con un canal de salud natural). Todas las
+         escenas del guion deben poder pertenecer al mismo video sin sentirse fuera
+         de lugar entre sí.
    Pensado para que el conjunto dure entre {dur_min} y {dur_max} minutos hablado en total
    (aprox 140 palabras/min). Menciona la keyword_principal DE FORMA NATURAL y hablada
    dentro de los primeros 60 segundos del guion (primer o segundo beat del capítulo 1):
@@ -75,6 +82,12 @@ Instrucciones de formato:
    Además, 10 a 15 tags: el primero debe ser la keyword_principal exacta, luego
    variaciones y términos relacionados (sin relleno ni tags que no describan el video).
 5) Un disclaimer breve al final si el tema es de salud, finanzas u otro tema sensible.
+6) Un campo "audiencia_exclusiva": escribe "mujeres" SOLO si el tema es
+   biológica o temáticamente exclusivo de mujeres (ej: menstruación,
+   menopausia, embarazo, lactancia, salud ginecológica). Para CUALQUIER otro
+   tema de salud general (que le sirve tanto a hombres como a mujeres),
+   escribe "ninguna". La mayoría de los videos deben ser "ninguna": no lo
+   marques como exclusivo solo porque el tema sea más popular entre mujeres.
 
 Devuélvelo en JSON con esta forma EXACTA (sin texto fuera del JSON; recuerda:
 "visual" siempre en inglés, todo lo demás en español):
@@ -87,7 +100,8 @@ Devuélvelo en JSON con esta forma EXACTA (sin texto fuera del JSON; recuerda:
   ],
   "descripcion": "...",
   "tags": ["...","..."],
-  "disclaimer": "..."
+  "disclaimer": "...",
+  "audiencia_exclusiva": "ninguna"
 
 }}
 """
@@ -158,6 +172,26 @@ def _sanitizar_guion(guion: dict) -> dict:
         cap["nombre"] = cap["nombre"].replace("*", "").replace("#", "").strip()
         for beat in cap.get("beats", []):
             beat["texto"] = limpiar_texto_para_voz(beat.get("texto", ""))
+
+    # Red de seguridad para "audiencia_exclusiva": si el LLM olvidó marcarlo
+    # (pasa a veces), lo deducimos por palabras clave del propio tema. Mejor
+    # pecar de cauteloso (usar la voz femenina) en un tema realmente
+    # exclusivo de mujeres, que dejarlo al azar.
+    PALABRAS_EXCLUSIVAS_MUJERES = [
+        "menstrua", "menopaus", "embaraz", "lactancia materna", "ginecolog",
+        "ovario", "óvulo", "ovulo", "vaginal", "climaterio", "parto", "posparto",
+        "endometriosis", "sop ", "síndrome de ovario poliquístico",
+    ]
+    if not guion.get("audiencia_exclusiva"):
+        texto_para_detectar = " ".join([
+            guion.get("keyword_principal", ""), guion.get("titulo", ""),
+            guion.get("descripcion", ""), " ".join(guion.get("tags", [])),
+        ]).lower()
+        if any(p in texto_para_detectar for p in PALABRAS_EXCLUSIVAS_MUJERES):
+            guion["audiencia_exclusiva"] = "mujeres"
+        else:
+            guion["audiencia_exclusiva"] = "ninguna"
+
     return guion
 
 
@@ -233,6 +267,7 @@ def _plantilla_local(idea, cfg):
         ),
         "tags": [nicho, "consejos", "hábitos saludables", "bienestar", "rutina diaria"],
         "disclaimer": "Este video es solo informativo y no sustituye una consulta médica o profesional.",
+        "audiencia_exclusiva": "ninguna",
 
     }
 

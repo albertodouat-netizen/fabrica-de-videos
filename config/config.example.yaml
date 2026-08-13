@@ -57,7 +57,17 @@ apis:
   jamendo_client_id: "OBTENER_GRATIS_AQUI"
 
   # --- Voz (100% gratis, no requiere key: Microsoft Edge TTS) ---
-  voz_narrador: "es-MX-JorgeNeural"   # otras: es-ES-AlvaroNeural, es-US-AlonsoNeural
+  # Se elige AL AZAR una de estas 4 voces para cada video nuevo (variedad).
+  voz_narrador_pool:
+    - "es-CO-GonzaloNeural"    # Colombia, masculina
+    - "es-MX-JorgeNeural"      # México, masculina
+    - "es-US-AlonsoNeural"     # neutra (todo Latinoamérica), masculina
+    - "es-MX-DaliaNeural"      # México, femenina
+  # Si el guion se marca como "audiencia_exclusiva: mujeres" (temas como
+  # menstruación, menopausia, embarazo), se usa SIEMPRE esta voz, sin azar:
+  voz_narrador_exclusiva_mujeres: "es-MX-DaliaNeural"
+  voz_narrador_rate: "-8%"    # ritmo (negativo = más lento/pausado = suena más natural y cálido)
+  voz_narrador_pitch: "+0Hz"  # tono; no suele hacer falta tocarlo
 
 publicacion:
   privacidad_default: "private"   # sube como privado/programado por seguridad; cambia a "public" cuando lo revises
