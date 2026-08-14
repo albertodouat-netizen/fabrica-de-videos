@@ -28,11 +28,12 @@ Cada llamado:
     frase en todos los videos) para que el canal no se sienta "plantillado"
     -- justo lo que la política de "contenido inauténtico" de YouTube
     penaliza (investigado en este proyecto).
-  - Usa el marcador especial MARCADOR_VISUAL_SUSCRIPCION como palabra
-    visual, para que VisualScout (agents/visuals.py) muestre la tarjeta
-    gráfica de suscripción en vez de buscar un clip de stock.
+  - Usa una palabra clave visual NORMAL y segura (persona sonriendo en luz
+    natural), para que aparezca un video/foto real de fondo; el aviso de
+    "SUSCRÍBETE" se dibuja como un banner pequeño superpuesto en la parte de
+    abajo (ver generar_overlay_suscripcion), nunca a pantalla completa.
   - Queda marcado con beat["es_llamado_suscripcion"] = True para que otros
-    agentes (QA-Coherencia, ShortsCreator) lo reconozcan y lo traten aparte.
+    agentes (QA-Coherencia, ShortsCreator, EditorVideo) lo reconozcan y lo traten aparte.
 """
 import os
 import random
@@ -43,9 +44,17 @@ from agents.utils import log
 
 AGENT = "SuscripcionCTA"
 
-# Marcador especial usado en el campo "visual" del beat: en vez de buscar un
-# clip de stock, VisualScout genera la tarjeta gráfica de suscripción.
-MARCADOR_VISUAL_SUSCRIPCION = "TARJETA_LLAMADO_SUSCRIPCION"
+# Palabra clave visual NORMAL (real, filmable, segura) para los 3 momentos
+# de suscripción. Antes esto usaba un marcador especial que hacía aparecer
+# una tarjeta A PANTALLA COMPLETA sin ningún video real detrás -- un
+# experto en tráfico de YouTube señaló, con razón, que el aviso de
+# suscripción NO debe tapar toda la pantalla, sobre todo en los primeros
+# segundos (los más importantes para retener a alguien nuevo). Ahora este
+# beat usa una escena real y agradable de fondo (como cualquier otro beat,
+# pasa por el buscador de video/foto normal), y el aviso de "SUSCRÍBETE" se
+# dibuja como un banner PEQUEÑO y transparente encima, solo en la parte de
+# abajo (ver generar_overlay_suscripcion en agents/video_editor.py).
+VISUAL_SEGURO_SUSCRIPCION = "person smiling warmly in soft natural light at home"
 
 FRASES_INICIO = [
     "Antes de seguir, un segundo. Si te interesa cuidarte de forma natural, suscríbete gratis al canal ahora mismo.",
@@ -80,7 +89,7 @@ TAGLINE_DE_MARCA = "Recuerda, pequeños cambios naturales, grandes resultados. N
 def _beat_cta(texto: str, momento: str) -> dict:
     return {
         "texto": texto,
-        "visual": MARCADOR_VISUAL_SUSCRIPCION,
+        "visual": VISUAL_SEGURO_SUSCRIPCION,
         "es_llamado_suscripcion": True,
         "momento_suscripcion": momento,
     }
@@ -165,36 +174,46 @@ _COLORES_ACENTO = {
 }
 
 
-def generar_tarjeta_suscripcion(momento: str, carpeta_salida: str, tag: str,
+def generar_overlay_suscripcion(momento: str, carpeta_salida: str, tag: str,
                                  resolucion=(1280, 720)) -> str:
     """Genera (100% con Pillow, sin IA, sin ninguna persona real o generada)
-    una tarjeta gráfica para el llamado a suscripción. Formato 100% sin
-    rostro, a propósito (ver nota al inicio del archivo)."""
+    un banner PEQUEÑO y transparente para el llamado a suscripción, pensado
+    para superponerse sobre un video/foto real de fondo (nunca reemplazarlo
+    por completo). Ocupa solo la franja inferior de la pantalla (~22% de
+    alto), tal como recomienda la buena práctica de retención: en los
+    primeros segundos del video no se debe tapar la imagen con avisos que
+    ocupen toda la pantalla."""
     color_acento = _COLORES_ACENTO.get(momento, (255, 210, 0))
-    img = Image.new("RGB", resolucion, (18, 18, 22))
-    draw = ImageDraw.Draw(img)
+    w, h = resolucion
+    overlay = Image.new("RGBA", resolucion, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(overlay)
 
-    cx, cy = resolucion[0] // 2, resolucion[1] // 2 - 60
-    r = 90
-    draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=color_acento, width=8)
-    # Campana simple dibujada a mano (mismo estilo en todo el proyecto).
+    alto_banner = int(h * 0.22)
+    y0 = h - alto_banner
+    # Franja semitransparente (no un bloque sólido) para que se note que hay
+    # video real detrás, no una tarjeta que reemplaza la pantalla completa.
+    draw.rectangle([0, y0, w, h], fill=(10, 10, 15, 195))
+    draw.rectangle([0, y0, w, y0 + 5], fill=color_acento + (255,))  # línea de acento arriba del banner
+
+    # Campanita simple (mismo estilo en todo el proyecto)
+    r = int(alto_banner * 0.28)
+    cx, cy = int(w * 0.12), y0 + alto_banner // 2
+    draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=color_acento + (255,), width=4)
     br = int(r * 0.55)
-    draw.pieslice([cx - br, cy - br, cx + br, cy + int(br * 0.6)], 180, 360, fill=color_acento)
-    draw.rectangle([cx - br, cy - int(br * 0.2), cx + br, cy + int(br * 0.5)], fill=color_acento)
-    draw.ellipse([cx - int(br * 0.25), cy + int(br * 0.5), cx + int(br * 0.25), cy + int(br * 0.9)],
-                 fill=color_acento)
+    draw.pieslice([cx - br, cy - br, cx + br, cy + int(br * 0.6)], 180, 360, fill=color_acento + (255,))
+    draw.rectangle([cx - br, cy - int(br * 0.2), cx + br, cy + int(br * 0.5)], fill=color_acento + (255,))
 
-    font_grande = _fuente(74)
+    font_grande = _fuente(int(alto_banner * 0.38))
     texto = "SUSCRÍBETE"
-    tw = draw.textlength(texto, font=font_grande)
-    draw.text(((resolucion[0] - tw) / 2, cy + r + 40), texto, font=font_grande, fill=(255, 255, 255))
+    tx = cx + r + int(w * 0.03)
+    ty = y0 + int(alto_banner * 0.14)
+    draw.text((tx, ty), texto, font=font_grande, fill=(255, 255, 255, 255))
 
-    font_chica = _fuente(34)
+    font_chica = _fuente(int(alto_banner * 0.18))
     pie = "Es gratis y ayuda mucho"
-    tw2 = draw.textlength(pie, font=font_chica)
-    draw.text(((resolucion[0] - tw2) / 2, cy + r + 130), pie, font=font_chica, fill=(190, 190, 190))
+    draw.text((tx, ty + font_grande.size + int(alto_banner * 0.05)), pie, font=font_chica, fill=(210, 210, 210, 255))
 
     os.makedirs(carpeta_salida, exist_ok=True)
-    destino = os.path.join(carpeta_salida, f"{tag}_tarjeta_suscripcion.jpg")
-    img.save(destino, quality=92)
+    destino = os.path.join(carpeta_salida, f"{tag}_overlay_suscripcion.png")
+    overlay.save(destino)
     return destino

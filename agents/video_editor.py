@@ -188,6 +188,26 @@ def _renderizar_capitulo(cap, audio_cap_info, visuales_cap, carpeta_salida, indi
             log(AGENT, f"Aviso: no se pudo dibujar el callout de la cifra '{cifra}' ({e}); "
                         "el video sigue igual, solo sin ese recuadro.")
 
+    # Llamados a suscripción (ver agents/suscripcion_cta.py): banner PEQUEÑO
+    # en la parte de abajo, superpuesto sobre el video real (nunca tapa toda
+    # la pantalla, según recomendación real de retención de audiencia).
+    for idx, (beat, dur) in enumerate(zip(beats_cap, duraciones_beats)):
+        if not beat.get("es_llamado_suscripcion") or idx >= len(sub_clips):
+            continue
+        try:
+            from agents.suscripcion_cta import generar_overlay_suscripcion
+            momento = beat.get("momento_suscripcion", "inicio")
+            ruta_overlay = generar_overlay_suscripcion(momento, carpeta_salida, tag=f"susc_cap{indice}_b{idx}",
+                                                        resolucion=resolucion)
+            clip_overlay = (ImageClip(ruta_overlay)
+                            .with_duration(sub_clips[idx].duration)
+                            .with_position((0, 0)))
+            sub_clips[idx] = CompositeVideoClip([sub_clips[idx], clip_overlay], size=resolucion) \
+                .with_duration(sub_clips[idx].duration)
+        except Exception as e:
+            log(AGENT, f"Aviso: no se pudo dibujar el banner de suscripción ({e}); "
+                        "el video sigue igual, solo sin ese banner.")
+
     video_capitulo = concatenate_videoclips(sub_clips, method="chain") if len(sub_clips) > 1 else sub_clips[0]
     # Usamos la duración REAL de lo ya renderizado (no la del audio) para evitar
     # pedirle a moviepy frames más allá de lo que el clip visual realmente tiene.

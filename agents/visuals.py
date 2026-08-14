@@ -505,29 +505,13 @@ def obtener_visuales_para_guion(guion: dict, carpeta_salida: str, orientacion="l
         visuales_cap = []
         for j, beat in enumerate(beats):
             # Los 3 llamados obligatorios a suscripción (ver
-            # agents/suscripcion_cta.py) no buscan stock: siempre muestran al
-            # presentador fijo del canal (rostro humano real y consistente)
-            # con el botón de suscripción, sin gastar cuota de Pexels/Pixabay.
-            if beat.get("es_llamado_suscripcion"):
-                # Los 3 llamados obligatorios a suscripción (ver
-                # agents/suscripcion_cta.py) usan una tarjeta gráfica sin
-                # ningún rostro (real o generado): decisión tomada en la
-                # auditoría de agosto 2026 para no arriesgar la política de
-                # "personas de IA en temas sensibles" (salud) de YouTube.
-                from agents.suscripcion_cta import generar_tarjeta_suscripcion
-                momento = beat.get("momento_suscripcion", "inicio")
-                try:
-                    ruta_tarjeta = generar_tarjeta_suscripcion(momento, carpeta_salida, tag=f"cap{i}_b{j}")
-                    visuales_cap.append({"tipo": "imagen", "ruta": ruta_tarjeta,
-                                          "keyword": "tarjeta grafica de suscripcion"})
-                    log(AGENT, f"Cap {i+1} beat {j+1}/{len(beats)}: llamado a suscripción ({momento}) "
-                                f"-> tarjeta gráfica (sin rostro)")
-                    continue
-                except Exception as e:
-                    log(AGENT, f"Aviso: no se pudo generar la tarjeta de suscripción ({e}); "
-                                "se busca un visual normal de respaldo para este beat.")
-                    beat = dict(beat)
-                    beat["visual"] = "person smiling warmly outdoors in natural light"
+            # agents/suscripcion_cta.py) YA NO usan una tarjeta a pantalla
+            # completa: un experto en tráfico de YouTube señaló que el
+            # aviso de suscripción no debe tapar toda la pantalla, sobre
+            # todo en los primeros segundos. Ahora este beat usa una escena
+            # real (búsqueda normal, como cualquier otro beat) y solo se le
+            # superpone un banner pequeño en la parte de abajo, ya en
+            # agents/video_editor.py (igual que el callout de cifras).
 
             # Mención cruzada a otro video del canal (tráfico orgánico
             # interno, ver agents/promocion_cruzada.py): se muestra una
