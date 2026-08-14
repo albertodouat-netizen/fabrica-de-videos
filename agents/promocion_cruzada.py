@@ -199,13 +199,8 @@ def agregar_mencion_video_relacionado(guion: dict, video_relacionado: dict) -> d
 
     cap_final = capitulos[-1]
     beats = cap_final.setdefault("beats", [])
-    # Si el último beat ya es el llamado final a suscripción, esta mención se
-    # inserta justo ANTES (para que el video siga cerrando con el llamado a
-    # suscribirse, que es lo más importante que debe quedar en el oído).
-    if beats and beats[-1].get("es_llamado_suscripcion"):
-        beats.insert(len(beats) - 1, beat)
-    else:
-        beats.append(beat)
+    from agents.suscripcion_cta import insertar_antes_del_cierre
+    insertar_antes_del_cierre(beats, beat)
 
     log(AGENT, f"Mención cruzada agregada al guion, recomendando: '{titulo_rel}'")
     return guion

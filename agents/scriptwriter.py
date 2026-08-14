@@ -184,6 +184,154 @@ def _llamar_ollama(prompt, modelo):
     return r.json()["response"]
 
 
+# --- Extensión automática cuando el guion sale corto (bug real encontrado en
+# la auditoría de agosto 2026): el LLM a veces no respeta "8 a 14 beats por
+# capítulo" y entrega guiones de apenas ~2 minutos, muy por debajo del
+# objetivo de 8-15 minutos (el mínimo real para que YouTube habilite
+# anuncios intermedios, que suben el RPM 40-100%). En vez de solo pedirlo
+# más fuerte en el prompt (no garantiza nada), se MIDE la duración real del
+# guion ya escrito y, si falta, se le pide al LLM contenido NUEVO adicional
+# (nunca relleno/repetición) hasta acercarse al objetivo. ---
+PALABRAS_POR_MINUTO_HABLADO = 140
+
+PROMPT_EXTENSION = """Ya escribiste este guion en español sobre {nicho}, inspirado en el ángulo de: "{titulo_ref}".
+
+Título ya elegido: "{titulo}"
+
+Capítulos YA ESCRITOS (no los repitas ni los reformules con otras palabras, continúa desde aquí con información NUEVA):
+{resumen_capitulos}
+
+ADVERTENCIA (léela con cuidado): en intentos anteriores algunos capítulos "nuevos" terminaron siendo casi el mismo \
+tema que uno ya escrito arriba, solo con el título reformulado. Antes de escribir cada capítulo nuevo, revisa la \
+lista de arriba y asegúrate de que su tema central sea GENUINAMENTE distinto (no una variación del mismo punto). \
+Si ya se habló de un remedio o alimento específico, no le dediques otro capítulo entero, elige otro ángulo real \
+que falte (por ejemplo: cómo empezar sin dinero extra, qué evitar, cómo mantenerlo a largo plazo, señales de que \
+está funcionando, o un remedio/hábito que aún no se haya mencionado).
+
+El guion completo lleva hasta ahora aproximadamente {palabras_actuales} palabras habladas (~{duracion_actual:.1f} \
+minutos a 140 palabras/min), pero el objetivo real es llegar a entre {dur_min} y {dur_max} minutos (entre \
+{palabras_min} y {palabras_max} palabras en total). Escribe {n_capitulos_nuevos} capítulo(s) ADICIONAL(es) que \
+sigan el mismo video, con información REAL, específica y práctica que NO se haya mencionado todavía (más consejos \
+concretos y accionables, precauciones importantes, errores comunes al aplicar esto, o un ángulo distinto de lo ya \
+dicho). Nunca inventes una cifra que no esté en las fuentes de abajo.
+
+MUY IMPORTANTE: cada uno de estos capítulos nuevos debe tener EN TOTAL al menos {palabras_por_capitulo_nuevo} \
+palabras habladas repartidas en varios beats cortos (8 a 14 beats por capítulo, como indican las reglas de abajo). \
+Los intentos anteriores quedaron demasiado cortos, así que desarrolla cada punto con más profundidad real \
+(ejemplos concretos, el mecanismo de por qué funciona, cómo aplicarlo paso a paso) en vez de resumir en 2 o 3 \
+frases.
+
+{fuentes_cientificas}
+
+{reglas_retencion}
+
+Devuelve ÚNICAMENTE un JSON con esta forma exacta, sin nada de texto fuera del JSON (recuerda: "visual" siempre en \
+inglés, todo lo demás en español):
+{{"capitulos_nuevos": [{{"nombre": "...", "beats": [{{"texto": "...", "visual": "english visual keyword here"}}]}}]}}
+"""
+
+
+def _contar_palabras_guion(guion: dict) -> int:
+    total = len((guion.get("gancho") or "").split())
+    for cap in guion.get("capitulos", []):
+        for beat in cap.get("beats", []):
+            total += len((beat.get("texto") or "").split())
+    return total
+
+
+def _resumen_capitulos_para_extension(guion: dict) -> str:
+    lineas = []
+    for cap in guion.get("capitulos", []):
+        resumen_texto = " ".join(b.get("texto", "") for b in cap.get("beats", []))[:280]
+        lineas.append(f"- {cap.get('nombre', '')}: {resumen_texto}")
+    return "\n".join(lineas)
+
+
+def _intentar_llamar_llm(prompt: str, cfg: dict, provider_preferido: str):
+    """Igual que la cascada principal, pero reutilizable para la extensión:
+    prueba el proveedor preferido y cae a los demás disponibles."""
+    orden = [provider_preferido] + [p for p in ("gemini", "groq", "ollama") if p != provider_preferido]
+    for provider in orden:
+        try:
+            if provider == "gemini":
+                key = cfg["apis"].get("gemini_api_key", "")
+                if not key or "OBTENER_GRATIS" in key:
+                    continue
+                return _llamar_gemini(prompt, key)
+            elif provider == "groq":
+                key = cfg["apis"].get("groq_api_key", "")
+                if not key or "OBTENER_GRATIS" in key:
+                    continue
+                return _llamar_groq(prompt, key)
+            elif provider == "ollama":
+                modelo = cfg["apis"].get("ollama_model", "llama3.1")
+                return _llamar_ollama(prompt, modelo)
+        except Exception as e:
+            log(AGENT, f"Aviso: fallo extendiendo el guion con '{provider}' ({e}). Probando el siguiente...")
+            continue
+    return None
+
+
+def _asegurar_duracion_minima(guion: dict, cfg: dict, idea: dict, fuentes_texto: str,
+                               max_intentos: int = 10) -> dict:
+    dur_min = cfg["estrategia"]["duracion_minima_min"]
+    dur_max = cfg["estrategia"]["duracion_objetivo_min"]
+    palabras_min = int(dur_min * PALABRAS_POR_MINUTO_HABLADO)
+    palabras_max = int(dur_max * PALABRAS_POR_MINUTO_HABLADO)
+    provider_preferido = cfg["apis"].get("llm_provider", "gemini")
+
+    for intento in range(max_intentos):
+        palabras_antes = _contar_palabras_guion(guion)
+        if palabras_antes >= palabras_min:
+            break
+
+        faltan_palabras = palabras_min - palabras_antes
+        # Se pide un poco más de lo que falta (los LLM casi siempre entregan
+        # menos de lo pedido), y se reparte en varios capítulos cortos para
+        # que cada uno tenga espacio de sobra para 8-14 beats reales.
+        n_nuevos = min(5, max(2, round(faltan_palabras / 200)))
+        log(AGENT, f"El guion quedó corto (~{palabras_antes/PALABRAS_POR_MINUTO_HABLADO:.1f} min de las "
+                    f"{dur_min}-{dur_max} min objetivo, intento {intento+1}/{max_intentos}). "
+                    f"Pidiendo {n_nuevos} capítulo(s) más con contenido nuevo real (nunca relleno)...")
+
+        prompt_ext = PROMPT_EXTENSION.format(
+            nicho=cfg["canal"]["nicho"], titulo_ref=idea["titulo"], titulo=guion.get("titulo", ""),
+            resumen_capitulos=_resumen_capitulos_para_extension(guion),
+            palabras_actuales=palabras_antes, duracion_actual=palabras_antes / PALABRAS_POR_MINUTO_HABLADO,
+            dur_min=dur_min, dur_max=dur_max, palabras_min=palabras_min, palabras_max=palabras_max,
+            n_capitulos_nuevos=n_nuevos, fuentes_cientificas=fuentes_texto, reglas_retencion=REGLAS_PARA_GUIONISTA,
+            palabras_por_capitulo_nuevo=max(180, round(faltan_palabras / n_nuevos)),
+        )
+        try:
+            texto = _intentar_llamar_llm(prompt_ext, cfg, provider_preferido)
+            if not texto:
+                log(AGENT, "No hay ningún proveedor de IA disponible para extender el guion; se deja como está.")
+                break
+            nuevos = _extraer_json(texto).get("capitulos_nuevos", [])
+            if not nuevos:
+                log(AGENT, "La extensión no trajo capítulos nuevos; se deja el guion como está.")
+                break
+            guion.setdefault("capitulos", []).extend(nuevos)
+            guion = _sanitizar_guion(guion)
+        except Exception as e:
+            log(AGENT, f"Aviso: no se pudo extender el guion ({e}); se deja como está (nunca bloquea el video).")
+            break
+
+        # Si una ronda casi no agregó nada (el LLM se está quedando corto de
+        # ideas nuevas de verdad), mejor parar aquí que insistir sin sentido
+        # y arriesgar contenido relleno/repetitivo.
+        palabras_despues = _contar_palabras_guion(guion)
+        if palabras_despues - palabras_antes < 40:
+            log(AGENT, "La última extensión aportó muy poco contenido nuevo; se deja el guion como está "
+                        "(mejor esto que arriesgar relleno repetitivo).")
+            break
+
+    palabras_finales = _contar_palabras_guion(guion)
+    log(AGENT, f"Duración final estimada del guion: ~{palabras_finales / PALABRAS_POR_MINUTO_HABLADO:.1f} min "
+                f"({palabras_finales} palabras habladas), objetivo {dur_min}-{dur_max} min.")
+    return guion
+
+
 def _extraer_json(texto):
     inicio = texto.find("{")
     fin = texto.rfind("}")
@@ -384,6 +532,16 @@ def generar_guion(idea: dict) -> dict:
 
     guion = _sanitizar_guion(guion)
 
+    # Si el guion quedó corto (bug real: el LLM a veces ignora la cantidad
+    # de beats pedida), se extiende con contenido nuevo real antes de
+    # seguir, para que el video sí llegue al mínimo que YouTube exige para
+    # habilitar anuncios intermedios (8 minutos) y al objetivo configurado.
+    try:
+        guion = _asegurar_duracion_minima(guion, cfg, idea, fuentes_texto)
+    except Exception as e:
+        log(AGENT, f"Aviso: no se pudo verificar/extender la duración del guion ({e}). "
+                    f"El video se genera igual con el guion que ya se tiene.")
+
     # Verificación final OBLIGATORIA: cualquier cifra puntual que haya quedado
     # en el guion se confirma contra los resúmenes reales encontrados antes de
     # escribir. Lo que no se pueda confirmar se suaviza (nunca se inventa un
@@ -405,6 +563,16 @@ def generar_guion(idea: dict) -> dict:
         guion = agregar_llamados_a_suscripcion(guion)
     except Exception as e:
         log(AGENT, f"Aviso: no se pudieron insertar los llamados a suscripción ({e}). "
+                    f"El video se genera igual, pero revisa este punto.")
+
+    # Llamado a comentar y compartir (pregunta específica del tema + pedido
+    # directo de compartir, sin premios ni sorteos -- ver
+    # agents/engagement_cta.py, cumple con la política de YouTube).
+    try:
+        from agents.engagement_cta import agregar_llamado_interaccion
+        guion = agregar_llamado_interaccion(guion)
+    except Exception as e:
+        log(AGENT, f"Aviso: no se pudo insertar el llamado a interacción ({e}). "
                     f"El video se genera igual, pero revisa este punto.")
 
     return guion

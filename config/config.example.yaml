@@ -58,8 +58,8 @@ canal:
 
 estrategia:
   videos_por_semana: 4          # igual que recomienda el video analizado
-  duracion_minima_min: 8        # minutos mínimos por video (RPM más alto con videos largos)
-  duracion_objetivo_min: 15
+  duracion_minima_min: 15       # minutos mínimos por video (RPM más alto: habilita 2-3 anuncios intermedios)
+  duracion_objetivo_min: 20
   max_suscriptores_referencia: 250000   # canales de referencia con <250k subs = nicho "joven"/viral
   dias_publicado_max: 365               # solo mirar contenido de los últimos 12 meses
   ratio_minimo_vistas_subs: 3           # vistas >= 3x suscriptores => señal de nicho potente

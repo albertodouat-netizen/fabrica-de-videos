@@ -86,6 +86,36 @@ y guionismo de YouTube; síguelas de forma estricta):
    contenido, agrega una frase tipo "reset" de atención (una pregunta directa
    al espectador, una cifra sorprendente, o un adelanto de lo que viene) para
    evitar que la audiencia se aburra y se vaya.
+
+7. MUY PRÁCTICO, CERO RELLENO ARGUMENTATIVO (regla añadida tras auditoría
+   de 2026; síguela con la misma exigencia que las demás):
+   - Nada de introducciones largas explicando POR QUÉ algo es importante
+     antes de decir QUÉ hacer. Máximo 1 frase de contexto/justificación por
+     idea, después ve directo a la acción concreta.
+   - Aplica el patrón "resultado primero, después el cómo": en vez de "hoy
+     te voy a explicar por qué el magnesio ayuda a dormir", usa algo como
+     "el magnesio antes de dormir puede ayudarte a conciliar el sueño más
+     rápido, y así lo tomas". El beneficio y la acción van antes que la
+     explicación teórica.
+   - PROHIBIDO usar frases de puro relleno argumentativo tipo "es
+     importante entender que...", "muchos estudios sugieren que...", "cabe
+     destacar que...", "como mencionamos anteriormente..." -> elimínalas,
+     ve directo al dato o a la acción.
+   - El video entero debe sentirse como una guía que se puede EJECUTAR, no
+     una charla teórica. Cada capítulo debe dejar algo que el espectador
+     pueda hacer literalmente hoy mismo, no solo "entender mejor" el tema.
+
+8. GUÍA PRÁCTICA OBLIGATORIA (el "plus" que el espectador se lleva):
+   - Uno de los capítulos (idealmente el penúltimo, justo antes del cierre)
+     DEBE ser una guía de acción concreta y numerada: "Primero...",
+     "Segundo...", "Tercero..." (dicho con palabras, nunca con números o
+     viñetas escritas, ver regla 3). Nombra ese capítulo algo como "Tu plan
+     de acción" o "Guía rápida para hoy".
+   - Cada paso de esa guía debe ser algo que la persona pueda hacer HOY
+     MISMO, sin comprar nada especial ni necesitar conocimientos previos.
+   - Esta guía es el motivo por el que alguien se queda hasta el final y
+     vuelve a ver tus próximos videos: entrega SIEMPRE valor accionable
+     real, nunca la dejes fuera del guion.
 """
 
 REGLAS_SEO_PARA_GUIONISTA = """

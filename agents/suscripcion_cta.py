@@ -86,6 +86,26 @@ def _beat_cta(texto: str, momento: str) -> dict:
     }
 
 
+def insertar_antes_del_cierre(beats: list, beat_nuevo: dict) -> list:
+    """Inserta 'beat_nuevo' justo ANTES del llamado final a suscripción
+    (momento_suscripcion == 'final'), sin importar qué más se haya agregado
+    después de ese beat (como la frase de marca, ver TAGLINE_DE_MARCA).
+
+    Por qué existe esto (bug real encontrado y corregido en la auditoría):
+    antes, otros agentes (ej. la mención a un video relacionado) solo
+    revisaban si el ÚLTIMO beat de la lista era el llamado final; eso se
+    rompió en cuanto se agregó la frase de marca DESPUÉS del llamado final
+    (el último beat dejó de ser el de suscripción), y el video terminaba
+    con el orden equivocado. Buscar por 'momento_suscripcion' explícito es
+    a prueba de futuros agregados al final del guion."""
+    for i, b in enumerate(beats):
+        if b.get("es_llamado_suscripcion") and b.get("momento_suscripcion") == "final":
+            beats.insert(i, beat_nuevo)
+            return beats
+    beats.append(beat_nuevo)
+    return beats
+
+
 def agregar_llamados_a_suscripcion(guion: dict) -> dict:
     """Inserta, SIEMPRE y de forma determinística, 3 beats de llamado a
     suscripción: inicio (primer capítulo), mitad (capítulo central) y
