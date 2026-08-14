@@ -59,6 +59,7 @@ def _demo_resultados(cfg):
     ejemplos = [
         {
             "titulo": "5 Morning Habits That Fixed My Gut Health",
+            "categoria": "salud digestiva e intestinal",
             "canal": "Wellness Outliers",
             "suscriptores": 42000,
             "vistas": 1850000,
@@ -68,6 +69,7 @@ def _demo_resultados(cfg):
         },
         {
             "titulo": "The Real Cause of Chronic Fatigue (Doctors Won't Tell You)",
+            "categoria": "sistema inmunológico",
             "canal": "Health Signals",
             "suscriptores": 88000,
             "vistas": 2400000,
@@ -77,6 +79,7 @@ def _demo_resultados(cfg):
         },
         {
             "titulo": "Why You Should Stop Drinking Water Without Thirst",
+            "categoria": "salud metabólica y glucosa",
             "canal": "Ancient Wellness",
             "suscriptores": 15000,
             "vistas": 640000,
@@ -88,7 +91,21 @@ def _demo_resultados(cfg):
     return sorted(ejemplos, key=lambda x: x["ratio_outlier"], reverse=True)
 
 
-def buscar_ideas_potenciales(max_resultados=15):
+def _obtener_ejes_tematicos(cfg):
+    """Lee la lista de ejes temáticos (categoría + palabras clave) del
+    config. Soporta también el formato viejo (lista plana de palabras
+    clave sin categoría), para no romper configuraciones anteriores."""
+    ejes = cfg["canal"].get("ejes_tematicos")
+    if ejes:
+        return ejes
+    plano = cfg["canal"].get("palabras_clave", [])
+    return [{"categoria": "general", "palabras_clave": plano}] if plano else []
+
+
+def buscar_ideas_potenciales(max_resultados=15, categorias_evitar=None):
+    """categorias_evitar: lista opcional de categorías usadas recientemente
+    (ver orchestrator.py) para dar prioridad a ejes temáticos distintos y
+    que el canal no se sienta repetitivo."""
     cfg = load_config()
     api_key = cfg["apis"].get("youtube_api_key", "")
     if not api_key or "OBTENER_GRATIS" in api_key:
@@ -96,8 +113,13 @@ def buscar_ideas_potenciales(max_resultados=15):
 
     youtube = build("youtube", "v3", developerKey=api_key)
     estrategia = cfg["estrategia"]
-    keywords = cfg["canal"]["palabras_clave"]
+    ejes = _obtener_ejes_tematicos(cfg)
+    categorias_evitar = set(categorias_evitar or [])
     idioma = cfg["canal"]["idioma_investigacion"]
+
+    # Priorizamos ejes temáticos que NO se hayan usado recientemente (rotación
+    # para variedad); si todos se evitarían, igual los recorremos todos.
+    ejes_ordenados = sorted(ejes, key=lambda e: e["categoria"] in categorias_evitar)
 
     publicado_despues = (
         dt.datetime.utcnow() - dt.timedelta(days=estrategia["dias_publicado_max"])
@@ -108,66 +130,69 @@ def buscar_ideas_potenciales(max_resultados=15):
     canal_cache = {}
     hubo_error_api = False
 
-    for kw in keywords:
-        log(AGENT, f"Buscando: '{kw}' ...")
-        try:
-            search_resp = youtube.search().list(
-                q=kw,
-                part="snippet",
-                type="video",
-                maxResults=25,
-                order="viewCount",
-                relevanceLanguage=idioma,
-                publishedAfter=publicado_despues,
-            ).execute()
+    for eje in ejes_ordenados:
+        categoria = eje["categoria"]
+        for kw in eje["palabras_clave"]:
+            log(AGENT, f"Buscando: '{kw}' (eje: {categoria}) ...")
+            try:
+                search_resp = youtube.search().list(
+                    q=kw,
+                    part="snippet",
+                    type="video",
+                    maxResults=25,
+                    order="viewCount",
+                    relevanceLanguage=idioma,
+                    publishedAfter=publicado_despues,
+                ).execute()
 
-            video_ids = [it["id"]["videoId"] for it in search_resp.get("items", [])]
-            if not video_ids:
+                video_ids = [it["id"]["videoId"] for it in search_resp.get("items", [])]
+                if not video_ids:
+                    continue
+
+                videos_resp = youtube.videos().list(
+                    part="statistics,contentDetails,snippet",
+                    id=",".join(video_ids),
+                ).execute()
+
+                for v in videos_resp.get("items", []):
+                    duracion_seg = _parse_duration_seconds(v["contentDetails"]["duration"])
+                    duracion_min = duracion_seg / 60
+                    if duracion_min < estrategia["duracion_minima_min"]:
+                        continue
+
+                    vistas = int(v["statistics"].get("viewCount", 0))
+                    channel_id = v["snippet"]["channelId"]
+
+                    if channel_id not in canal_cache:
+                        ch_resp = youtube.channels().list(part="statistics", id=channel_id).execute()
+                        items = ch_resp.get("items", [])
+                        subs = int(items[0]["statistics"].get("subscriberCount", 0)) if items else 0
+                        canal_cache[channel_id] = subs
+                    subs = canal_cache[channel_id]
+
+                    if subs == 0 or subs > estrategia["max_suscriptores_referencia"]:
+                        continue
+
+                    ratio = vistas / subs
+                    item = {
+                        "titulo": v["snippet"]["title"],
+                        "categoria": categoria,
+                        "canal": v["snippet"]["channelTitle"],
+                        "suscriptores": subs,
+                        "vistas": vistas,
+                        "duracion_min": round(duracion_min, 1),
+                        "ratio_outlier": round(ratio, 1),
+                        "url": f"https://www.youtube.com/watch?v={v['id']}",
+                    }
+                    casi_candidatos.append(item)
+
+                    if ratio >= estrategia["ratio_minimo_vistas_subs"]:
+                        candidatos.append(item)
+
+            except Exception as e:
+                hubo_error_api = True
+                log(AGENT, f"Aviso: la búsqueda de '{kw}' falló ({e}). Se continúa con las demás palabras clave.")
                 continue
-
-            videos_resp = youtube.videos().list(
-                part="statistics,contentDetails,snippet",
-                id=",".join(video_ids),
-            ).execute()
-
-            for v in videos_resp.get("items", []):
-                duracion_seg = _parse_duration_seconds(v["contentDetails"]["duration"])
-                duracion_min = duracion_seg / 60
-                if duracion_min < estrategia["duracion_minima_min"]:
-                    continue
-
-                vistas = int(v["statistics"].get("viewCount", 0))
-                channel_id = v["snippet"]["channelId"]
-
-                if channel_id not in canal_cache:
-                    ch_resp = youtube.channels().list(part="statistics", id=channel_id).execute()
-                    items = ch_resp.get("items", [])
-                    subs = int(items[0]["statistics"].get("subscriberCount", 0)) if items else 0
-                    canal_cache[channel_id] = subs
-                subs = canal_cache[channel_id]
-
-                if subs == 0 or subs > estrategia["max_suscriptores_referencia"]:
-                    continue
-
-                ratio = vistas / subs
-                item = {
-                    "titulo": v["snippet"]["title"],
-                    "canal": v["snippet"]["channelTitle"],
-                    "suscriptores": subs,
-                    "vistas": vistas,
-                    "duracion_min": round(duracion_min, 1),
-                    "ratio_outlier": round(ratio, 1),
-                    "url": f"https://www.youtube.com/watch?v={v['id']}",
-                }
-                casi_candidatos.append(item)
-
-                if ratio >= estrategia["ratio_minimo_vistas_subs"]:
-                    candidatos.append(item)
-
-        except Exception as e:
-            hubo_error_api = True
-            log(AGENT, f"Aviso: la búsqueda de '{kw}' falló ({e}). Se continúa con las demás palabras clave.")
-            continue
 
     if not candidatos and casi_candidatos:
         log(AGENT, "Ningún video superó el ratio-outlier mínimo esta vez; "
@@ -181,7 +206,9 @@ def buscar_ideas_potenciales(max_resultados=15):
         log(AGENT, f"Sin resultados reales disponibles: {motivo}. Usando datos DEMO para no detener el pipeline.")
         return _demo_resultados(cfg)
 
-    candidatos.sort(key=lambda x: x["ratio_outlier"], reverse=True)
+    # Ordena priorizando categorías NO usadas recientemente (variedad real),
+    # y dentro de cada grupo por ratio-outlier (qué tan viral es el ángulo).
+    candidatos.sort(key=lambda x: (x["categoria"] in categorias_evitar, -x["ratio_outlier"]))
     return candidatos[:max_resultados]
 
 if __name__ == "__main__":

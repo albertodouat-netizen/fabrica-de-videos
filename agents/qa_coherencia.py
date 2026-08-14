@@ -48,19 +48,32 @@ def _extraer_frame_jpg(visual: dict, destino_jpg: str) -> bool:
         return False
 
 
-def _preguntar_a_gemini_vision(ruta_jpg: str, keyword: str, texto_beat: str, api_key: str) -> int:
+def _preguntar_a_gemini_vision(ruta_jpg: str, keyword: str, texto_beat: str, api_key: str,
+                                tema_general: str = "", nombre_capitulo: str = "") -> int:
     import requests
     with open(ruta_jpg, "rb") as f:
         img_b64 = base64.b64encode(f.read()).decode("utf-8")
 
+    contexto_extra = ""
+    if tema_general:
+        contexto_extra += f"El video completo trata sobre: \"{tema_general}\". "
+    if nombre_capitulo:
+        contexto_extra += f"Este momento pertenece al capítulo: \"{nombre_capitulo}\". "
+
     prompt = (
         f"Estás verificando la calidad de un video generado automáticamente. "
-        f"En este momento el narrador está diciendo: \"{texto_beat}\". "
+        f"{contexto_extra}"
+        f"En este momento exacto el narrador está diciendo: \"{texto_beat}\". "
         f"Se eligió esta imagen para ilustrar la palabra clave: \"{keyword}\". "
+        f"Evalúa DOS cosas a la vez: (1) si la imagen representa bien esa frase "
+        f"específica, y (2) si tiene sentido dentro del tema general del video "
+        f"(por ejemplo, una oficina o una pantalla de computadora no encajan en "
+        f"un video de salud natural aunque la frase mencione \"estrés\", sería "
+        f"mejor una persona respirando o relajándose). "
         f"Responde ÚNICAMENTE con un número del 0 al 10 indicando qué tan bien "
-        f"la imagen representa esa palabra clave y el contexto de la frase "
-        f"(0 = no tiene nada que ver, 10 = coincide perfectamente). "
-        f"No expliques nada, solo el número."
+        f"encaja la imagen tomando en cuenta ambas cosas "
+        f"(0 = no tiene nada que ver, 10 = coincide perfectamente con la frase "
+        f"y con el tema general). No expliques nada, solo el número."
     )
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
     body = {
@@ -96,11 +109,12 @@ def verificar_y_corregir(guion: dict, visuales_info: dict, carpeta_salida: str) 
                     "configura gemini_api_key.")
         return visuales_info
 
-    log(AGENT, "Verificando con Gemini Vision que cada imagen/clip coincide con el guion...")
+    log(AGENT, "Verificando con Gemini Vision que cada imagen/clip coincide con el guion Y con el tema general...")
     total = 0
     reemplazados = 0
     errores_consecutivos = 0
     rendido = False
+    tema_general = guion.get("keyword_principal", "") or guion.get("titulo", "")
 
     for i, cap in enumerate(guion["capitulos"]):
         beats = cap.get("beats", [])
@@ -117,7 +131,8 @@ def verificar_y_corregir(guion: dict, visuales_info: dict, carpeta_salida: str) 
                 continue
 
             try:
-                score = _preguntar_a_gemini_vision(ruta_jpg, keyword, beat.get("texto", ""), gemini_key)
+                score = _preguntar_a_gemini_vision(ruta_jpg, keyword, beat.get("texto", ""), gemini_key,
+                                                    tema_general=tema_general, nombre_capitulo=cap.get("nombre", ""))
                 errores_consecutivos = 0
             except Exception as e:
                 errores_consecutivos += 1
@@ -132,8 +147,9 @@ def verificar_y_corregir(guion: dict, visuales_info: dict, carpeta_salida: str) 
             if score < UMBRAL_APROBACION and buscador is not None:
                 log(AGENT, f"Beat {tag}: coincidencia baja ({score}/10) para '{keyword}'. "
                             f"Generando una imagen IA a medida para esta frase exacta...")
+                contexto_completo = f"{beat.get('texto', '')} (tema general del video: {tema_general})"
                 nuevo_visual = buscador.re_obtener_evitando(keyword, carpeta_salida, tag, visual["ruta"],
-                                                             contexto=beat.get("texto", ""))
+                                                             contexto=contexto_completo)
                 visuales_cap[j] = nuevo_visual
                 reemplazados += 1
             time.sleep(2.5)  # margen para no exceder el límite gratuito de peticiones por minuto

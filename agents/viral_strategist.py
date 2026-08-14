@@ -178,6 +178,16 @@ def construir_descripcion_publicacion(guion: dict, timestamps_capitulos: list, n
         lineas.append(f"{minutos:02d}:{seg:02d} {nombre}")
     lineas.append("")
 
+    referencias = guion.get("referencias", [])
+    if referencias:
+        lineas.append("📚 REFERENCIAS CIENTÍFICAS (verificadas, revísalas tú mismo):")
+        for r in referencias:
+            autores = r.get("autores", "").strip()
+            autor_corto = autores.split(",")[0] if autores else ""
+            lineas.append(f"• {r['titulo']} — {autor_corto} et al., {r.get('revista','')} "
+                          f"({r.get('anio','')}): {r['url']}")
+        lineas.append("")
+
     if bloque_afiliados:
         lineas.append(bloque_afiliados)
 

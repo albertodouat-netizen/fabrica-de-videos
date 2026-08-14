@@ -42,6 +42,14 @@ Título de referencia: "{titulo_ref}"
 
 {reglas_seo}
 
+{fuentes_cientificas}
+
+REGLA DE HONESTIDAD CIENTÍFICA (OBLIGATORIA, sin excepción): si mencionas una cifra, \
+porcentaje o "estudios muestran que...", DEBE coincidir con una de las fuentes reales \
+de arriba (si las hay). Está PROHIBIDO inventar estudios, porcentajes o estadísticas \
+que no aparezcan en esas fuentes. Si no tienes una fuente real para respaldar algo, \
+dilo en términos generales sin inventar un número.
+
 Instrucciones de formato:
 0) Primero decide UNA "keyword_principal": la frase de búsqueda de 2-4 palabras
    que una persona real escribiría en YouTube para encontrar este video
@@ -279,9 +287,32 @@ def generar_guion(idea: dict) -> dict:
     dur_min = cfg["estrategia"]["duracion_minima_min"]
     dur_max = cfg["estrategia"]["duracion_objetivo_min"]
 
+    # Investigación científica ANTES de escribir (nunca al revés): se buscan
+    # estudios reales sobre el tema exacto para que el guionista solo pueda
+    # citar cifras que existan de verdad. Si esto falla por cualquier motivo
+    # (sin internet, API caída), seguimos sin bloquear el video: simplemente
+    # el guion no incluirá cifras específicas (ver instrucción en el prompt).
+    # Si el Orquestador ya validó estudios al elegir esta idea (ver
+    # orchestrator.elegir_idea_no_usada), los reutilizamos en vez de volver
+    # a consultar Europe PMC (ahorra tiempo y llamadas).
+    estudios = idea.get("_estudios_validados", [])
+    try:
+        from agents.investigacion_cientifica import buscar_estudios, construir_bloque_fuentes_para_prompt
+        if not estudios:
+            estudios = buscar_estudios(idea["titulo"])
+        fuentes_texto = construir_bloque_fuentes_para_prompt(estudios)
+    except Exception as e:
+        log(AGENT, f"Aviso: no se pudo investigar estudios científicos previos ({e}). "
+                    f"El guion no incluirá cifras específicas por seguridad.")
+        fuentes_texto = (
+            "No hay fuentes científicas disponibles en este momento. REGLA OBLIGATORIA: "
+            "NO inventes cifras, porcentajes ni estudios; habla en términos generales."
+        )
+
     prompt = PROMPT_BASE.format(
         nicho=nicho, titulo_ref=idea["titulo"], dur_min=dur_min, dur_max=dur_max,
         reglas_retencion=REGLAS_PARA_GUIONISTA, reglas_seo=REGLAS_SEO_PARA_GUIONISTA,
+        fuentes_cientificas=fuentes_texto,
     )
 
     # Cascada de respaldo: si el proveedor preferido falla (cuota agotada,
@@ -329,7 +360,21 @@ def generar_guion(idea: dict) -> dict:
         log(AGENT, "Usando generador de plantilla local (sin IA externa, 100% gratis).")
         guion = _plantilla_local(idea, cfg)
 
-    return _sanitizar_guion(guion)
+    guion = _sanitizar_guion(guion)
+
+    # Verificación final OBLIGATORIA: cualquier cifra puntual que haya quedado
+    # en el guion se confirma contra los resúmenes reales encontrados antes de
+    # escribir. Lo que no se pueda confirmar se suaviza (nunca se inventa un
+    # reemplazo). Esto nunca bloquea el video si algo falla.
+    try:
+        from agents.investigacion_cientifica import verificar_y_filtrar_guion
+        guion = verificar_y_filtrar_guion(guion, estudios)
+    except Exception as e:
+        log(AGENT, f"Aviso: no se pudo completar la verificación científica final ({e}). "
+                    f"Por seguridad, no se incluirán referencias en este video.")
+        guion["referencias"] = []
+
+    return guion
 
 
 if __name__ == "__main__":

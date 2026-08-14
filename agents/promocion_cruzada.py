@@ -118,3 +118,34 @@ def construir_bloque_mas_videos(videos_relacionados: list) -> str:
         lineas.append(f"• {v['titulo']}: https://youtube.com/watch?v={v['video_id']}")
     lineas.append("")
     return "\n".join(lineas)
+
+
+def publicar_comentario_cruzado(video_id: str, texto: str) -> bool:
+    """Publica un comentario del propio canal en 'video_id' (funciona tanto
+    para el video largo como para el Short). No sustituye a un comentario
+    'fijado' de verdad (la API de YouTube NO permite fijar comentarios de
+    forma automática, es una limitación confirmada de la plataforma, no
+    nuestra), pero SÍ deja el enlace visible y clicable entre los primeros
+    comentarios de un video recién publicado con pocos comentarios todavía,
+    con cero configuración adicional: usa la misma autorización que ya
+    tenemos para publicar videos."""
+    cfg = load_config()
+    try:
+        creds = _obtener_credenciales(cfg)
+        youtube = googleapiclient.discovery.build("youtube", "v3", credentials=creds)
+        youtube.commentThreads().insert(
+            part="snippet",
+            body={
+                "snippet": {
+                    "videoId": video_id,
+                    "topLevelComment": {"snippet": {"textOriginal": texto}},
+                }
+            },
+        ).execute()
+        log(AGENT, f"Comentario de enlace cruzado publicado en {video_id}.")
+        return True
+    except Exception as e:
+        log(AGENT, f"Aviso: no se pudo publicar el comentario cruzado en {video_id} ({e}). "
+                    f"No es grave, el video se publicó igual; los comentarios a veces están "
+                    f"desactivados o tardan unos minutos en habilitarse tras la subida.")
+        return False

@@ -393,12 +393,18 @@ def obtener_visuales_para_guion(guion: dict, carpeta_salida: str, orientacion="l
     buscador = BuscadorVisualesUnicos(cfg, orientacion=orientacion)
 
     visuales_por_capitulo = []
+    tema_general = guion.get("keyword_principal", "") or guion.get("titulo", "")
     for i, cap in enumerate(guion["capitulos"]):
         beats = cap.get("beats", [])
         visuales_cap = []
         for j, beat in enumerate(beats):
             keyword = _limpiar_palabra_clave(beat.get("visual") or cap["nombre"])
+            # El contexto incluye la frase exacta Y el tema general del video
+            # (para que, si hace falta generar una imagen IA, esta encaje con
+            # el resto del video y no solo con la frase aislada).
             contexto = beat.get("texto", "")
+            if tema_general:
+                contexto = f"{contexto} (tema general del video: {tema_general})"
             visual = buscador.obtener(keyword, carpeta_salida, tag=f"cap{i}_b{j}", contexto=contexto)
             visuales_cap.append(visual)
             log(AGENT, f"Cap {i+1} beat {j+1}/{len(beats)}: '{keyword}' -> {visual['tipo']}")
