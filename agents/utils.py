@@ -67,3 +67,19 @@ def limpiar_texto_para_voz(texto: str) -> str:
     t = re.sub(r"\s{2,}", " ", t).strip()
     return t
 
+
+def obtener_duracion_video(ruta_video: str):
+    """Duración real (segundos) de un archivo de video ya renderizado,
+    usando ffprobe (ya viene instalado junto a ffmpeg). Devuelve None si
+    no se pudo determinar, nunca lanza excepción hacia arriba."""
+    import subprocess
+    try:
+        resultado = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+             "-of", "default=noprint_wrappers=1:nokey=1", ruta_video],
+            capture_output=True, text=True, timeout=20,
+        )
+        return float(resultado.stdout.strip())
+    except Exception:
+        return None
+

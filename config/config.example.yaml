@@ -13,6 +13,11 @@ canal:
   # para que también aparezca en búsquedas en otros idiomas. Déjalo vacío []
   # para desactivarlo. Ejemplo: ["en", "de"] (inglés, alemán).
   idiomas_seo_adicionales: []
+  # Doblaje de audio (gratis): prepara un archivo de audio narrado en otro
+  # idioma, listo para subir a mano en YouTube Studio > Idiomas (la API de
+  # YouTube no permite subir esa pista de audio automáticamente todavía).
+  # Déjalo como "" para desactivarlo. Ejemplo: "en" (inglés).
+  idioma_doblaje: ""
   nicho: "salud natural, alternativa, tradicional y complementaria (con respaldo científico)"
   # EJES TEMÁTICOS: reemplaza a la lista plana de palabras clave. Cada eje es
   # una categoría de salud distinta; el sistema ROTA entre ellas para que el

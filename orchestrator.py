@@ -183,6 +183,22 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
                     agregar_titulos_traducidos(video_id, guion["titulo"], descripcion_final, idiomas_seo)
             except Exception as e:
                 log(AGENT, f"Aviso: no se pudieron agregar títulos/descripciones traducidos ({e}).")
+
+            try:
+                idioma_doblaje = cfg["canal"].get("idioma_doblaje", "")
+                if idioma_doblaje:
+                    from agents.doblaje_audio import generar_doblaje, escribir_instrucciones
+                    from agents.utils import obtener_duracion_video
+                    duracion_real = obtener_duracion_video(ruta_video)
+                    doblaje = generar_doblaje(guion, duracion_real, "output/doblajes", nombre_base, idioma_doblaje)
+                    if doblaje:
+                        ruta_instrucciones = f"output/doblajes/{nombre_base}_COMO_SUBIR.txt"
+                        escribir_instrucciones(ruta_instrucciones, idioma_doblaje, doblaje["titulo"],
+                                                doblaje["descripcion"], os.path.basename(doblaje["audio"]))
+                        log(AGENT, f"Doblaje listo para subir a mano: {doblaje['audio']} "
+                                    f"(instrucciones en {ruta_instrucciones}).")
+            except Exception as e:
+                log(AGENT, f"Aviso: no se pudo generar el doblaje de audio ({e}).")
     else:
         log(AGENT, "8/9 Publicación omitida (--no-publicar). Video listo en disco.")
 
