@@ -198,6 +198,22 @@ def _dibujar_boton_suscribete(base: Image.Image, momento: str) -> Image.Image:
     ty = cy - font.size // 2
     draw.text((tx, ty), texto, font=font, fill=(255, 255, 255, 255))
 
+    # Etiqueta de transparencia "Presentadora generada con IA" (siempre
+    # visible, arriba, lejos del botón): esto NO es opcional-decorativo,
+    # responde a un hallazgo real de la auditoría de agosto 2026 -- YouTube
+    # restringe la MONETIZACIÓN de "personas de IA" que dan consejos en
+    # temas sensibles como salud (política aclarada el 16-jul-2026). Nuestra
+    # presentadora NUNCA da consejos de salud (solo pide la suscripción), y
+    # esta etiqueta lo deja explícito e inconfundible para cualquier
+    # espectador o revisor humano/automático de YouTube.
+    font_etq = _fuente(max(16, int(h * 0.032)))
+    etiqueta = "PRESENTADORA GENERADA CON IA"
+    tw = draw.textlength(etiqueta, font=font_etq)
+    ex1, ey1 = pad, pad
+    ex2, ey2 = ex1 + tw + 20, ey1 + font_etq.size + 14
+    draw.rounded_rectangle([ex1, ey1, ex2, ey2], radius=8, fill=(0, 0, 0, 160))
+    draw.text((ex1 + 10, ey1 + 7), etiqueta, font=font_etq, fill=(255, 255, 255, 255))
+
     resultado = Image.alpha_composite(base, overlay).convert("RGB")
     return resultado
 

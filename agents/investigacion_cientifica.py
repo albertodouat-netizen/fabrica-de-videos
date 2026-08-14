@@ -133,6 +133,8 @@ def _preguntar_gemini_si_respalda(afirmacion: str, estudios: list, gemini_key: s
     try:
         r = requests.post(url, json=body, timeout=30)
         r.raise_for_status()
+        from agents.presupuesto_ia import registrar_uso_gemini
+        registrar_uso_gemini(1)
         texto = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
         if texto.upper().startswith("SI"):
             m = re.search(r"(\d+)", texto)
@@ -173,6 +175,8 @@ def _reescribir_sin_cifra(texto: str, gemini_key: str) -> str:
     try:
         r = requests.post(url, json=body, timeout=30)
         r.raise_for_status()
+        from agents.presupuesto_ia import registrar_uso_gemini
+        registrar_uso_gemini(1)
         reescrita = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip().strip('"')
         # Verificación de seguridad: si por algún motivo la reescritura todavía
         # trae una cifra, mejor usamos un respaldo simple (nunca deberíamos

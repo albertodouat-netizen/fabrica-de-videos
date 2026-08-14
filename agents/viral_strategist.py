@@ -23,6 +23,8 @@ Fuentes de las reglas (resumen; ver conversación/README para detalle):
     sin repetir la misma idea con otras palabras.
 """
 
+import re
+
 # --- Parámetros de ritmo (todo esto es configurable y basado en la
 #     investigación resumida arriba) ---
 DURACION_MIN_CORTE_SEG = 3.0     # ningún corte visual dura menos de esto (evita caos)
@@ -206,12 +208,38 @@ def construir_descripcion_publicacion(guion: dict, timestamps_capitulos: list, n
         if keyword_principal:
             ordenados.append(keyword_principal)
         ordenados += [t for t in tags if t.lower() != keyword_principal.lower()]
-        lineas.append(" ".join(f"#{t.replace(' ', '')}" for t in ordenados[:5]))
-        lineas.append("")
+        # Bug real encontrado en auditoría (agosto 2026): un tag con comas o
+        # paréntesis (ej. el nicho completo usado como tag de respaldo) hacía
+        # un hashtag roto tipo "#saludnatural,alternativa,(...)"; ahora se
+        # limpia todo lo que no sea letra/número antes de armar el hashtag.
+        hashtags_validos = []
+        for t in ordenados[:8]:
+            limpio = re.sub(r"[^0-9A-Za-zÁÉÍÓÚÑáéíóúñ]", "", t)
+            if limpio:
+                hashtags_validos.append(f"#{limpio}")
+            if len(hashtags_validos) >= 5:
+                break
+        if hashtags_validos:
+            lineas.append(" ".join(hashtags_validos))
+            lineas.append("")
 
     disclaimer = guion.get("disclaimer", "")
     if disclaimer:
         lineas.append(f"⚠️ {disclaimer}")
+
+    # Divulgación explícita de contenido generado con IA (auditoría agosto
+    # 2026: descubrimos que el campo "containsSyntheticMedia" de la API de
+    # YouTube NO se está guardando de verdad en los videos reales del canal
+    # pese a que la llamada no da error -- limitación real de la API, no un
+    # bug nuestro. Mientras eso se resuelve del lado de YouTube, dejamos
+    # esta divulgación en texto, bien visible, como respaldo: es honesta,
+    # cumple con lo que pide la política de contenido sintético, y además
+    # reduce el riesgo de que el algoritmo "sospeche" de contenido no
+    # declarado.
+    lineas.append("")
+    lineas.append("🤖 Este video usa guion, narración por voz y algunas imágenes generadas "
+                  "o asistidas por inteligencia artificial, siempre basados en evidencia "
+                  "científica real y verificada (ver referencias arriba).")
 
     return "\n".join(lineas)
 

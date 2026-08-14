@@ -109,60 +109,84 @@ def verificar_y_corregir(guion: dict, visuales_info: dict, carpeta_salida: str) 
                     "configura gemini_api_key.")
         return visuales_info
 
-    log(AGENT, "Verificando con Gemini Vision que cada imagen/clip coincide con el guion Y con el tema general...")
-    total = 0
-    reemplazados = 0
-    errores_consecutivos = 0
-    rendido = False
-    tema_general = guion.get("keyword_principal", "") or guion.get("titulo", "")
+    # Presupuesto compartido de Gemini (ver agents/presupuesto_ia.py): el
+    # proyecto gratuito tiene una cuota MUY ajustada (20/día observado en
+    # vivo), y el Guionista necesita cupo de sobra para escribir guiones
+    # reales en vez de caer al generador de plantilla local. Por eso
+    # QA-Coherencia solo usa lo que sobra después de esa reserva, y verifica
+    # una MUESTRA de beats (no todos) si el cupo es limitado.
+    from agents.presupuesto_ia import gemini_disponibles_para_qa, registrar_uso_gemini, avisar_estado
+    avisar_estado(AGENT)
+    cupo_qa = gemini_disponibles_para_qa()
 
+    candidatos = []
     for i, cap in enumerate(guion["capitulos"]):
         beats = cap.get("beats", [])
         visuales_cap = visuales_info["visuales_por_capitulo"][i]
         for j, (beat, visual) in enumerate(zip(beats, visuales_cap)):
-            if rendido:
+            if beat.get("es_llamado_suscripcion") or beat.get("es_mencion_cruzada"):
+                # Los frames del presentador y las tarjetas de "también te
+                # puede interesar" son intencionales, no hay que verificarlos.
+                continue
+            candidatos.append((i, j, beat, visual, cap.get("nombre", "")))
+
+    if cupo_qa <= 0:
+        log(AGENT, "Cupo diario de Gemini casi agotado (reservado para el Guionista): "
+                    "se omite la verificación visual en este video. El resto del pipeline sigue normal.")
+        return visuales_info
+
+    if len(candidatos) > cupo_qa:
+        # Muestreo parejo (no solo los primeros beats): tomamos 'cupo_qa'
+        # candidatos repartidos a lo largo de todo el video, para seguir
+        # detectando problemas en cualquier parte del video, no solo al inicio.
+        paso = len(candidatos) / cupo_qa
+        indices_muestra = sorted({int(k * paso) for k in range(cupo_qa)})
+        candidatos = [candidatos[idx] for idx in indices_muestra]
+        log(AGENT, f"Cupo limitado hoy: se verificarán {len(candidatos)} de los beats totales "
+                    f"(muestra repartida a lo largo del video, no solo el inicio).")
+    else:
+        log(AGENT, f"Verificando con Gemini Vision los {len(candidatos)} beats de este video "
+                    f"(cupo suficiente hoy).")
+
+    total = 0
+    reemplazados = 0
+    errores_consecutivos = 0
+    tema_general = guion.get("keyword_principal", "") or guion.get("titulo", "")
+
+    for i, j, beat, visual, nombre_capitulo in candidatos:
+        total += 1
+        keyword = visual.get("keyword", beat.get("visual", ""))
+        tag = f"cap{i}_b{j}"
+        ruta_jpg = f"{carpeta_salida}/_qa_{tag}.jpg"
+
+        if not _extraer_frame_jpg(visual, ruta_jpg):
+            continue
+
+        try:
+            score = _preguntar_a_gemini_vision(ruta_jpg, keyword, beat.get("texto", ""), gemini_key,
+                                                tema_general=tema_general, nombre_capitulo=nombre_capitulo)
+            registrar_uso_gemini(1)
+            errores_consecutivos = 0
+        except Exception as e:
+            errores_consecutivos += 1
+            log(AGENT, f"Aviso verificando beat {tag}: {e}")
+            if errores_consecutivos >= MAX_ERRORES_CONSECUTIVOS_ANTES_DE_RENDIRSE:
+                log(AGENT, "Demasiados errores seguidos (probable límite de cuota gratuita). "
+                            "Se detiene la verificación para no bloquear el video; "
+                            "el resto de recursos ya elegidos se mantienen.")
                 break
-            if beat.get("es_llamado_suscripcion"):
-                # Los frames del presentador pidiendo suscripción son
-                # intencionales (rostro fijo del canal + botón dibujado a
-                # mano): no tiene sentido pedirle a Gemini Vision que los
-                # "corrija" comparándolos con la frase narrada.
-                continue
-            if beat.get("es_mencion_cruzada"):
-                # Igual que arriba: la tarjeta de "también te puede
-                # interesar" es intencional, no un recurso a verificar.
-                continue
-            total += 1
-            keyword = visual.get("keyword", beat.get("visual", ""))
-            tag = f"cap{i}_b{j}"
-            ruta_jpg = f"{carpeta_salida}/_qa_{tag}.jpg"
+            continue
 
-            if not _extraer_frame_jpg(visual, ruta_jpg):
-                continue
+        if score < UMBRAL_APROBACION and buscador is not None:
+            log(AGENT, f"Beat {tag}: coincidencia baja ({score}/10) para '{keyword}'. "
+                        f"Generando una imagen IA a medida para esta frase exacta...")
+            contexto_completo = f"{beat.get('texto', '')} (tema general del video: {tema_general})"
+            nuevo_visual = buscador.re_obtener_evitando(keyword, carpeta_salida, tag, visual["ruta"],
+                                                         contexto=contexto_completo)
+            visuales_info["visuales_por_capitulo"][i][j] = nuevo_visual
+            reemplazados += 1
+        time.sleep(2.5)  # margen para no exceder el límite gratuito de peticiones por minuto
 
-            try:
-                score = _preguntar_a_gemini_vision(ruta_jpg, keyword, beat.get("texto", ""), gemini_key,
-                                                    tema_general=tema_general, nombre_capitulo=cap.get("nombre", ""))
-                errores_consecutivos = 0
-            except Exception as e:
-                errores_consecutivos += 1
-                log(AGENT, f"Aviso verificando beat {tag}: {e}")
-                if errores_consecutivos >= MAX_ERRORES_CONSECUTIVOS_ANTES_DE_RENDIRSE:
-                    log(AGENT, "Demasiados errores seguidos (probable límite de cuota gratuita). "
-                                "Se detiene la verificación para no bloquear el video; "
-                                "el resto de recursos ya elegidos se mantienen.")
-                    rendido = True
-                continue
-
-            if score < UMBRAL_APROBACION and buscador is not None:
-                log(AGENT, f"Beat {tag}: coincidencia baja ({score}/10) para '{keyword}'. "
-                            f"Generando una imagen IA a medida para esta frase exacta...")
-                contexto_completo = f"{beat.get('texto', '')} (tema general del video: {tema_general})"
-                nuevo_visual = buscador.re_obtener_evitando(keyword, carpeta_salida, tag, visual["ruta"],
-                                                             contexto=contexto_completo)
-                visuales_cap[j] = nuevo_visual
-                reemplazados += 1
-            time.sleep(2.5)  # margen para no exceder el límite gratuito de peticiones por minuto
 
     log(AGENT, f"Verificación completa: {reemplazados}/{total} recursos reemplazados por baja coincidencia.")
     return visuales_info

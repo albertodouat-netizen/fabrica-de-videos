@@ -130,6 +130,8 @@ def _llamar_gemini(prompt, api_key):
                 continue
             r.raise_for_status()
             data = r.json()
+            from agents.presupuesto_ia import registrar_uso_gemini
+            registrar_uso_gemini(1)  # se registra en el presupuesto compartido (ver agents/presupuesto_ia.py)
             return data["candidates"][0]["content"]["parts"][0]["text"]
         except requests.exceptions.RequestException as e:
             ultimo_error = e
@@ -138,6 +140,7 @@ def _llamar_gemini(prompt, api_key):
                 continue
             raise
     raise ultimo_error
+
 
 
 
