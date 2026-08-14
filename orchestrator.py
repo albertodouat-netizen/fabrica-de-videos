@@ -142,7 +142,23 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
                                                         ruta_musica_fondo=ruta_musica)
 
     log(AGENT, "7/9 Generando miniatura (Packaging)...")
-    primera_imagen = visuales_info["visuales_por_capitulo"][0][0]["ruta"]
+    # Bug real encontrado en producción (agosto 2026): desde que el primer
+    # beat del video es casi siempre el llamado a suscripción (ver
+    # agents/suscripcion_cta.py), tomar "el primer visual del video" a
+    # ciegas usaba la TARJETA de "SUSCRÍBETE" como base de la miniatura en
+    # vez de una imagen real de contenido -- se veía superpuesta y rota.
+    # Ahora se busca el primer beat de contenido real (sin marcas de CTA).
+    primera_imagen = None
+    for i, cap in enumerate(guion["capitulos"]):
+        for j, beat in enumerate(cap.get("beats", [])):
+            if beat.get("es_llamado_suscripcion") or beat.get("es_mencion_cruzada") or beat.get("es_llamado_interaccion"):
+                continue
+            primera_imagen = visuales_info["visuales_por_capitulo"][i][j]["ruta"]
+            break
+        if primera_imagen:
+            break
+    if not primera_imagen:  # respaldo por si un video quedara sin ningún beat normal
+        primera_imagen = visuales_info["visuales_por_capitulo"][0][0]["ruta"]
     ruta_miniatura = generar_miniatura(guion, primera_imagen,
                                         f"output/thumbnails/{nombre_base}.png")
 
