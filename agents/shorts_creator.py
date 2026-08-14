@@ -97,8 +97,8 @@ def _tarjeta_cta_final(destino_png, titulo_video_largo: str, resolucion=RESOLUCI
     tw = draw.textlength("Y suscríbete, es gratis", font=font_chica)
     draw.text(((resolucion[0]-tw)/2, resolucion[1]/2 - int(60*escala)), "Y suscríbete, es gratis",
                font=font_chica, fill=(255, 255, 255))
-    tw2 = draw.textlength("Link en la descripción", font=font_chica)
-    draw.text(((resolucion[0]-tw2)/2, resolucion[1]/2 + int(10*escala)), "Link en la descripción",
+    tw2 = draw.textlength("Link en los comentarios", font=font_chica)
+    draw.text(((resolucion[0]-tw2)/2, resolucion[1]/2 + int(10*escala)), "Link en los comentarios",
                font=font_chica, fill=(200, 200, 200))
 
     # título del video largo, envuelto en varias líneas
