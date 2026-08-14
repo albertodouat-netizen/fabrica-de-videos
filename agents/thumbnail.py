@@ -77,7 +77,13 @@ def _generar_fondo_ia_miniatura(keyword_principal: str, titulo: str, destino_jpg
     se decidió quitarlo por el riesgo de la política de YouTube sobre
     "personas de IA" en temas sensibles como salud. Ahora cada miniatura
     genera una persona distinta relacionada con el tema del video (formato
-    100% sin identidad fija, más seguro)."""
+    100% sin identidad fija, más seguro).
+
+    Nota de seguridad (misma auditoría): se confirmó en vivo que el
+    parámetro 'safe=true' de Pollinations NO bloquea de forma confiable
+    contenido NSFW por sí solo. Por eso cada imagen generada aquí también
+    se verifica con Gemini Vision antes de aceptarla (ver
+    agents.visuals._imagen_es_segura_gemini), con reintentos si falla."""
     base = keyword_principal.strip() or titulo
     prompt = (
         f"fotografía editorial realista relacionada con {base}, primer plano de una "
@@ -86,23 +92,47 @@ def _generar_fondo_ia_miniatura(keyword_principal: str, titulo: str, destino_jpg
         f"fotografía de revista de salud, colores vibrantes, alto contraste, fondo "
         f"simple desenfocado, composición centrada tipo miniatura de youtube, "
         f"fotografía profesional de alta resolución, 8k, sin texto en la imagen, "
-        f"sin logotipos, sin marca de agua"
+        f"sin logotipos, sin marca de agua, encuadre de los hombros hacia arriba, "
+        f"persona completamente vestida con cuello alto o camiseta cerrada, sin "
+        f"escote, sin piel descubierta más allá del rostro y el cuello, sin "
+        f"desnudos, contenido apto para todo público, familiar, profesional"
     )
     prompt_codificado = urllib.parse.quote(prompt)
-    semilla = random.randint(1, 999999)
-    url = (f"https://image.pollinations.ai/prompt/{prompt_codificado}"
-           f"?width={tamano[0]}&height={tamano[1]}&nologo=true&seed={semilla}")
-    try:
-        r = requests.get(url, timeout=45)
-        r.raise_for_status()
-        if len(r.content) < 5000:
-            return False
-        with open(destino_jpg, "wb") as f:
-            f.write(r.content)
-        return True
-    except Exception as e:
-        log(AGENT, f"No se pudo generar fondo IA para miniatura ({e}); se usará respaldo.")
-        return False
+
+    for intento in range(3):
+        semilla = random.randint(1, 999999)
+        # safe=true + model=flux: ver la nota completa en agents/visuals.py
+        # (hallazgo real de la auditoría de agosto 2026 sobre contenido NSFW).
+        url = (f"https://image.pollinations.ai/prompt/{prompt_codificado}"
+               f"?width={tamano[0]}&height={tamano[1]}&nologo=true&seed={semilla}"
+               f"&safe=true&model=flux")
+        try:
+            r = requests.get(url, timeout=45)
+            r.raise_for_status()
+            if len(r.content) < 5000:
+                continue
+            with open(destino_jpg, "wb") as f:
+                f.write(r.content)
+        except Exception as e:
+            log(AGENT, f"No se pudo generar fondo IA para miniatura ({e}); se usará respaldo.")
+            continue
+
+        try:
+            from agents.visuals import _imagen_es_segura_gemini
+            if _imagen_es_segura_gemini(destino_jpg):
+                return True
+            log(AGENT, f"Fondo de miniatura descartado por seguridad (intento {intento+1}/3); "
+                        f"probando con otra semilla...")
+        except Exception as e:
+            log(AGENT, f"Aviso: no se pudo verificar la seguridad del fondo de miniatura ({e}); "
+                        f"se descarta por precaución.")
+        try:
+            os.remove(destino_jpg)
+        except OSError:
+            pass
+
+    log(AGENT, "No se logró un fondo de miniatura seguro tras 3 intentos; se usará un respaldo.")
+    return False
 
 
 def _fondo_desde_frame(imagen_base: str):

@@ -76,6 +76,23 @@ y guionismo de YouTube; síguelas de forma estricta):
    - Ejemplos PROHIBIDOS (demasiado vagos o no filmables): "gráfico de salud",
      "animación del sistema inmune", "diagrama", "ilustración", "dibujo".
    - No repitas la misma palabra clave visual dos veces en el guion completo.
+   - PROHIBIDO ABSOLUTO (regla de seguridad real, agosto 2026): nunca sugieras
+     escenas de "masaje", "spa", personas sin camisa/con la espalda descubierta,
+     ropa de baño, lencería, ni cualquier escena que pueda mostrar piel
+     descubierta de forma no apropiada. Aunque el tema sea relajación muscular
+     o estrés, usa alternativas seguras y siempre con ropa: "persona respirando
+     profundamente con los ojos cerrados", "persona estirando el cuello con
+     ropa deportiva", "persona meditando sentada vestida cómodamente", "manos
+     sosteniendo una taza de té caliente". La salud del canal depende de esto.
+   - PROHIBIDO ABSOLUTO #2 (hallazgo real, agosto 2026): NUNCA describas a una
+     persona solo por su "cuerpo" o "figura" en abstracto (ejemplos prohibidos:
+     "body figure", "human body", "cuerpo humano", "silueta"). Ese tipo de
+     descripción aislada generó una imagen de desnudo real al probarlo. Cuando
+     el tema sea sobre el cuerpo/anatomía (ej. "cómo el cuerpo absorbe el
+     magnesio"), describe SIEMPRE una acción o escena concreta y vestida en su
+     lugar: "persona tomando un suplemento con un vaso de agua en la cocina",
+     "primer plano de una tableta de magnesio en la mano", nunca una persona
+     descrita solo por su anatomía.
 
 5. ESTRUCTURA EN "BEATS" (no bloques largos de texto):
    - Divide cada capítulo en varios "beats" cortos (no un solo bloque de texto).

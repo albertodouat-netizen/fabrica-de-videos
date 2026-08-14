@@ -141,7 +141,7 @@ def _buscar_pexels_foto(query, api_key, por_pagina=6, orientacion="landscape"):
 
 def _buscar_pixabay_video(query, api_key, por_pagina=6):
     url = "https://pixabay.com/api/videos/"
-    params = {"key": api_key, "q": query, "per_page": por_pagina}
+    params = {"key": api_key, "q": query, "per_page": por_pagina, "safesearch": "true"}
     r = requests.get(url, params=params, timeout=20)
     r.raise_for_status()
     resultados = []
@@ -155,7 +155,7 @@ def _buscar_pixabay_video(query, api_key, por_pagina=6):
 
 def _buscar_pixabay_foto(query, api_key, por_pagina=6):
     url = "https://pixabay.com/api/"
-    params = {"key": api_key, "q": query, "per_page": por_pagina, "image_type": "photo"}
+    params = {"key": api_key, "q": query, "per_page": por_pagina, "image_type": "photo", "safesearch": "true"}
     r = requests.get(url, params=params, timeout=20)
     r.raise_for_status()
     resultados = []
@@ -181,6 +181,22 @@ def _descargar(url, destino):
     return destino
 
 
+def _sanear_descripcion_para_ia(texto: str) -> str:
+    """Quita términos abstractos de 'cuerpo/figura' que en la práctica
+    inducen a los generadores de imágenes a crear estudios de figura
+    desnuda (hallazgo real: 'body figure', 'cuerpo humano' como frase
+    aislada generó desnudos explícitos en pruebas reales de esta auditoría).
+    Se reemplazan por una escena concreta y con ropa, nunca una persona
+    aislada descrita solo por su "cuerpo"."""
+    texto_bajo = texto.lower()
+    disparadores = ["body figure", "human figure", "person figure", "human body",
+                    "cuerpo humano", "figura humana", "silueta humana", "the body",
+                    "female body", "male body", "woman's body", "man's body"]
+    if any(d in texto_bajo for d in disparadores):
+        return "person in casual clothing smiling in a bright kitchen"
+    return texto
+
+
 def _generar_imagen_ia(descripcion: str, destino_jpg: str, tamano=(1280, 720),
                         contexto: str = "") -> bool:
     """Genera una imagen FOTORREALISTA a medida con Pollinations.ai (100%
@@ -195,28 +211,103 @@ def _generar_imagen_ia(descripcion: str, destino_jpg: str, tamano=(1280, 720),
     específica que la sola palabra clave (ej. keyword="manos" + contexto=
     "corta el ajo justo antes de cocinarlo" da una imagen mucho más precisa
     que "manos" sola).
-    """
+
+    NOTA DE SEGURIDAD (auditoría agosto 2026): se descubrió que un beat con
+    keyword abstracta tipo "body figure" generó un desnudo explícito real.
+    Se corrigió en 3 capas: (1) se sanea la descripción para nunca describir
+    a una persona solo por su "cuerpo/figura" en abstracto, (2) el prompt
+    ahora pide encuadre de la cintura para arriba y ropa específica (mucho
+    más efectivo que solo decir "con ropa"), (3) cada imagen generada se
+    verifica con Gemini Vision antes de aceptarla (ver
+    _imagen_es_seguro_gemini), con reintentos con otra semilla si falla."""
+    descripcion = _sanear_descripcion_para_ia(descripcion)
     base = f"{descripcion}. {contexto}".strip(". ").strip()
     prompt = (
         f"{base}, fotografía realista tipo documental, cámara real, luz natural, "
         f"alta definición, composición cinematográfica, sin texto, sin marca de agua, "
-        f"sin logotipos, persona real (no dibujo, no animación, no 3D)"
+        f"sin logotipos, persona real (no dibujo, no animación, no 3D), "
+        f"encuadre de la cintura hacia arriba o solo manos/rostro, persona vestida "
+        f"con camiseta o camisa casual, ambiente cotidiano tipo cocina u hogar, "
+        f"nunca un estudio de figura ni retrato de cuerpo aislado, "
+        f"contenido apto para todo público, familiar, profesional"
     )
     prompt_codificado = urllib.parse.quote(prompt)
-    semilla = random.randint(1, 999999)
-    url = (f"https://image.pollinations.ai/prompt/{prompt_codificado}"
-           f"?width={tamano[0]}&height={tamano[1]}&nologo=true&seed={semilla}")
-    try:
-        r = requests.get(url, timeout=40)
-        r.raise_for_status()
-        if len(r.content) < 5000:  # respuesta sospechosamente pequeña (error disfrazado de imagen)
-            return False
-        with open(destino_jpg, "wb") as f:
-            f.write(r.content)
-        return True
-    except Exception as e:
-        log(AGENT, f"No se pudo generar imagen IA para '{descripcion}': {e}")
-        return False
+
+    # Hasta 3 intentos con semillas distintas: cada imagen se verifica de
+    # verdad con Gemini Vision (ver _imagen_es_segura_gemini) antes de
+    # aceptarla. safe=true y model=flux se dejan puestos como ayuda
+    # adicional, aunque la auditoría de agosto 2026 confirmó en vivo que
+    # 'safe=true' NO bloquea de forma confiable el contenido NSFW por sí
+    # solo -- por eso la verificación con Gemini es la que de verdad manda.
+    for intento in range(3):
+        semilla = random.randint(1, 999999)
+        url = (f"https://image.pollinations.ai/prompt/{prompt_codificado}"
+               f"?width={tamano[0]}&height={tamano[1]}&nologo=true&seed={semilla}"
+               f"&safe=true&model=flux")
+        try:
+            r = requests.get(url, timeout=40)
+            r.raise_for_status()
+            if len(r.content) < 5000:  # respuesta sospechosamente pequeña (error disfrazado de imagen)
+                continue
+            with open(destino_jpg, "wb") as f:
+                f.write(r.content)
+        except Exception as e:
+            log(AGENT, f"No se pudo generar imagen IA para '{descripcion}': {e}")
+            continue
+
+        try:
+            if _imagen_es_segura_gemini(destino_jpg):
+                return True
+            log(AGENT, f"Imagen IA descartada por seguridad para '{descripcion}' "
+                        f"(intento {intento+1}/3); probando con otra semilla...")
+        except Exception as e:
+            # Si la verificación de seguridad falla técnicamente (sin key de
+            # Gemini, sin cuota, etc.), no podemos confirmar que sea segura,
+            # así que por precaución NO se acepta esta imagen en concreto.
+            log(AGENT, f"Aviso: no se pudo verificar la seguridad de la imagen IA ({e}); "
+                        f"se descarta por precaución.")
+        try:
+            os.remove(destino_jpg)
+        except OSError:
+            pass
+
+    log(AGENT, f"No se logró una imagen IA segura para '{descripcion}' tras 3 intentos; "
+                f"se usará un fondo de respaldo en su lugar.")
+    return False
+
+
+def _imagen_es_segura_gemini(ruta_jpg: str) -> bool:
+    """Verificación REAL (no un heurístico de color) de que una imagen no
+    contiene desnudos ni contenido inapropiado, usando Gemini Vision -- el
+    mismo modelo que ya usa agents/qa_coherencia.py. Se aplica SOLO a
+    imágenes generadas por IA (el punto de mayor riesgo real, confirmado en
+    esta auditoría: Pollinations puede generar desnudos explícitos incluso
+    con 'safe=true' activado). Lanza excepción si no se puede verificar
+    (sin key de Gemini configurada, cuota agotada, etc.), para que quien
+    llama decida qué hacer (nunca se asume "seguro" por defecto)."""
+    import base64
+    cfg = load_config()
+    gemini_key = cfg["apis"].get("gemini_api_key", "")
+    if not gemini_key or "OBTENER_GRATIS" in gemini_key:
+        raise RuntimeError("Sin gemini_api_key configurada: no se puede verificar la seguridad de esta imagen.")
+
+    from agents.presupuesto_ia import registrar_uso_gemini
+    with open(ruta_jpg, "rb") as f:
+        img_b64 = base64.b64encode(f.read()).decode("utf-8")
+    prompt = (
+        "Responde ÚNICAMENTE con SI o NO, sin nada más. "
+        "¿Esta imagen muestra desnudos, semi-desnudos, ropa interior, ropa de "
+        "baño, piel descubierta de forma sexual o sugerente, o cualquier "
+        "contenido no apto para un canal de salud familiar? Sé estricto: "
+        "cualquier duda razonable cuenta como SI."
+    )
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+    body = {"contents": [{"parts": [{"text": prompt}, {"inline_data": {"mime_type": "image/jpeg", "data": img_b64}}]}]}
+    r = requests.post(url, json=body, timeout=30)
+    r.raise_for_status()
+    registrar_uso_gemini(1)
+    texto = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip().upper()
+    return not texto.startswith("SI")
 
 
 def _generar_fondo_local(texto, destino_png, tamano=(1280, 720)):
@@ -275,19 +366,31 @@ class BuscadorVisualesUnicos:
         self.urls_usadas = set()
         self.orientacion = orientacion  # "landscape" (16:9) o "portrait" (9:16, para Shorts)
 
+    def _candidatos_ordenados_seguros(self, candidatos, keyword, umbral_minimo=0.0):
+        """Como _mejor_no_usado, pero devuelve TODOS los candidatos válidos
+        ordenados por relevancia (no solo el mejor), y descarta de entrada
+        cualquiera cuyo texto descriptivo/tags contenga una palabra de la
+        lista negra de seguridad (ver agents/moderacion_visual.py). Así, si
+        el mejor candidato resulta riesgoso al revisar los píxeles después
+        de descargarlo, hay más opciones para probar en su lugar."""
+        from agents.moderacion_visual import es_texto_inseguro
+        disponibles = [(u, t) for u, t in candidatos
+                       if u not in self.urls_usadas and not es_texto_inseguro(t)]
+        if not disponibles:
+            return []
+        disponibles.sort(key=lambda ut: _puntaje_relevancia(keyword, ut[1]), reverse=True)
+        if umbral_minimo > 0:
+            disponibles = [(u, t) for u, t in disponibles
+                           if _puntaje_relevancia(keyword, t) >= umbral_minimo]
+        return [u for u, t in disponibles]
+
     def _mejor_no_usado(self, candidatos, keyword, umbral_minimo=0.0):
         """candidatos: lista de (url, texto_meta). Devuelve el de mejor
         puntaje de relevancia que no se haya usado ya en este video, SIEMPRE
         que supere 'umbral_minimo' (si no, es preferible generar una imagen
         IA a medida en vez de aceptar algo que casi no tiene relación)."""
-        disponibles = [(u, t) for u, t in candidatos if u not in self.urls_usadas]
-        if not disponibles:
-            return None
-        disponibles.sort(key=lambda ut: _puntaje_relevancia(keyword, ut[1]), reverse=True)
-        mejor_url, mejor_meta = disponibles[0]
-        if umbral_minimo > 0 and _puntaje_relevancia(keyword, mejor_meta) < umbral_minimo:
-            return None
-        return mejor_url
+        ordenados = self._candidatos_ordenados_seguros(candidatos, keyword, umbral_minimo)
+        return ordenados[0] if ordenados else None
 
     def obtener(self, keyword: str, carpeta_salida: str, tag: str, contexto: str = "") -> dict:
         orient_pexels = self.orientacion
@@ -334,18 +437,21 @@ class BuscadorVisualesUnicos:
             # imagen IA a medida (ver más abajo) antes que aceptar un
             # video/foto de stock que no tiene casi relación con la palabra
             # clave; esa era la causa principal de la incoherencia reportada.
-            url = self._mejor_no_usado(candidatos, keyword, umbral_minimo=UMBRAL_RELEVANCIA_MINIMA_STOCK)
-            if not url:
-                continue
-            ext = ".mp4" if tipo == "video" else ".jpg"
-            destino = os.path.join(carpeta_salida, f"{tag}_{slugify(keyword)}{ext}")
-            try:
-                _descargar(url, destino)
+            urls_candidatas = self._candidatos_ordenados_seguros(candidatos, keyword,
+                                                                  umbral_minimo=UMBRAL_RELEVANCIA_MINIMA_STOCK)
+            for url in urls_candidatas[:3]:  # hasta 3 intentos por proveedor antes de rendirse
+                ext = ".mp4" if tipo == "video" else ".jpg"
+                destino = os.path.join(carpeta_salida, f"{tag}_{slugify(keyword)}{ext}")
+                try:
+                    _descargar(url, destino)
+                except Exception as e:
+                    log(AGENT, f"No se pudo descargar '{keyword}': {e}")
+                    self.urls_usadas.add(url)  # no reintentar la misma URL rota
+                    continue
+
                 self.urls_usadas.add(url)
-                return {"tipo": "video" if tipo == "video" else "imagen", "ruta": destino, "keyword": keyword}
-            except Exception as e:
-                log(AGENT, f"No se pudo descargar '{keyword}': {e}")
-                self.urls_usadas.add(url)  # no reintentar la misma URL rota
+                visual_candidato = {"tipo": "video" if tipo == "video" else "imagen", "ruta": destino, "keyword": keyword}
+                return visual_candidato
 
         # Antes de resignarnos a un fondo genérico: generamos una imagen IA
         # hecha a medida para ESTA frase exacta (gratis, sin límite). Este es

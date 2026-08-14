@@ -49,7 +49,7 @@ def _extraer_frame_jpg(visual: dict, destino_jpg: str) -> bool:
 
 
 def _preguntar_a_gemini_vision(ruta_jpg: str, keyword: str, texto_beat: str, api_key: str,
-                                tema_general: str = "", nombre_capitulo: str = "") -> int:
+                                tema_general: str = "", nombre_capitulo: str = "") -> dict:
     import requests
     with open(ruta_jpg, "rb") as f:
         img_b64 = base64.b64encode(f.read()).decode("utf-8")
@@ -61,19 +61,25 @@ def _preguntar_a_gemini_vision(ruta_jpg: str, keyword: str, texto_beat: str, api
         contexto_extra += f"Este momento pertenece al capítulo: \"{nombre_capitulo}\". "
 
     prompt = (
-        f"Estás verificando la calidad de un video generado automáticamente. "
+        f"Estás verificando la calidad Y LA SEGURIDAD de un video generado "
+        f"automáticamente para un canal de salud, apto para todo público. "
         f"{contexto_extra}"
         f"En este momento exacto el narrador está diciendo: \"{texto_beat}\". "
         f"Se eligió esta imagen para ilustrar la palabra clave: \"{keyword}\". "
-        f"Evalúa DOS cosas a la vez: (1) si la imagen representa bien esa frase "
-        f"específica, y (2) si tiene sentido dentro del tema general del video "
-        f"(por ejemplo, una oficina o una pantalla de computadora no encajan en "
-        f"un video de salud natural aunque la frase mencione \"estrés\", sería "
-        f"mejor una persona respirando o relajándose). "
-        f"Responde ÚNICAMENTE con un número del 0 al 10 indicando qué tan bien "
-        f"encaja la imagen tomando en cuenta ambas cosas "
-        f"(0 = no tiene nada que ver, 10 = coincide perfectamente con la frase "
-        f"y con el tema general). No expliques nada, solo el número."
+        f"Evalúa TRES cosas:\n"
+        f"1) COHERENCIA: si la imagen representa bien esa frase específica, y si "
+        f"tiene sentido dentro del tema general del video (por ejemplo, una "
+        f"oficina no encaja en un video de salud natural aunque la frase "
+        f"mencione \"estrés\", sería mejor una persona respirando o relajándose).\n"
+        f"2) SEGURIDAD: ¿la imagen muestra desnudos, semi-desnudos, ropa interior, "
+        f"ropa de baño, piel descubierta de forma no apropiada (torso, espalda, "
+        f"escote pronunciado), o cualquier contenido sexual o sugerente? Sé "
+        f"ESTRICTO: este es un canal de salud familiar, cualquier duda cuenta "
+        f"como inapropiado.\n"
+        f"3) VIOLENCIA: ¿la imagen muestra sangre, heridas explícitas, violencia "
+        f"o contenido perturbador?\n\n"
+        f"Responde ÚNICAMENTE en este formato EXACTO, sin explicar nada más:\n"
+        f"COHERENCIA:<número del 0 al 10>|INAPROPIADA:<SI o NO>"
     )
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
     body = {
@@ -90,9 +96,11 @@ def _preguntar_a_gemini_vision(ruta_jpg: str, keyword: str, texto_beat: str, api
             time.sleep(15 * (intento + 1))
             continue
         r.raise_for_status()
-        texto = r.json()["candidates"][0]["content"]["parts"][0]["text"]
-        digitos = "".join(c for c in texto if c.isdigit())
-        return int(digitos[:2]) if digitos else 5
+        texto = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip().upper()
+        digitos = "".join(c for c in texto.split("|")[0] if c.isdigit())
+        score = int(digitos[:2]) if digitos else 5
+        inapropiada = "INAPROPIADA:SI" in texto.replace(" ", "")
+        return {"score": score, "inapropiada": inapropiada}
     r.raise_for_status()
 
 
@@ -163,8 +171,8 @@ def verificar_y_corregir(guion: dict, visuales_info: dict, carpeta_salida: str) 
             continue
 
         try:
-            score = _preguntar_a_gemini_vision(ruta_jpg, keyword, beat.get("texto", ""), gemini_key,
-                                                tema_general=tema_general, nombre_capitulo=nombre_capitulo)
+            resultado = _preguntar_a_gemini_vision(ruta_jpg, keyword, beat.get("texto", ""), gemini_key,
+                                                    tema_general=tema_general, nombre_capitulo=nombre_capitulo)
             registrar_uso_gemini(1)
             errores_consecutivos = 0
         except Exception as e:
@@ -177,7 +185,23 @@ def verificar_y_corregir(guion: dict, visuales_info: dict, carpeta_salida: str) 
                 break
             continue
 
-        if score < UMBRAL_APROBACION and buscador is not None:
+        score = resultado["score"]
+        # La seguridad manda por encima de la coherencia: si Gemini Vision
+        # marca la imagen como inapropiada (desnudos, ropa interior, piel
+        # descubierta de forma indebida, violencia), se reemplaza SIEMPRE,
+        # sin importar qué tan "coherente" fuera con la frase narrada. Esto
+        # responde directamente al caso real encontrado en la auditoría de
+        # agosto 2026 (clip de "masaje" con piel descubierta que sí
+        # coincidía bien por palabra clave, pero no era apto).
+        if resultado["inapropiada"]:
+            log(AGENT, f"⚠️ Beat {tag}: Gemini Vision marcó esta imagen como INAPROPIADA para '{keyword}'. "
+                        f"Se reemplaza de inmediato, sin importar su coincidencia con el guion.")
+            contexto_completo = f"{beat.get('texto', '')} (tema general del video: {tema_general})"
+            nuevo_visual = buscador.re_obtener_evitando(keyword, carpeta_salida, tag, visual["ruta"],
+                                                         contexto=contexto_completo) if buscador is not None else visual
+            visuales_info["visuales_por_capitulo"][i][j] = nuevo_visual
+            reemplazados += 1
+        elif score < UMBRAL_APROBACION and buscador is not None:
             log(AGENT, f"Beat {tag}: coincidencia baja ({score}/10) para '{keyword}'. "
                         f"Generando una imagen IA a medida para esta frase exacta...")
             contexto_completo = f"{beat.get('texto', '')} (tema general del video: {tema_general})"
