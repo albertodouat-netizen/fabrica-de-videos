@@ -93,7 +93,17 @@ def _ajustar_duraciones_a_ritmo(duraciones: list, total_real: float,
         margenes = [(max_seg - v) for v in valores] if diff > 0 else [(v - min_seg) for v in valores]
         total_margen = sum(margenes)
         if total_margen <= 0.01:
-            valores[-1] = max(0.5, valores[-1] + diff)  # último recurso: absorbe lo que quede
+            # Último recurso: repartir lo que queda entre TODOS los cortes en
+            # proporción a su duración (auditoría con Short real, 14-ago-2026:
+            # antes se botaba todo el sobrante en el ÚLTIMO corte, y el Short
+            # publicado terminó con una misma imagen estática en pantalla
+            # durante ~20 segundos mientras la voz seguía narrando).
+            total_actual = sum(valores)
+            if total_actual > 0:
+                factor = total_real / total_actual
+                valores = [max(0.5, v * factor) for v in valores]
+            else:
+                valores[-1] = max(0.5, valores[-1] + diff)
             break
         for i in range(n):
             valores[i] += diff * (margenes[i] / total_margen)

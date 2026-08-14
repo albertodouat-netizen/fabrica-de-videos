@@ -146,12 +146,16 @@ def _armar_mini_guion(guion: dict) -> dict:
     if guion.get("gancho"):
         beats_short.append({
             "texto": limpiar_texto_para_voz(guion["gancho"]),
-            "visual": beats_originales[0]["visual"] if beats_originales else "persona sorprendida mirando a cámara",
+            "visual": beats_originales[0]["visual"] if beats_originales else "surprised person looking at camera bright room",
         })
     beats_short.extend(beats_originales)
     beats_short.append({
         "texto": "Te cuento todos los detalles en el video completo de mi canal.",
-        "visual": "persona sonriendo y señalando hacia arriba con el dedo",
+        # En inglés SIEMPRE (auditoría con Short real, 14-ago-2026: esta
+        # keyword estaba en español, los bancos de stock no devolvían nada
+        # y el Short terminaba con un fondo genérico que mostraba el texto
+        # crudo "…iendo y señalando con el dedo" en pantalla).
+        "visual": "smiling person pointing finger upward bright room",
     })
 
     return {

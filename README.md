@@ -174,6 +174,29 @@ documentados: pedir suscripción antes de dar valor.
 2 primeros beats de contenido (~20-30 segundos), sin tocar los CTA de
 mitad y final.
 
+### 🩹 Correcciones de la auditoría del Short real (14-ago-2026, tarde)
+Descargando y revisando fotograma por fotograma el Short publicado ese día
+se encontraron y corrigieron 3 defectos reales:
+
+1. **La voz narraba jerga interna de SEO**: se oía literalmente «La keyword
+   principal 'alimentos para la visión' es crucial...». Nuevo filtro
+   determinista `_quitar_lenguaje_meta()` en `agents/scriptwriter.py`:
+   elimina 'keyword', 'palabra clave', 'SEO' y similares de TODO texto
+   narrable, venga del LLM que venga.
+2. **Texto interno visible en pantalla**: el fondo de último recurso
+   (`_generar_fondo_local` en `agents/visuals.py`) escribía la palabra
+   clave de búsqueda en la imagen; como es texto interno (a veces en inglés
+   o recortado), el espectador veía cosas como "eating healthy foo..." o
+   "...iendo y señalando con el dedo". Ahora ese fondo es un degradado
+   limpio SIN texto (el subtítulo de la narración ya comunica).
+   Además la keyword del beat final del Short ahora está en inglés para
+   que los bancos de stock sí encuentren metraje real.
+3. **Imagen congelada ~20 segundos al final del Short**: cuando el audio
+   duraba más que la suma de cortes al máximo permitido, TODO el sobrante
+   se botaba en el último corte. Ahora `_ajustar_duraciones_a_ritmo()`
+   (en `agents/video_editor.py`) reparte el sobrante proporcionalmente
+   entre todos los cortes.
+
 ### 🎣 Gancho reforzado con datos reales de retención (auditoría agosto 2026)
 `agents/viral_strategist.py` fue actualizado con una investigación real
 sobre qué hace que alguien se quede viendo un video en sus primeros

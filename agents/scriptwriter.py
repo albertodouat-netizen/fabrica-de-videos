@@ -392,16 +392,39 @@ def _extraer_json(texto):
     return json.loads(texto[inicio:fin + 1])
 
 
+def _quitar_lenguaje_meta(texto: str) -> str:
+    """Elimina 'lenguaje meta' de SEO que el LLM a veces cuela en el texto
+    narrado (bug real visto en un Short publicado el 14-ago-2026: la voz
+    decía literalmente «La keyword principal 'alimentos para la visión' es
+    crucial para entender...»). Un espectador jamás debe oír palabras como
+    'keyword', 'SEO' o 'palabra clave': son instrucciones internas, no
+    contenido. Se reescribe de forma determinista, sin gastar llamadas IA."""
+    if not texto:
+        return texto
+    t = texto
+    # «la keyword principal 'X' es/son...» -> «X es/son...» (con o sin comillas)
+    t = re.sub(r"(?i)\bla\s+keyword[\s_]?principal\s*,?\s*['\"«]?([^'\"»]{3,60})['\"»]?\s*,?\s*",
+               r"\1 ", t)
+    t = re.sub(r"(?i)\bla\s+palabra\s+clave\s*(principal)?\s*,?\s*['\"«]?([^'\"»]{3,60})['\"»]?\s*,?\s*",
+               r"\2 ", t)
+    # Menciones sueltas de jerga interna que no deben narrarse jamás
+    t = re.sub(r"(?i)\b(keyword[\s_]?principal|keyword|palabras?\s+claves?|seo|t[ií]tulo\s+del\s+video|meta\s*descripci[oó]n)\b",
+               "", t)
+    # Limpieza de espacios dobles/residuos de puntuación tras los reemplazos
+    t = re.sub(r"\s{2,}", " ", t).strip(" ,;:")
+    return t.strip()
+
+
 def _sanitizar_guion(guion: dict) -> dict:
     """Aplica la limpieza anti-símbolos a TODO el texto narrable, sin importar
     si vino de un LLM externo o de la plantilla local. Defensa en profundidad."""
-    guion["gancho"] = limpiar_texto_para_voz(guion.get("gancho", ""))
+    guion["gancho"] = limpiar_texto_para_voz(_quitar_lenguaje_meta(guion.get("gancho", "")))
     guion["titulo"] = (guion.get("titulo", "") or "").replace("*", "").replace("#", "").strip()
     for cap in guion.get("capitulos", []):
         cap["nombre"] = re.sub(r"^\s*\d{1,2}:\d{2}(:\d{2})?\s*[-|]\s*", "", cap.get("nombre", ""))
         cap["nombre"] = cap["nombre"].replace("*", "").replace("#", "").strip()
         for beat in cap.get("beats", []):
-            beat["texto"] = limpiar_texto_para_voz(beat.get("texto", ""))
+            beat["texto"] = limpiar_texto_para_voz(_quitar_lenguaje_meta(beat.get("texto", "")))
 
     # Red de seguridad para "audiencia_exclusiva": si el LLM olvidó marcarlo
     # (pasa a veces), lo deducimos por palabras clave del propio tema. Mejor

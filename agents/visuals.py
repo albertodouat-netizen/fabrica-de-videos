@@ -312,7 +312,16 @@ def _imagen_es_segura_gemini(ruta_jpg: str) -> bool:
 
 def _generar_fondo_local(texto, destino_png, tamano=(1280, 720)):
     """Último recurso: fondo local generado (solo si no hubo NINGÚN resultado
-    real disponible en los bancos gratuitos para esa palabra clave)."""
+    real disponible en los bancos gratuitos para esa palabra clave).
+
+    CORRECCIÓN (auditoría con Short real publicado, 14-ago-2026): antes este
+    fondo escribía la palabra clave de búsqueda EN PANTALLA, y como esa
+    keyword es texto interno (a veces en inglés, tipo "eating healthy food",
+    o recortada, tipo "...iendo y señalando con el dedo"), el espectador veía
+    texto sin sentido en el video publicado. Ahora el fondo es solo un
+    degradado limpio con un suave motivo decorativo, SIN texto: el subtítulo
+    de la narración (que sí es texto pensado para humanos) hace el trabajo de
+    comunicar."""
     colores = [
         ((25, 42, 86), (60, 110, 180)),
         ((15, 60, 45), (50, 140, 90)),
@@ -327,26 +336,16 @@ def _generar_fondo_local(texto, destino_png, tamano=(1280, 720)):
         t = y / h
         color = tuple(int(c1[i] + (c2[i] - c1[i]) * t) for i in range(3))
         draw.line([(0, y), (w, y)], fill=color)
-    try:
-        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 40)
-    except Exception:
-        font = ImageFont.load_default()
-    palabras = texto.split()
-    linea, lineas = "", []
-    for palabra in palabras:
-        prueba = (linea + " " + palabra).strip()
-        if draw.textlength(prueba, font=font) > w * 0.8:
-            lineas.append(linea)
-            linea = palabra
-        else:
-            linea = prueba
-    if linea:
-        lineas.append(linea)
-    alto_total = len(lineas) * 55
-    y0 = (h - alto_total) // 2
-    for i, ln in enumerate(lineas[:5]):
-        tw = draw.textlength(ln, font=font)
-        draw.text(((w - tw) / 2, y0 + i * 55), ln, font=font, fill=(255, 255, 255))
+    # Motivo decorativo sutil (círculos translúcidos), para que el fondo no
+    # se sienta vacío pero sin mostrar ningún texto interno.
+    capa = Image.new("RGBA", tamano, (0, 0, 0, 0))
+    dcapa = ImageDraw.Draw(capa)
+    for _ in range(6):
+        r = random.randint(int(h * 0.10), int(h * 0.35))
+        x = random.randint(-r // 2, w - r // 2)
+        y = random.randint(-r // 2, h - r // 2)
+        dcapa.ellipse([x, y, x + r, y + r], fill=(255, 255, 255, 14))
+    img = Image.alpha_composite(img.convert("RGBA"), capa).convert("RGB")
     img.save(destino_png)
     return destino_png
 
