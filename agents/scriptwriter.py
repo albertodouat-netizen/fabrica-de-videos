@@ -61,6 +61,13 @@ Instrucciones de formato:
 2) Un "gancho" (hook) de los primeros segundos: 1-2 frases, texto narrable puro (ver reglas arriba).
 3) El guion completo dividido en 5 a 9 capítulos. Cada capítulo tiene:
    - "nombre": título corto del capítulo, SIN marca de tiempo y sin símbolos.
+     IMPORTANTE (SEO real): escribe el nombre como una BÚSQUEDA REAL que alguien
+     escribiría en YouTube (long-tail), no como un encabezado genérico. Los nombres
+     de capítulo se vuelven timestamps clicables en la descripción y YouTube los usa
+     para posicionar búsquedas concretas. Ejemplos: en vez de "Guía Práctica" usa
+     "Cómo tomar magnesio para dormir"; en vez de "Beneficios" usa "Beneficios del
+     magnesio comprobados"; en vez de "Errores comunes" usa "Errores al tomar
+     magnesio que debes evitar".
    - "beats": lista de 8 a 14 fragmentos cortos, cada uno con:
        - "texto": 1-2 frases, SOLO texto narrable puro (ver regla 3 arriba, nada de
          asteriscos, guiones, numerales ni marcas de tiempo).
@@ -87,6 +94,7 @@ Instrucciones de formato:
    YouTube analiza las palabras realmente narradas, no solo el título.
 4) Una descripción para YouTube de 200-300 palabras en lenguaje NATURAL (nunca lista de
    palabras clave repetidas): la keyword_principal debe aparecer en la primera frase.
+   {frases_audiencias}
    Además, 15 a 20 tags (auditoría real de la competencia, agosto 2026: los videos que
    mejor posicionan en este nicho usan entre 18 y 29 tags, no solo 10): el primero debe
    ser la keyword_principal exacta, luego variaciones reales tipo pregunta que la gente
@@ -529,6 +537,45 @@ def _plantilla_local(idea, cfg):
     }
 
 
+def _sugerencias_de_youtube(tema: str, max_sugerencias: int = 8) -> list:
+    """Frases REALES del autocompletado público de YouTube (mismo endpoint
+    que usa la cajita de búsqueda, gratis y sin key). Son las "frases de
+    audiencias similares" de la investigación SEO de agosto 2026: lo que la
+    gente de verdad escribe al buscar este tema. Se tejen de forma natural
+    en la descripción para aparecer en más búsquedas."""
+    try:
+        import json as _json
+        r = requests.get(
+            "https://suggestqueries-clients6.youtube.com/complete/search",
+            params={"client": "youtube", "ds": "yt", "q": tema, "hl": "es"},
+            timeout=12,
+        )
+        r.raise_for_status()
+        m = re.search(r"\((.*)\)$", r.text, re.DOTALL)
+        data = _json.loads(m.group(1))
+        # Nombres de otros creadores/doctores famosos que aparecen en el
+        # autocompletado de temas de salud: se excluyen (no vamos a meter
+        # el nombre de otro canal en NUESTRA descripción).
+        nombres_ajenos = ["frank suarez", "carlos jaramillo", "dr ", "doctor ",
+                          "la rosa", "metabolismo tv", "veller"]
+        sugerencias = []
+        for s in data[1]:
+            frase = (s[0] or "").strip()
+            fl = frase.lower()
+            if not frase or fl == tema.lower() or len(frase.split()) < 2:
+                continue
+            if any(n in fl for n in nombres_ajenos):
+                continue
+            sugerencias.append(frase)
+            if len(sugerencias) >= max_sugerencias:
+                break
+        return sugerencias
+    except Exception as e:
+        log(AGENT, f"Aviso: no se pudo consultar el autocompletado de YouTube ({e}); "
+                    f"la descripción se genera igual, sin esas frases.")
+        return []
+
+
 def generar_guion(idea: dict) -> dict:
     cfg = load_config()
     provider_preferido = cfg["apis"].get("llm_provider", "none")
@@ -558,10 +605,34 @@ def generar_guion(idea: dict) -> dict:
             "NO inventes cifras, porcentajes ni estudios; habla en términos generales."
         )
 
+    # Frases reales del autocompletado de YouTube ("audiencias similares"):
+    # lo que la gente de verdad escribe al buscar este tema. El guionista
+    # las teje de forma natural en la descripción (técnica SEO verificada
+    # en la investigación de agosto 2026).
+    # Se consulta con una versión corta del tema (lo que va antes de los
+    # dos puntos, o las primeras 4 palabras): el autocompletado devuelve
+    # muchas más frases reales con consultas cortas que con títulos largos.
+    tema_corto = idea["titulo"].split(":")[0].strip()
+    if len(tema_corto.split()) > 4:
+        tema_corto = " ".join(tema_corto.split()[:4])
+    sugerencias = _sugerencias_de_youtube(tema_corto)
+    if not sugerencias and tema_corto != idea["titulo"]:
+        sugerencias = _sugerencias_de_youtube(idea["titulo"])
+    if sugerencias:
+        frases_audiencias = (
+            "Teje de forma NATURAL (sin listas, sin repetir en bloque) estas frases que "
+            "la gente busca de verdad en YouTube sobre este tema: "
+            + "; ".join(f'"{s}"' for s in sugerencias[:6]) + "."
+        )
+        log(AGENT, f"{len(sugerencias)} frase(s) reales del autocompletado de YouTube "
+                    f"añadidas al prompt de la descripción.")
+    else:
+        frases_audiencias = ""
+
     prompt = PROMPT_BASE.format(
         nicho=nicho, titulo_ref=idea["titulo"], dur_min=dur_min, dur_max=dur_max,
         reglas_retencion=REGLAS_PARA_GUIONISTA, reglas_seo=REGLAS_SEO_PARA_GUIONISTA,
-        fuentes_cientificas=fuentes_texto,
+        fuentes_cientificas=fuentes_texto, frases_audiencias=frases_audiencias,
     )
 
     # Cascada de respaldo: si el proveedor preferido falla (cuota agotada,

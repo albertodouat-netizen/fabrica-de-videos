@@ -46,16 +46,27 @@ def _fuente(tam, negrita=True):
 
 def _frase_corta_para_miniatura(titulo: str, keyword_principal: str = "") -> str:
     """El título completo casi nunca cabe legible en una miniatura pequeña.
-    Nos quedamos con una frase de máximo 5 palabras, con las palabras más
-    'fuertes' (evitando conectores tipo 'de', 'para', 'con', 'el', 'la').
-    Los números se excluyen del texto porque ya se destacan aparte con la
-    insignia circular (ver _numero_en_titulo), para no repetirlos dos veces."""
+    MÁXIMO 3 PALABRAS (actualizado 14-ago-2026): recomendación consistente
+    de la investigación real analizada (grupo de grandes creadores citado
+    por experta ex-YouTube: "la miniatura no debe tener más de tres
+    palabras"; comprobado además en la miniatura real del 14-ago, que con
+    5 palabras se veía redundante: "ALIMENTOS VISIÓN MEJORA VISIÓN ESTOS").
+    Se eligen las 3 palabras más 'fuertes' SIN repetir (evitando conectores
+    y duplicados como el doble "visión"). Los números se excluyen porque ya
+    se destacan aparte con la insignia circular (ver _numero_en_titulo)."""
     conectores = {"de", "del", "la", "el", "los", "las", "para", "con", "en",
-                  "y", "a", "un", "una", "que", "tu", "su", "al"}
+                  "y", "a", "un", "una", "que", "tu", "su", "al", "estos",
+                  "estas", "este", "esta", "como", "cómo", "más", "sin"}
     palabras = re.findall(r"[\wÁÉÍÓÚÑáéíóúñ]+", titulo)
     palabras = [p for p in palabras if not p.isdigit()]
-    fuertes = [p for p in palabras if p.lower() not in conectores]
-    elegidas = fuertes[:5] if len(fuertes) >= 3 else palabras[:5]
+    fuertes, vistas = [], set()
+    for p in palabras:
+        pl = p.lower()
+        if pl in conectores or pl in vistas:
+            continue
+        vistas.add(pl)
+        fuertes.append(p)
+    elegidas = fuertes[:3] if len(fuertes) >= 2 else palabras[:3]
     frase = " ".join(elegidas)
     return frase if frase else titulo[:30]
 

@@ -234,6 +234,8 @@ def buscar_estudios(tema: str, max_resultados: int = 6) -> list:
             "anio": item.get("pubYear", ""),
             "url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/",
             "resumen": resumen,
+            "pmcid": item.get("pmcid", ""),
+            "acceso_abierto": item.get("isOpenAccess") == "Y",
         })
         if len(estudios) >= max_resultados * 2:
             break
@@ -318,6 +320,8 @@ def _reintento_con_query_de_llm(tema: str, max_resultados: int) -> list:
                 "anio": item.get("pubYear", ""),
                 "url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/",
                 "resumen": _limpiar_html(abstract),
+                "pmcid": item.get("pmcid", ""),
+                "acceso_abierto": item.get("isOpenAccess") == "Y",
             })
             if len(estudios) >= max_resultados * 2:
                 break

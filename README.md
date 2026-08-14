@@ -197,6 +197,64 @@ se encontraron y corrigieron 3 defectos reales:
    (en `agents/video_editor.py`) reparte el sobrante proporcionalmente
    entre todos los cortes.
 
+### 🔬 Agente 28: Portada REAL del estudio en pantalla (auditoría élite 14-ago-2026)
+Resultado de una auditoría brutal pedida por el dueño del canal: hasta esa
+fecha, la "toma del documento" en las citas científicas era metraje de
+stock genérico (una persona leyendo papeles cualesquiera), NO el estudio
+citado. `agents/portada_estudio.py` lo corrige de verdad:
+
+- Con el PMID del estudio citado consulta Europe PMC; si el artículo es de
+  **acceso abierto**, descarga el **PDF oficial** y renderiza su **primera
+  página real** (título, autores, revista, DOI visibles).
+- Compone una escena 16:9 estilo documental: la portada real con sombra
+  sobre fondo oscuro + franja "ESTUDIO CIENTÍFICO REAL" con revista y año.
+- Esa imagen reemplaza el stock en el beat de cita científica
+  (`agents/visuals.py`), y el recuadro "ESTUDIO REAL" del editor no se
+  dibuja encima (la portada ya trae su propia franja).
+- `agents/citas_cientificas.py` ahora **prioriza estudios de acceso
+  abierto** al elegir qué citar (son los que tienen portada mostrable).
+- Si el estudio no es de acceso abierto, se usa el visual genérico de
+  siempre: mostrar un PDF sin licencia no es una opción.
+- Probado en vivo con 3 estudios reales distintos (PDFs de 0.7-2 MB,
+  portadas renderizadas correctamente).
+- Requiere `pymupdf` (añadido a requirements.txt).
+
+### 📋 Resultado de la auditoría élite (14-ago-2026) — honestidad total
+1. **Referencias en videos publicados**: los 8 videos del canal hasta esa
+   fecha NO tienen ningún enlace PubMed en la descripción (verificado por
+   API). Causa raíz: la búsqueda científica en español contra una base en
+   inglés (corregida ese mismo día, pendiente de validar en la próxima
+   corrida real).
+2. **Link del Short**: los enlaces en descripciones de Shorts NO son
+   clicables — limitación oficial de YouTube, no un bug nuestro. El enlace
+   clicable real va en el comentario automático. La descripción del Short
+   ahora dice claramente "el video completo está en el PRIMER COMENTARIO".
+3. **Tarjetas y pantallas finales ("ventanitas")**: la API pública de
+   YouTube NO permite configurarlas (limitación conocida de la
+   plataforma). El video ya incluye una tarjeta visual renderizada de
+   "video relacionado" + enlaces en descripción y comentario. Para añadir
+   las tarjetas nativas de verdad (opcional, 30 segundos por video, desde
+   el celular): YouTube Studio → video → Editar → Tarjetas → Añadir video
+   → elegir el video anterior → Guardar. Y para la pantalla final: Editar
+   → Pantalla final → plantilla con 1 video + botón de suscripción.
+
+### 🖼️ Miniaturas de máximo 3 palabras + Shorts más cortos (14-ago-2026)
+- `agents/thumbnail.py`: el texto de la miniatura pasó de 5 palabras a
+  **máximo 3, sin repetidas** (recomendación del grupo de grandes
+  creadores citado por la experta ex-YouTube; la miniatura real del
+  14-ago decía "ALIMENTOS VISIÓN MEJORA VISIÓN ESTOS", redundante).
+- `agents/shorts_creator.py`: `MAX_BEATS_SHORT` bajó de 4 a 2 → Shorts de
+  ~25-35s que se ven completos y se repiten (mejor swipe rate y % visto,
+  las 2 métricas que deciden si YouTube recomienda un Short).
+- `agents/scriptwriter.py`: los nombres de capítulo ahora se piden como
+  **búsquedas reales long-tail** ("Cómo tomar magnesio para dormir" en vez
+  de "Guía práctica") — los timestamps posicionan búsquedas concretas.
+- `agents/scriptwriter.py`: la descripción ahora teje **frases reales del
+  autocompletado público de YouTube** ("frases de audiencias similares"),
+  excluyendo nombres de otros creadores. Probado en vivo: para "alimentos
+  para la visión" devuelve "alimentos para recuperar la visión", "alimentos
+  buenos para la vision", "alimentos para la vista"...
+
 ### 🎣 Gancho reforzado con datos reales de retención (auditoría agosto 2026)
 `agents/viral_strategist.py` fue actualizado con una investigación real
 sobre qué hace que alguien se quede viendo un video en sus primeros

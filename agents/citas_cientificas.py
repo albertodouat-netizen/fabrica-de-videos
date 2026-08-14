@@ -133,11 +133,18 @@ def _construir_beat_cita(estudio: dict, visual: str) -> dict:
 def _elegir_estudios_para_citar(estudios: list, ya_citados_pmid: set, max_n: int = 2) -> list:
     """Prioriza estudios con revista Y año reales (cita más creíble en
     pantalla), evitando repetir uno que ya haya quedado citado por la
-    verificación de cifras (agents/investigacion_cientifica.py)."""
+    verificación de cifras (agents/investigacion_cientifica.py).
+
+    Desde la auditoría élite del 14-ago-2026, dentro de los que tienen
+    revista y año se priorizan los de ACCESO ABIERTO: para esos se puede
+    mostrar la PORTADA REAL del estudio en pantalla (ver
+    agents/portada_estudio.py), que es la evidencia visual más fuerte."""
     candidatos = [e for e in estudios if e.get("pmid") not in ya_citados_pmid]
     con_revista_y_anio = [e for e in candidatos if e.get("revista") and e.get("anio")]
     resto = [e for e in candidatos if e not in con_revista_y_anio]
-    ordenados = con_revista_y_anio + resto
+    oa = [e for e in con_revista_y_anio if e.get("acceso_abierto")]
+    no_oa = [e for e in con_revista_y_anio if not e.get("acceso_abierto")]
+    ordenados = oa + no_oa + resto
     return ordenados[:max_n]
 
 

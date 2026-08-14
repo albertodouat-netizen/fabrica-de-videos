@@ -155,6 +155,13 @@ def _clip_desde_visual(visual, duracion, carpeta_tmp, resolucion=RESOLUCION):
     try:
         clip = ImageClip(visual["ruta"]).with_duration(duracion)
         clip_cubierto = _cubrir_resolucion(clip, resolucion)
+        # La portada real del estudio (ver agents/portada_estudio.py) NO
+        # lleva zoom Ken Burns: el zoom recortaba la franja inferior con la
+        # revista/año (comprobado extrayendo un fotograma del render real).
+        # Esa imagen ya está compuesta exactamente a la resolución del video
+        # y debe verse completa y estable, como un documento que se muestra.
+        if visual.get("keyword") == "portada real del estudio científico citado":
+            return clip_cubierto
         return _aplicar_ken_burns(clip_cubierto, resolucion, duracion)
     except Exception as e:
         log(AGENT, f"Imagen dañada/no legible, generando fondo de respaldo: {e}")
@@ -190,6 +197,13 @@ def _renderizar_capitulo(cap, audio_cap_info, visuales_cap, carpeta_salida, indi
         if not cifra and not cita_fuente:
             continue
         if idx >= len(sub_clips):
+            continue
+        # Si el visual de este beat ES la portada real del estudio (ver
+        # agents/portada_estudio.py), no se dibuja el recuadro encima: la
+        # portada ya trae su propia franja "ESTUDIO CIENTÍFICO REAL" con
+        # revista y año, y taparla con otro recuadro sería contraproducente.
+        if idx < len(visuales_cap) and \
+                (visuales_cap[idx].get("keyword") == "portada real del estudio científico citado"):
             continue
         texto_recuadro = cifra if cifra else "ESTUDIO REAL"
         try:

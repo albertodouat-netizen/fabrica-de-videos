@@ -27,7 +27,13 @@ from agents.voice import narrar_guion
 
 AGENT = "ShortsCreator"
 RESOLUCION_SHORT = (720, 1280)   # 720p vertical: se ve nítido en móvil y usa mucha menos RAM/CPU
-MAX_BEATS_SHORT = 4          # cuántos beats del capítulo 1 se reutilizan (antes del CTA)
+MAX_BEATS_SHORT = 2          # cuántos beats del capítulo 1 se reutilizan (antes del CTA).
+                             # Bajado de 4 a 2 (14-ago-2026): la investigación real de
+                             # Shorts (métrica "swipe rate" + duración media vista cercana
+                             # al 100%) favorece Shorts de ~25-35s que se ven COMPLETOS y
+                             # se repiten, sobre Shorts de 40-50s que la gente abandona.
+                             # El Short real del 14-ago duró 38s y arrastraba una tarjeta
+                             # final estática; más corto = más % visto = más recomendación.
 DURACION_MAX_OBJETIVO = 50   # segundos, sin contar la tarjeta final de CTA
 DURACION_MIN_CORTE_SHORT = 2.0   # cortes más rápidos que el video largo (ideal para Shorts)
 DURACION_MAX_CORTE_SHORT = 5.0
@@ -262,9 +268,17 @@ def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_la
     shutil.rmtree(os.path.join(carpeta_salida, "audio"), ignore_errors=True)
 
     titulo_short = (guion["titulo"][:80] + " 😱 #Shorts").strip()
+    # HONESTIDAD TÉCNICA (auditoría 14-ago-2026): YouTube NO hace clicables
+    # los enlaces en las descripciones de Shorts (limitación oficial de la
+    # plataforma, verificada). El enlace clicable REAL va en el comentario
+    # que publica agents/promocion_cruzada.py. La descripción lo dice
+    # claro para que nadie intente copiar un texto plano, y aun así se
+    # incluye la URL (YouTube la usa como señal de relación entre videos,
+    # y en escritorio sí se puede copiar).
     descripcion_short = (
         f"{guion.get('gancho', '')}\n\n"
-        f"👉 Mira el video COMPLETO en mi canal: {url_video_largo}\n\n"
+        f"👉 El video COMPLETO está en el PRIMER COMENTARIO (link directo) 📌\n"
+        f"También puedes buscarlo en mi canal: {url_video_largo}\n\n"
         f"#Shorts #{mini_guion['titulo'][:20].replace(' ', '')}"
     )
 

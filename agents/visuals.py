@@ -516,6 +516,33 @@ def obtener_visuales_para_guion(guion: dict, carpeta_salida: str, orientacion="l
             # interno, ver agents/promocion_cruzada.py): se muestra una
             # tarjeta con el título del video recomendado en vez de buscar
             # stock (nada de la vida real representa "otro video del canal").
+            # Cita científica (ver agents/citas_cientificas.py): desde la
+            # auditoría élite del 14-ago-2026, si el estudio citado es de
+            # ACCESO ABIERTO se muestra la PORTADA REAL del estudio
+            # (renderizada del PDF oficial de Europe PMC), no un stock
+            # genérico de "persona leyendo papeles". El espectador ve el
+            # título, autores y revista reales del estudio que respalda el
+            # video. Si no hay PDF legal disponible, se usa el visual de
+            # documento de siempre (nunca un PDF sin licencia).
+            if beat.get("es_cita_cientifica") and beat.get("_pmid"):
+                try:
+                    from agents.portada_estudio import generar_visual_portada_estudio
+                    cita = beat.get("cita_fuente") or {}
+                    estudio_min = {"pmid": beat.get("_pmid"),
+                                   "revista": cita.get("revista", ""),
+                                   "anio": cita.get("anio", "")}
+                    ruta_portada = generar_visual_portada_estudio(
+                        estudio_min, carpeta_salida, tag=f"cap{i}_b{j}")
+                    if ruta_portada:
+                        visuales_cap.append({"tipo": "imagen", "ruta": ruta_portada,
+                                              "keyword": "portada real del estudio científico citado"})
+                        log(AGENT, f"Cap {i+1} beat {j+1}/{len(beats)}: cita científica -> "
+                                    f"PORTADA REAL del estudio (PDF oficial)")
+                        continue
+                except Exception as e:
+                    log(AGENT, f"Aviso: no se pudo renderizar la portada real del estudio ({e}); "
+                                "se usa el visual de documento genérico.")
+
             if beat.get("es_mencion_cruzada"):
                 from agents.promocion_cruzada import generar_tarjeta_video_relacionado
                 titulo_rel = beat.get("titulo_video_relacionado", "")
