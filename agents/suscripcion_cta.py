@@ -68,6 +68,14 @@ FRASES_FINAL = [
     "Gracias por ver hasta el final. Suscríbete gratis al canal, así seguimos ayudándote a cuidar tu salud de forma natural.",
 ]
 
+# Frase de marca (mantra de cierre): a diferencia de las frases de arriba
+# (que rotan al azar para no sonar repetitivas), esta SIEMPRE es la misma,
+# a propósito. Es una práctica de branding real y segura (igual que el
+# "sign-off" de cualquier creador de verdad); ayuda a que el canal se sienta
+# reconocible sin caer en la "plantilla idéntica" que sí penaliza YouTube
+# (esta es solo 1 frase corta al final, no la estructura completa del video).
+TAGLINE_DE_MARCA = "Recuerda, pequeños cambios naturales, grandes resultados. Nos vemos en el próximo video."
+
 
 def _beat_cta(texto: str, momento: str) -> dict:
     return {
@@ -106,6 +114,15 @@ def agregar_llamados_a_suscripcion(guion: dict) -> dict:
     # --- FINAL: al final del último capítulo.
     cap_final = capitulos[-1]
     cap_final.setdefault("beats", []).append(_beat_cta(random.choice(FRASES_FINAL), "final"))
+
+    # --- MANTRA DE MARCA: una última frase, siempre la misma, para dar
+    # identidad reconocible al canal (ver nota en TAGLINE_DE_MARCA). Usa un
+    # visual normal de contexto (no la tarjeta de suscripción), para que no
+    # se sienta como un cuarto aviso, sino como el cierre natural del video.
+    cap_final["beats"].append({
+        "texto": TAGLINE_DE_MARCA,
+        "visual": "peaceful sunrise over calm nature landscape",
+    })
 
     log(AGENT, "Los 3 llamados obligatorios a suscripción quedaron insertados "
                 "(inicio, mitad y final), con tarjeta gráfica (sin rostro).")
