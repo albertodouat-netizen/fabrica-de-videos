@@ -403,18 +403,25 @@ def obtener_visuales_para_guion(guion: dict, carpeta_salida: str, orientacion="l
             # presentador fijo del canal (rostro humano real y consistente)
             # con el botón de suscripción, sin gastar cuota de Pexels/Pixabay.
             if beat.get("es_llamado_suscripcion"):
-                from agents.avatar_presentador import generar_frame_llamado_suscripcion
+                # Los 3 llamados obligatorios a suscripción (ver
+                # agents/suscripcion_cta.py) usan una tarjeta gráfica sin
+                # ningún rostro (real o generado): decisión tomada en la
+                # auditoría de agosto 2026 para no arriesgar la política de
+                # "personas de IA en temas sensibles" (salud) de YouTube.
+                from agents.suscripcion_cta import generar_tarjeta_suscripcion
                 momento = beat.get("momento_suscripcion", "inicio")
-                visual = generar_frame_llamado_suscripcion(momento, carpeta_salida, tag=f"cap{i}_b{j}")
-                if visual:
-                    visuales_cap.append(visual)
+                try:
+                    ruta_tarjeta = generar_tarjeta_suscripcion(momento, carpeta_salida, tag=f"cap{i}_b{j}")
+                    visuales_cap.append({"tipo": "imagen", "ruta": ruta_tarjeta,
+                                          "keyword": "tarjeta grafica de suscripcion"})
                     log(AGENT, f"Cap {i+1} beat {j+1}/{len(beats)}: llamado a suscripción ({momento}) "
-                                f"-> presentador del canal")
+                                f"-> tarjeta gráfica (sin rostro)")
                     continue
-                log(AGENT, "Aviso: no se pudo generar el frame del presentador; "
-                            "se busca un visual normal de respaldo para este beat.")
-                beat = dict(beat)
-                beat["visual"] = "friendly person smiling warmly directly at the camera"
+                except Exception as e:
+                    log(AGENT, f"Aviso: no se pudo generar la tarjeta de suscripción ({e}); "
+                                "se busca un visual normal de respaldo para este beat.")
+                    beat = dict(beat)
+                    beat["visual"] = "person smiling warmly outdoors in natural light"
 
             # Mención cruzada a otro video del canal (tráfico orgánico
             # interno, ver agents/promocion_cruzada.py): se muestra una

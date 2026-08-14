@@ -18,20 +18,12 @@ canal:
   # YouTube no permite subir esa pista de audio automáticamente todavía).
   # Déjalo como "" para desactivarlo. Ejemplo: "en" (inglés).
   idioma_doblaje: ""
-  # PRESENTADOR DEL CANAL (rostro humano fijo, ver agents/avatar_presentador.py):
-  # el algoritmo de YouTube favorece videos con una persona real en pantalla.
-  # Generar un avatar hablante con sincronización labial de verdad requiere
-  # herramientas de pago; en su lugar, el sistema genera UNA SOLA VEZ una foto
-  # realista de un presentador fijo (siempre la misma persona, para dar
-  # reconocimiento de marca) y la usa en los 3 llamados obligatorios a
-  # suscripción (inicio/mitad/final) y como protagonista de las miniaturas.
-  # Cambia "descripcion" a tu gusto (edad, género, estilo) y borra el archivo
-  # assets/presentador/avatar_base.jpg para que se regenere con la nueva
-  # descripción la próxima vez que corra el robot.
-  presentador:
-    activar: true
-    descripcion: "mujer latina de unos 35 anios, cabello oscuro ondulado hasta los hombros, sonrisa calida y genuina, mirada cercana y segura, piel con textura realista, aspecto saludable, ropa casual de color verde salvia o beige, presentadora de un canal de salud y bienestar natural"
-    semilla: 583920
+  # NOTA (auditoría agosto 2026): este canal tuvo, por un tiempo breve, una
+  # presentadora fija generada con IA para los llamados a suscripción. Se
+  # QUITÓ por decisión del dueño del canal, para evitar cualquier riesgo con
+  # la política de YouTube (16-jul-2026) sobre "personas de IA" en temas
+  # sensibles como salud. El canal ahora es 100% sin rostro (voz + imágenes
+  # reales/generadas de contexto, nunca un personaje fijo).
 
   nicho: "salud natural, alternativa, tradicional y complementaria (con respaldo científico)"
   # EJES TEMÁTICOS: reemplaza a la lista plana de palabras clave. Cada eje es

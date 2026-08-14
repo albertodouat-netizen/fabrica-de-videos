@@ -125,8 +125,8 @@ def verificar_y_corregir(guion: dict, visuales_info: dict, carpeta_salida: str) 
         visuales_cap = visuales_info["visuales_por_capitulo"][i]
         for j, (beat, visual) in enumerate(zip(beats, visuales_cap)):
             if beat.get("es_llamado_suscripcion") or beat.get("es_mencion_cruzada"):
-                # Los frames del presentador y las tarjetas de "también te
-                # puede interesar" son intencionales, no hay que verificarlos.
+                # Las tarjetas gráficas de suscripción y de "también te
+                # puede interesar" son intencionales, no hay que verificarlas.
                 continue
             candidatos.append((i, j, beat, visual, cap.get("nombre", "")))
 

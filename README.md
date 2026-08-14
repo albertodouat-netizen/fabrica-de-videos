@@ -91,37 +91,22 @@ filtrando automáticamente solo licencias que permiten uso comercial (nunca
 usa pistas "No Comercial", ya que el canal se va a monetizar), y agrega el
 crédito correspondiente en la descripción.
 
-### 👤 Agente 21: Presentador del canal (rostro humano fijo)
-YouTube favorece en 2026 los videos con una persona real en cámara. Un
-avatar hablante con sincronización labial de verdad (como HeyGen/D-ID)
-requiere pago o GPU, así que no se puede prometer eso gratis y confiable
-todos los días. En su lugar, `agents/avatar_presentador.py` genera **una
-sola vez** (con Pollinations.ai, gratis) una foto realista de un
-presentador fijo para el canal y la reutiliza SIEMPRE (misma persona en
-todos los videos, para dar reconocimiento de marca). Esa foto:
-- Aparece en los 3 llamados obligatorios a suscripción (ver Agente 22).
-- Se usa también como la persona protagonista en las miniaturas
-  (`agents/thumbnail.py`), para reforzar la identidad visual del canal.
-La foto queda guardada en `assets/presentador/avatar_base.jpg` (se sube al
-repositorio para que sea siempre la misma persona). Si quieres cambiar de
-presentador, edita `canal.presentador.descripcion` en `config.yaml` y
-borra ese archivo: se genera uno nuevo en la siguiente corrida.
-**Sé honesto contigo mismo con esto**: es una foto fija con zoom lento, no
-un avatar hablando con los labios sincronizados. Es la mejora real y
-gratuita disponible hoy; si más adelante quieres subir de nivel, la opción
-realista sería contratar a un presentador humano de verdad (ej. Fiverr) o
-pagar una herramienta de avatar con lip-sync.
-
 ### 🔔 Agente 22: Llamados a suscripción garantizados (inicio/mitad/final)
 `agents/suscripcion_cta.py` inserta SIEMPRE, en código (no depende de que
 la IA se acuerde), 3 momentos pidiendo la suscripción: justo después del
 gancho inicial, en el capítulo central del video, y al final. Cada uno usa
 una frase distinta elegida al azar de varias opciones (para que el canal
-no se sienta repetitivo) y muestra al presentador fijo del canal con un
-botón de "SUSCRÍBETE" dibujado (no generado por IA, para que nunca salga
-con letras deformes). El Short reutiliza el mismo guion pero SIN estos 3
-llamados (ya tiene su propia tarjeta final, que también invita a
-suscribirse) para no sentirse repetitivo en 45 segundos.
+no se sienta repetitivo) y muestra una **tarjeta gráfica** (campana +
+"SUSCRÍBETE", sin ninguna persona real ni generada). El Short reutiliza el
+mismo guion pero SIN estos 3 llamados (ya tiene su propia tarjeta final,
+que también invita a suscribirse) para no sentirse repetitivo en 45 segundos.
+
+📌 **Historial (auditoría agosto 2026)**: este canal tuvo brevemente una
+presentadora fija generada con IA para estos 3 momentos, pensada para dar
+un "rostro humano" y reconocimiento de marca. Se QUITÓ por decisión del
+dueño del canal al descubrir que YouTube aclaró (16-jul-2026) que los
+canales con "personas de IA" en temas sensibles como salud pueden perder
+la monetización. El canal es ahora 100% sin rostro por precaución.
 
 ### 🧠 Resiliencia: cascada de proveedores de IA
 El Guionista ya no depende de un solo proveedor: si Gemini falla o se

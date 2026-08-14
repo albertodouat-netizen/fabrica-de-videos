@@ -72,21 +72,16 @@ def _generar_fondo_ia_miniatura(keyword_principal: str, titulo: str, destino_jpg
     miniatura de YouTube (primer plano, expresión clara, colores
     saturados), nunca un dibujo/animación.
 
-    Para dar consistencia de marca al canal, la persona que aparece en la
-    miniatura es SIEMPRE la del presentador fijo del canal (ver
-    agents/avatar_presentador.py), no una persona distinta generada al azar
-    en cada video: así los espectadores empiezan a reconocer visualmente al
-    canal, igual que reconocen a cualquier creador con cara fija."""
-    try:
-        from agents.avatar_presentador import descripcion_presentador_para_miniaturas
-        descripcion_persona = descripcion_presentador_para_miniaturas()
-    except Exception:
-        descripcion_persona = "una persona real sana y sonriente"
-
+    Nota (auditoría agosto 2026): antes esto usaba SIEMPRE la misma persona
+    fija (un "presentador" del canal) para dar reconocimiento de marca, pero
+    se decidió quitarlo por el riesgo de la política de YouTube sobre
+    "personas de IA" en temas sensibles como salud. Ahora cada miniatura
+    genera una persona distinta relacionada con el tema del video (formato
+    100% sin identidad fija, más seguro)."""
     base = keyword_principal.strip() or titulo
     prompt = (
-        f"fotografía editorial realista relacionada con {base}, primer plano de "
-        f"{descripcion_persona} mirando a la cámara con expresión de alivio y "
+        f"fotografía editorial realista relacionada con {base}, primer plano de una "
+        f"persona real sana y sonriente mirando a la cámara con expresión de alivio y "
         f"bienestar genuino, luz natural cálida de mañana, piel con textura realista, "
         f"fotografía de revista de salud, colores vibrantes, alto contraste, fondo "
         f"simple desenfocado, composición centrada tipo miniatura de youtube, "

@@ -11,6 +11,16 @@ NO NEGOCIABLE ("siempre", según el usuario), se implementa aquí de forma
 determinística en código, después de que el guion ya está listo: así
 funciona 100% de las veces, sin depender de que la IA "se acuerde".
 
+NOTA IMPORTANTE (decisión tomada en la auditoría de agosto 2026): este
+canal en un principio tuvo una presentadora fija generada con IA para
+estos 3 momentos, pero se decidió QUITARLA por completo. Motivo real: el
+16-jul-2026 YouTube aclaró que los canales con "personas de IA" dando
+contenido en temas sensibles (salud, finanzas, temas médicos/legales)
+pueden perder la monetización, y este es justamente un canal de salud.
+Para no correr ese riesgo, se volvió a un formato 100% sin rostro: los 3
+llamados a suscripción ahora se muestran con una TARJETA GRÁFICA (sin
+ninguna persona, real o generada), dibujada con Pillow.
+
 Cada llamado:
   - Es un beat más (mismo formato que el resto), así que se integra solo
     con Narrador, VisualScout, EditorVideo, Subtítulos, etc.
@@ -18,19 +28,24 @@ Cada llamado:
     frase en todos los videos) para que el canal no se sienta "plantillado"
     -- justo lo que la política de "contenido inauténtico" de YouTube
     penaliza (investigado en este proyecto).
-  - Usa el marcador especial de agents/avatar_presentador.py como palabra
-    visual, para que en pantalla aparezca el presentador fijo del canal
-    pidiendo la suscripción (rostro humano real, consistente en todos los
-    videos) en vez de un clip de stock genérico.
+  - Usa el marcador especial MARCADOR_VISUAL_SUSCRIPCION como palabra
+    visual, para que VisualScout (agents/visuals.py) muestre la tarjeta
+    gráfica de suscripción en vez de buscar un clip de stock.
   - Queda marcado con beat["es_llamado_suscripcion"] = True para que otros
     agentes (QA-Coherencia, ShortsCreator) lo reconozcan y lo traten aparte.
 """
+import os
 import random
 
-from agents.avatar_presentador import MARCADOR_VISUAL_CTA
+from PIL import Image, ImageDraw, ImageFont
+
 from agents.utils import log
 
 AGENT = "SuscripcionCTA"
+
+# Marcador especial usado en el campo "visual" del beat: en vez de buscar un
+# clip de stock, VisualScout genera la tarjeta gráfica de suscripción.
+MARCADOR_VISUAL_SUSCRIPCION = "TARJETA_LLAMADO_SUSCRIPCION"
 
 FRASES_INICIO = [
     "Antes de seguir, un segundo. Si te interesa cuidarte de forma natural, suscríbete gratis al canal ahora mismo.",
@@ -57,7 +72,7 @@ FRASES_FINAL = [
 def _beat_cta(texto: str, momento: str) -> dict:
     return {
         "texto": texto,
-        "visual": MARCADOR_VISUAL_CTA,
+        "visual": MARCADOR_VISUAL_SUSCRIPCION,
         "es_llamado_suscripcion": True,
         "momento_suscripcion": momento,
     }
@@ -88,11 +103,61 @@ def agregar_llamados_a_suscripcion(guion: dict) -> dict:
     posicion_mitad = 1 if cap_mitad is cap_inicio else 0
     cap_mitad.setdefault("beats", []).insert(posicion_mitad, _beat_cta(random.choice(FRASES_MITAD), "mitad"))
 
-
     # --- FINAL: al final del último capítulo.
     cap_final = capitulos[-1]
     cap_final.setdefault("beats", []).append(_beat_cta(random.choice(FRASES_FINAL), "final"))
 
     log(AGENT, "Los 3 llamados obligatorios a suscripción quedaron insertados "
-                "(inicio, mitad y final), con el presentador del canal en pantalla.")
+                "(inicio, mitad y final), con tarjeta gráfica (sin rostro).")
     return guion
+
+
+def _fuente(tam):
+    ruta = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    if os.path.exists(ruta):
+        return ImageFont.truetype(ruta, tam)
+    return ImageFont.load_default()
+
+
+# Un color de acento distinto por momento: le da algo de variedad visual
+# entre los 3 avisos de un mismo video sin necesitar ninguna foto ni rostro.
+_COLORES_ACENTO = {
+    "inicio": (255, 210, 0),
+    "mitad": (0, 210, 160),
+    "final": (255, 90, 70),
+}
+
+
+def generar_tarjeta_suscripcion(momento: str, carpeta_salida: str, tag: str,
+                                 resolucion=(1280, 720)) -> str:
+    """Genera (100% con Pillow, sin IA, sin ninguna persona real o generada)
+    una tarjeta gráfica para el llamado a suscripción. Formato 100% sin
+    rostro, a propósito (ver nota al inicio del archivo)."""
+    color_acento = _COLORES_ACENTO.get(momento, (255, 210, 0))
+    img = Image.new("RGB", resolucion, (18, 18, 22))
+    draw = ImageDraw.Draw(img)
+
+    cx, cy = resolucion[0] // 2, resolucion[1] // 2 - 60
+    r = 90
+    draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=color_acento, width=8)
+    # Campana simple dibujada a mano (mismo estilo en todo el proyecto).
+    br = int(r * 0.55)
+    draw.pieslice([cx - br, cy - br, cx + br, cy + int(br * 0.6)], 180, 360, fill=color_acento)
+    draw.rectangle([cx - br, cy - int(br * 0.2), cx + br, cy + int(br * 0.5)], fill=color_acento)
+    draw.ellipse([cx - int(br * 0.25), cy + int(br * 0.5), cx + int(br * 0.25), cy + int(br * 0.9)],
+                 fill=color_acento)
+
+    font_grande = _fuente(74)
+    texto = "SUSCRÍBETE"
+    tw = draw.textlength(texto, font=font_grande)
+    draw.text(((resolucion[0] - tw) / 2, cy + r + 40), texto, font=font_grande, fill=(255, 255, 255))
+
+    font_chica = _fuente(34)
+    pie = "Es gratis y ayuda mucho"
+    tw2 = draw.textlength(pie, font=font_chica)
+    draw.text(((resolucion[0] - tw2) / 2, cy + r + 130), pie, font=font_chica, fill=(190, 190, 190))
+
+    os.makedirs(carpeta_salida, exist_ok=True)
+    destino = os.path.join(carpeta_salida, f"{tag}_tarjeta_suscripcion.jpg")
+    img.save(destino, quality=92)
+    return destino
