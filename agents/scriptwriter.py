@@ -610,6 +610,21 @@ def generar_guion(idea: dict) -> dict:
                     f"Por seguridad, no se incluirán referencias en este video.")
         guion["referencias"] = []
 
+    # Refuerzo de credibilidad pedido explícitamente por el usuario
+    # (auditoría agosto 2026): que el video SÍ mencione en voz alta que la
+    # información tiene respaldo científico real, con toma de un
+    # documento/estudio en pantalla, y con el enlace real disponible en la
+    # descripción. Esto se agrega incluso si ninguna cifra puntual del
+    # guion pudo verificarse palabra por palabra arriba (ver
+    # agents/citas_cientificas.py: nunca inventa un hallazgo nuevo, solo
+    # comunica que el estudio real existe).
+    try:
+        from agents.citas_cientificas import agregar_citas_cientificas_en_guion
+        guion = agregar_citas_cientificas_en_guion(guion, estudios)
+    except Exception as e:
+        log(AGENT, f"Aviso: no se pudieron insertar las citas científicas en pantalla ({e}). "
+                    f"El video se genera igual, solo sin ese refuerzo de credibilidad.")
+
     # Regla de negocio NO NEGOCIABLE del canal: SIEMPRE 3 momentos pidiendo
     # suscripción (inicio, mitad, final). Se aplica aquí en código (no se le
     # deja la tarea solo al LLM) para que ocurra el 100% de las veces, con el

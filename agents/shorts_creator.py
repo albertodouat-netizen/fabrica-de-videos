@@ -138,7 +138,8 @@ def _armar_mini_guion(guion: dict) -> dict:
     beats_disponibles = [b for b in primer_capitulo.get("beats", [])
                           if not b.get("es_llamado_suscripcion")
                           and not b.get("es_mencion_cruzada")
-                          and not b.get("es_llamado_interaccion")]
+                          and not b.get("es_llamado_interaccion")
+                          and not b.get("es_cita_cientifica")]
     beats_originales = beats_disponibles[:MAX_BEATS_SHORT]
 
     beats_short = []

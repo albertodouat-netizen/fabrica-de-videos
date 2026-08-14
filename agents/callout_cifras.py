@@ -31,11 +31,19 @@ def _fuente(tam):
 
 
 def generar_overlay_cifra(cifra: str, carpeta_salida: str, tag: str,
-                           resolucion=(1280, 720)) -> str:
+                           resolucion=(1280, 720), cita_fuente: dict = None) -> str:
     """Genera un PNG TRANSPARENTE con la cifra destacada en grande, listo
     para superponerse sobre el video del beat (no reemplaza el video, solo
     se agrega encima). Estilo simple y legible: recuadro semi-transparente
-    + icono de barras + la cifra + 'dato verificado' como pie de página."""
+    + icono de barras + la cifra + pie de página.
+
+    'cita_fuente' (opcional, ver agents/investigacion_cientifica.py): dict
+    con 'revista' y 'anio' reales del estudio que respalda esta cifra. Si
+    se recibe, el pie de página muestra la fuente real (ej. 'Revista de
+    Nutrición Clínica, 2023') en vez del texto genérico 'Dato verificado
+    con estudios reales'. El usuario pidió explícitamente que el peso y la
+    veracidad de la información quede visible en pantalla, no solo en el
+    audio o escondida en la descripción."""
     w, h = resolucion
     img = Image.new("RGBA", resolucion, (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
@@ -62,10 +70,28 @@ def generar_overlay_cifra(cifra: str, carpeta_salida: str, tag: str,
 
     texto_x = base_x + 3 * (ancho_barra + 8) + 14
     font_cifra = _fuente(max(30, int(alto_caja * 0.36)))
+    # Ajuste automático de tamaño (hallazgo real probando esta función):
+    # "45%" es corto y cabe siempre, pero un texto más largo como
+    # "ESTUDIO REAL" (usado para las citas científicas sin cifra numérica,
+    # ver agents/citas_cientificas.py) se salía del recuadro. Se reduce la
+    # fuente hasta que quepa, igual que ya se hacía con el pie de página.
+    max_w_cifra = (x1 - texto_x) - 14
+    while draw.textlength(cifra, font=font_cifra) > max_w_cifra and font_cifra.size > 18:
+        font_cifra = _fuente(font_cifra.size - 3)
     draw.text((texto_x, y0 + 14), cifra, font=font_cifra, fill=(255, 255, 255, 255))
 
     font_pie = _fuente(max(14, int(alto_caja * 0.13)))
-    pie = "Dato verificado con estudios reales"
+    if cita_fuente and (cita_fuente.get("revista") or cita_fuente.get("anio")):
+        revista = cita_fuente.get("revista", "").strip()
+        anio = cita_fuente.get("anio", "").strip()
+        if revista and anio:
+            pie = f"Fuente real: {revista}, {anio}"
+        elif revista:
+            pie = f"Fuente real: {revista}"
+        else:
+            pie = f"Fuente real verificada, {anio}"
+    else:
+        pie = "Dato verificado con estudios reales"
     # Envolver el pie de página si no cabe en el ancho de la caja
     max_w_pie = (x1 - texto_x) - 10
     palabras = pie.split()

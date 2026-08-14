@@ -176,6 +176,13 @@ def _pmid_existe_de_verdad(pmid: str, titulo_esperado: str = "") -> bool:
         return False
 
 
+def pmid_es_real(pmid: str, titulo_esperado: str = "") -> bool:
+    """Versión pública de _pmid_existe_de_verdad, para que otros agentes
+    (ej. agents/citas_cientificas.py) puedan reutilizar la misma
+    verificación real contra NCBI sin duplicar código."""
+    return _pmid_existe_de_verdad(pmid, titulo_esperado)
+
+
 def _url_funciona(url: str) -> bool:
     """Respaldo genérico (para enlaces que no sean de PubMed): comprueba
     que la URL cargue con un código de respuesta válido."""
@@ -256,6 +263,22 @@ def verificar_y_filtrar_guion(guion: dict, estudios: list) -> dict:
                 # recuadro con la cifra encima del video en ese momento
                 # exacto (ver agents/callout_cifras.py).
                 beat["cifra_verificada"] = match.group(0).strip()
+                # Hallazgo real (auditoría agosto 2026, SEO/credibilidad):
+                # el usuario pidió que se note de dónde sale la información,
+                # no solo la cifra suelta. Se adjunta aquí la cita real
+                # (revista + año) para que el callout en pantalla y el
+                # buscador de video (agents/visuals.py) puedan mostrar,
+                # respectivamente, "Revista, Año" en vez de un texto
+                # genérico, y una escena real de un documento/estudio en
+                # vez de una escena sin relación con la fuente.
+                estudio_citado = estudios[resultado["indice_fuente"]]
+                autores = (estudio_citado.get("autores") or "").strip()
+                beat["cita_fuente"] = {
+                    "revista": estudio_citado.get("revista", "").strip(),
+                    "anio": str(estudio_citado.get("anio", "")).strip(),
+                    "autor_corto": autores.split(",")[0] if autores else "",
+                    "url": estudio_citado.get("url", ""),
+                }
             else:
                 texto_suave = _reescribir_sin_cifra(texto, gemini_key)
                 log(AGENT, f"Cifra no verificable descartada: \"{texto}\" -> \"{texto_suave}\"")

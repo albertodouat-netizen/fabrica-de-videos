@@ -108,6 +108,44 @@ dueño del canal al descubrir que YouTube aclaró (16-jul-2026) que los
 canales con "personas de IA" en temas sensibles como salud pueden perder
 la monetización. El canal es ahora 100% sin rostro por precaución.
 
+### 🔬 Agente 27: Citas Científicas en Pantalla
+`agents/citas_cientificas.py` responde a un pedido explícito del dueño del
+canal: que la información se sienta respaldada de verdad, no solo "por
+dentro" (verificada contra Europe PMC/NCBI, ver Agente 17) sino también
+**percibida** por quien ve el video. Igual que los llamados a suscripción,
+esto se garantiza en CÓDIGO, no se le deja solo a la IA:
+
+- Si el Investigador Científico (Agente 17) encontró estudios reales sobre
+  el tema del video, se insertan 1-2 frases que mencionan en voz alta,
+  de forma natural, el nombre real de la revista y el año reales
+  ("esto lo confirma un estudio publicado en la revista X, en 2023").
+  Nunca se inventa un hallazgo nuevo: solo se comunica que el estudio real
+  existe (lo mismo que ya se citaba, antes en silencio, solo en la
+  descripción).
+- Esa frase usa como imagen de fondo una toma real de documentos/artículos
+  científicos (portada de revista, persona leyendo un estudio, papeles de
+  laboratorio) en vez de una escena sin relación con lo que se dice.
+- Se dibuja un pequeño recuadro en pantalla (mismo estilo que las cifras
+  verificadas, ver Agente 24 `callout_cifras.py`) con el texto "ESTUDIO
+  REAL" y el nombre de la revista/año, para reforzarlo visualmente.
+- El estudio queda garantizado en la lista de referencias con enlace real
+  y verificado en la descripción de YouTube (antes esto solo pasaba si
+  una cifra puntual del guion coincidía palabra por palabra con el
+  estudio; ahora también pasa cuando la mención es más general).
+- Si no hay ningún estudio real disponible para el tema, no se inventa
+  nada: el video simplemente no incluye estas citas (mejor no citar que
+  citar algo sin verificar).
+
+### 🎣 Gancho reforzado con datos reales de retención (auditoría agosto 2026)
+`agents/viral_strategist.py` fue actualizado con una investigación real
+sobre qué hace que alguien se quede viendo un video en sus primeros
+segundos (ver sección de más abajo con las fuentes y cifras exactas). En
+resumen: ahora el guion sigue una estructura obligatoria de 3 fases en los
+primeros 15 segundos (interrupción de patrón → promesa concreta → gancho
+de compromiso), evita los "7 asesinos de retención" más comunes, y pide
+que el primer visual del video sea el más llamativo y específico de todo
+el guion (nunca una escena genérica).
+
 ### 🧠 Resiliencia: cascada de proveedores de IA
 El Guionista ya no depende de un solo proveedor: si Gemini falla o se
 satura (cuota agotada, sobrecarga temporal), prueba automáticamente con

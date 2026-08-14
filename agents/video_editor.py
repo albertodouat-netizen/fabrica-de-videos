@@ -167,25 +167,32 @@ def _renderizar_capitulo(cap, audio_cap_info, visuales_cap, carpeta_salida, indi
     sub_clips = [_clip_desde_visual(v, d, carpeta_salida, resolucion)
                  for v, d in zip(visuales_cap, duraciones_beats)]
 
-    # Cifras verificadas (ver agents/investigacion_cientifica.py): se
-    # superpone un recuadro con la cifra en grande, para que el espectador
-    # la vea con claridad y no dependa solo de escucharla una vez.
+    # Cifras verificadas Y citas científicas (ver agents/investigacion_cientifica.py
+    # y agents/citas_cientificas.py): se superpone un recuadro con la cifra
+    # o con "ESTUDIO REAL" en grande, para que el espectador vea con
+    # claridad que hay una fuente real detrás y no dependa solo de
+    # escucharlo una vez en el audio (pedido explícito del usuario, para
+    # dar más peso y veracidad a la información).
     beats_cap = cap.get("beats", [])
     for idx, (beat, dur) in enumerate(zip(beats_cap, duraciones_beats)):
         cifra = beat.get("cifra_verificada")
-        if not cifra or idx >= len(sub_clips):
+        cita_fuente = beat.get("cita_fuente")
+        if not cifra and not cita_fuente:
             continue
+        if idx >= len(sub_clips):
+            continue
+        texto_recuadro = cifra if cifra else "ESTUDIO REAL"
         try:
             from agents.callout_cifras import generar_overlay_cifra
-            ruta_overlay = generar_overlay_cifra(cifra, carpeta_salida, tag=f"cifra_cap{indice}_b{idx}",
-                                                  resolucion=resolucion)
+            ruta_overlay = generar_overlay_cifra(texto_recuadro, carpeta_salida, tag=f"cifra_cap{indice}_b{idx}",
+                                                  resolucion=resolucion, cita_fuente=cita_fuente)
             clip_overlay = (ImageClip(ruta_overlay)
                             .with_duration(sub_clips[idx].duration)
                             .with_position((0, 0)))
             sub_clips[idx] = CompositeVideoClip([sub_clips[idx], clip_overlay], size=resolucion) \
                 .with_duration(sub_clips[idx].duration)
         except Exception as e:
-            log(AGENT, f"Aviso: no se pudo dibujar el callout de la cifra '{cifra}' ({e}); "
+            log(AGENT, f"Aviso: no se pudo dibujar el callout de '{texto_recuadro}' ({e}); "
                         "el video sigue igual, solo sin ese recuadro.")
 
     # Llamados a suscripción (ver agents/suscripcion_cta.py): banner PEQUEÑO

@@ -38,12 +38,60 @@ REGLAS_PARA_GUIONISTA = f"""
 REGLAS DE RETENCIÓN DE AUDIENCIA (basadas en investigación real de edición
 y guionismo de YouTube; síguelas de forma estricta):
 
-1. GANCHO (primeras 2-3 frases / ~{DURACION_GANCHO_SEG_OBJETIVO} segundos hablados):
-   - Debe prometer un valor CONCRETO y específico (no genérico).
-   - PROHIBIDO empezar con muletillas de relleno como "Hola a todos",
-     "Bienvenidos de nuevo a mi canal", "En el video de hoy vamos a hablar de".
-   - Empieza directo con la promesa, una cifra, o una afirmación que genere
-     curiosidad o urgencia.
+1. GANCHO (los primeros 15 segundos deciden si la persona se queda o se va,
+   según datos reales de retención de YouTube 2026; síguelo con precisión
+   quirúrgica, no es "una sugerencia más"):
+
+   - EL DATO CLAVE: en un análisis real de miles de guiones de YouTube, los
+     que entregan una promesa de valor CONCRETA dentro de los primeros 15
+     segundos retienen en promedio 52% de la audiencia; los que no, solo
+     44%. La caída más brusca de espectadores de todo el video ocurre entre
+     el segundo 10 y el 20. Es decir: tienes hasta el segundo 15, no 30,
+     para "ganarte" al espectador.
+   - ESTRUCTURA OBLIGATORIA EN 3 FASES (basada en esa misma investigación):
+       Fase 1 (segundos 0-5, el "gancho" propiamente dicho, primera frase):
+         una interrupción de patrón. Debe sonar distinto a como empiezan
+         el 90% de los videos de salud. Usa una cifra concreta, una
+         afirmación que rompa una creencia común, o una pregunta directa
+         e incómoda. NUNCA una afirmación genérica tipo "hoy vamos a
+         hablar de...".
+       Fase 2 (segundos 5-15, segunda frase del gancho): la promesa de
+         valor CONCRETA y específica ("vas a aprender exactamente cómo...",
+         "al final de este video vas a saber cuáles 3 alimentos..."). Debe
+         quedar clarísimo QUÉ se lleva el espectador si se queda, no solo
+         "de qué trata" el video.
+       Fase 3 (primer beat del capítulo 1, justo después del gancho): el
+         "gancho de compromiso": plantea la pregunta o el problema exacto
+         que el resto del video va a resolver (un "bucle abierto" que solo
+         se cierra si sigue viendo), o arranca ya con el primer paso del
+         contenido. NUNCA otra frase de introducción/relleno aquí.
+   - PROHIBIDO ABSOLUTO en los primeros 15 segundos (los "7 asesinos de
+     retención" documentados en la investigación de 2026, cada uno de
+     estos por sí solo puede hundir la retención inicial): saludo genérico
+     ("Hola a todos", "Bienvenidos de nuevo al canal"), presentar el canal
+     o sus credenciales, explicar de qué "va a tratar" el video en vez de
+     entregar ya la promesa concreta, cualquier disculpa o descargo de
+     responsabilidad, pedir suscribirse ANTES de dar valor, frases de
+     relleno tipo "en el video de hoy", y cualquier cliché que el
+     espectador ya haya escuchado cientos de veces en otros canales.
+   - LA CIFRA AYUDA: agregar un número concreto en los primeros 15 segundos
+     ("el 80% de las personas...", "en solo 3 pasos...") da más credibilidad
+     inmediata que una descripción vaga. Si tienes una fuente científica
+     real para esa cifra (ver bloque de fuentes más abajo), úsala aquí
+     mismo en el gancho si encaja de forma natural.
+   - HONESTIDAD DEL GANCHO (no es solo ética, es estrategia): el gancho
+     debe prometer EXACTAMENTE lo que el video cumple. Un gancho engañoso
+     puede subir el clic momentáneamente pero hunde la retención a mitad
+     de video en cuanto el espectador nota que no se cumplió la promesa, y
+     eso pesa más para el algoritmo que un buen inicio.
+   - VISUAL DEL GANCHO: el campo "visual" del gancho y del primer beat debe
+     ser el más llamativo, específico y con más "movimiento/acción real"
+     de todo el guion (nunca una escena genérica y pasiva como "persona
+     sonriendo a cámara"). Piensa en una escena que por sí sola, sin
+     sonido, ya genere curiosidad: una acción en curso, un resultado
+     visible, un close-up impactante relacionado exactamente con la
+     promesa del gancho. Evita reutilizar esta misma idea visual más
+     adelante en el video (debe sentirse única, la "carta de presentación").
 
 2. RITMO Y CERO RELLENO:
    - Frases cortas, de máximo {PALABRAS_MAX_POR_FRASE} palabras.
@@ -133,6 +181,26 @@ y guionismo de YouTube; síguelas de forma estricta):
    - Esta guía es el motivo por el que alguien se queda hasta el final y
      vuelve a ver tus próximos videos: entrega SIEMPRE valor accionable
      real, nunca la dejes fuera del guion.
+
+9. CREDIBILIDAD CIENTÍFICA VISIBLE (regla añadida tras auditoría de 2026;
+   un canal de salud vive o muere de esto, es lo que Google/YouTube llaman
+   "E-E-A-T" -experiencia, pericia, autoridad y confiabilidad- y es
+   todavía más exigente en temas de salud):
+   - No basta con que la información sea correcta "por dentro": el
+     espectador necesita PERCIBIR que hay ciencia real detrás, en el
+     momento mismo en que la escucha, no solo si abre la descripción.
+   - Cuando el bloque de "FUENTES CIENTÍFICAS REALES" de arriba SÍ tenga
+     estudios disponibles, menciona de forma natural, al menos un par de
+     veces en el guion, que la información viene de una fuente real (por
+     ejemplo: "esto lo confirma un estudio publicado en la revista..." o
+     "la evidencia científica reciente respalda que..."), usando SOLO el
+     nombre de revista/año que aparezca en esas fuentes reales, nunca
+     inventado. (Nota: el sistema además garantiza esto por código en
+     otro paso posterior, así que esta regla es un refuerzo, no la única
+     protección.)
+   - Nunca describas una fuente como "los expertos dicen" o "estudios
+     demuestran" sin más: si tienes el nombre real de la revista o el año,
+     dilo explícitamente, es lo que separa un canal serio de uno genérico.
 """
 
 REGLAS_SEO_PARA_GUIONISTA = """
