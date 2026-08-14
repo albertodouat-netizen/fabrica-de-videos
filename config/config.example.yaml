@@ -8,13 +8,41 @@ canal:
   url: "https://www.youtube.com/channel/UCp96gCIthtbOAnhFpezcAHg"  # enlace directo a tu canal (para el CTA de suscripción en la descripción)
   idioma_destino: "es"          # idioma en el que se publica
   idioma_investigacion: "en"    # idioma donde se buscan ideas ganadoras (mercado más grande = más datos)
-  nicho: "salud y bienestar natural"
-  palabras_clave:
-    - "healthy habits"
-    - "natural remedies"
-    - "morning routine health"
-    - "gut health tips"
-    - "how to reduce inflammation"
+  # SEO multilingüe (gratis, recomendado por el experto de YouTube analizado):
+  # agrega título+descripción TRADUCIDOS al mismo video (sin subir nada nuevo)
+  # para que también aparezca en búsquedas en otros idiomas. Déjalo vacío []
+  # para desactivarlo. Ejemplo: ["en", "de"] (inglés, alemán).
+  idiomas_seo_adicionales: []
+  nicho: "salud natural, alternativa, tradicional y complementaria (con respaldo científico)"
+  # EJES TEMÁTICOS: reemplaza a la lista plana de palabras clave. Cada eje es
+  # una categoría de salud distinta; el sistema ROTA entre ellas para que el
+  # canal nunca se sienta repetitivo (YouTube penaliza el contenido siempre
+  # igual) y además exige que cada idea tenga estudios científicos reales
+  # disponibles antes de producirla (ver agents/investigacion_cientifica.py).
+  # Alcance: remedios/terapias naturales, alternativas, tradicionales o
+  # complementarias, Y recomendaciones que COMPLEMENTAN tratamientos médicos
+  # científicos (nunca que los reemplacen) — siempre con evidencia real.
+  ejes_tematicos:
+    - categoria: "sueño y descanso"
+      palabras_clave: ["natural sleep remedies", "how to sleep better naturally", "insomnia natural treatment"]
+    - categoria: "salud digestiva e intestinal"
+      palabras_clave: ["gut health tips", "natural remedies bloating", "improve digestion naturally"]
+    - categoria: "inflamación y dolor articular"
+      palabras_clave: ["how to reduce inflammation", "natural joint pain relief", "anti inflammatory habits"]
+    - categoria: "sistema inmunológico"
+      palabras_clave: ["boost immune system naturally", "natural immunity tips", "foods that boost immunity"]
+    - categoria: "estrés y ansiedad"
+      palabras_clave: ["natural stress relief", "reduce anxiety naturally", "adaptogens for stress"]
+    - categoria: "salud cardiovascular"
+      palabras_clave: ["natural ways lower blood pressure", "heart health natural remedies", "lower cholesterol naturally"]
+    - categoria: "salud metabólica y glucosa"
+      palabras_clave: ["natural ways lower blood sugar", "insulin resistance natural remedies", "metabolic health tips"]
+    - categoria: "salud de la piel"
+      palabras_clave: ["natural skin remedies", "skin inflammation natural treatment", "natural acne remedies"]
+    - categoria: "terapias complementarias con evidencia"
+      palabras_clave: ["yoga therapy benefits research", "meditation clinical benefits", "acupuncture evidence based"]
+    - categoria: "remedios tradicionales estudiados científicamente"
+      palabras_clave: ["turmeric curcumin research", "ginger health benefits research", "traditional herbal medicine evidence"]
 
 estrategia:
   videos_por_semana: 4          # igual que recomienda el video analizado

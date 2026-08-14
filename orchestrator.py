@@ -44,26 +44,62 @@ from agents.promocion_cruzada import obtener_videos_relacionados, construir_bloq
 AGENT = "Orquestador"
 
 
+CATEGORIAS_RECIENTES_A_EVITAR = 4  # cuántos videos anteriores se toman en cuenta para variar el tema
+
+
 def elegir_idea_no_usada(ideas, estado):
+    """Elige la mejor idea que (a) no se haya usado antes y (b) tenga
+    estudios científicos reales disponibles para respaldarla (ver
+    agents/investigacion_cientifica.py) — si un tema no se puede validar
+    con evidencia real, se descarta y se prueba con el siguiente candidato."""
     usadas = set(estado.get("ideas_usadas", []))
+    from agents.investigacion_cientifica import buscar_estudios
+
     for idea in ideas:
-        if idea["titulo"] not in usadas:
+        if idea["titulo"] in usadas:
+            continue
+        try:
+            estudios = buscar_estudios(idea["titulo"])
+        except Exception as e:
+            log(AGENT, f"Aviso: no se pudo validar evidencia científica para "
+                        f"'{idea['titulo']}' ({e}); se prueba el siguiente candidato.")
+            continue
+        if estudios:
+            idea["_estudios_validados"] = estudios
             return idea
+        log(AGENT, f"Idea descartada por falta de respaldo científico verificable: '{idea['titulo']}'")
+
+    # Si NINGÚN candidato nuevo tiene evidencia real disponible, es mejor
+    # repetir con cautela que forzar un tema sin ningún respaldo: se devuelve
+    # el de mejor ratio-outlier de todos modos (el guionista igual no podrá
+    # inventar cifras, solo hablará en términos generales).
+    log(AGENT, "Ningún candidato nuevo tiene estudios científicos disponibles; "
+                "se usa el mejor disponible de todos modos (sin cifras específicas).")
     return ideas[0] if ideas else None
+
+
+def _categorias_recientes(estado):
+    return estado.get("categorias_usadas", [])[-CATEGORIAS_RECIENTES_A_EVITAR:]
 
 
 def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool):
     cfg = load_config()
     estado = load_state()
 
-    log(AGENT, "1/9 Buscando ideas potenciales (TrendScout)...")
-    ideas = buscar_ideas_potenciales()
+    categorias_evitar = _categorias_recientes(estado)
+    log(AGENT, f"1/9 Buscando ideas potenciales (TrendScout)... "
+                f"(evitando repetir: {categorias_evitar or 'ninguna aún'})")
+    ideas = buscar_ideas_potenciales(categorias_evitar=categorias_evitar)
     if not ideas:
         log(AGENT, "No se encontraron ideas. Abortando esta ejecución.")
         return None
 
     idea = elegir_idea_no_usada(ideas, estado)
-    log(AGENT, f"Idea elegida: '{idea['titulo']}' (outlier {idea['ratio_outlier']}x)")
+    if idea is None:
+        log(AGENT, "No se pudo elegir ninguna idea válida. Abortando esta ejecución.")
+        return None
+    log(AGENT, f"Idea elegida: '{idea['titulo']}' (outlier {idea['ratio_outlier']}x, "
+                f"categoría: {idea.get('categoria', 'general')})")
 
     log(AGENT, "2/9 Redactando guion original en español, con reglas de retención (Guionista)...")
     guion = generar_guion(idea)
@@ -139,6 +175,14 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
                 agregar_a_playlist(video_id, nombre_playlist)
             except Exception as e:
                 log(AGENT, f"Aviso: no se pudo agregar a la playlist ({e}).")
+
+            try:
+                from agents.seo_multilingue import agregar_titulos_traducidos
+                idiomas_seo = cfg["canal"].get("idiomas_seo_adicionales", [])
+                if idiomas_seo:
+                    agregar_titulos_traducidos(video_id, guion["titulo"], descripcion_final, idiomas_seo)
+            except Exception as e:
+                log(AGENT, f"Aviso: no se pudieron agregar títulos/descripciones traducidos ({e}).")
     else:
         log(AGENT, "8/9 Publicación omitida (--no-publicar). Video listo en disco.")
 
@@ -164,6 +208,19 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
                                "disclaimer": guion.get("disclaimer", "")}
                 log(AGENT, "Publicando el Short en YouTube...")
                 short_id = publicar_video(ruta_short, None, guion_short, descripcion_short)
+
+                # Enlace cruzado por comentarios (100% gratis, sin configuración
+                # nueva): el video largo recibe un comentario con el link al
+                # Short, y el Short recibe uno con el link al video completo.
+                if video_id and short_id:
+                    from agents.promocion_cruzada import publicar_comentario_cruzado
+                    publicar_comentario_cruzado(
+                        video_id, f"🎬 ¿Prefieres el resumen rápido? Mira el Short de este video: "
+                                  f"https://youtube.com/shorts/{short_id}"
+                    )
+                    publicar_comentario_cruzado(
+                        short_id, f"👉 Mira el video COMPLETO aquí: https://youtube.com/watch?v={video_id}"
+                    )
         except Exception as e:
             log(AGENT, f"No se pudo generar/publicar el Short: {e}")
             traceback.print_exc()
@@ -171,6 +228,7 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
         log(AGENT, "9/9 Generación de Short omitida (--sin-short).")
 
     estado.setdefault("ideas_usadas", []).append(idea["titulo"])
+    estado.setdefault("categorias_usadas", []).append(idea.get("categoria", "general"))
     estado.setdefault("videos_publicados", []).append({
         "titulo": guion["titulo"],
         "ruta_video": ruta_video,
