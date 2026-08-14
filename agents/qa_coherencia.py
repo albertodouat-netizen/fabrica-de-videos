@@ -122,6 +122,12 @@ def verificar_y_corregir(guion: dict, visuales_info: dict, carpeta_salida: str) 
         for j, (beat, visual) in enumerate(zip(beats, visuales_cap)):
             if rendido:
                 break
+            if beat.get("es_llamado_suscripcion"):
+                # Los frames del presentador pidiendo suscripción son
+                # intencionales (rostro fijo del canal + botón dibujado a
+                # mano): no tiene sentido pedirle a Gemini Vision que los
+                # "corrija" comparándolos con la frase narrada.
+                continue
             total += 1
             keyword = visual.get("keyword", beat.get("visual", ""))
             tag = f"cap{i}_b{j}"

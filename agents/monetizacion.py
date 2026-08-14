@@ -82,7 +82,7 @@ def seleccionar_productos(guion: dict, ruta_catalogo: str = RUTA_CATALOGO) -> li
     candidatos.sort(key=lambda t: t[0], reverse=True)
     seleccionados = [p for _, p in candidatos[:max_productos]]
     if seleccionados:
-        log(AGENT, f"Productos recomendados para este video: {[p['nombre'] for p in seleccionados]}")
+        log(AGENT, f"Productos recomendados para este video: {[p.get('nombre', 'Producto') for p in seleccionados]}")
     else:
         log(AGENT, "Ningún producto del catálogo coincide lo suficiente con este video (o faltan enlaces reales); no se recomienda ninguno.")
     return seleccionados
@@ -92,7 +92,12 @@ def construir_bloque_afiliados(productos: list, ruta_catalogo: str = RUTA_CATALO
     """Arma el bloque de texto para la descripción de YouTube, con el
     aviso legal exacto que exige Amazon + el aviso de "enlace de afiliado"
     junto a cada link (requisito de la FTC), sin ninguna frase de presión
-    para hacer clic (prohibido por Amazon)."""
+    para hacer clic (prohibido por Amazon).
+
+    IMPORTANTE (regla de la FTC, investigada): la divulgación debe ir
+    ANTES de los enlaces de afiliado, no después -- "clear and conspicuous,
+    before or near the endorsement". Por eso el aviso legal se construye
+    primero y se coloca al principio del bloque, antes de listar productos."""
     if not productos:
         return ""
 
@@ -103,22 +108,10 @@ def construir_bloque_afiliados(productos: list, ruta_catalogo: str = RUTA_CATALO
     texto_ml = cfg.get("mercadolibre_disclosure_text",
                         "Como afiliado de Mercado Libre, puedo recibir una comisión por las compras realizadas a través de estos enlaces.")
 
-    lineas = ["🛒 PRODUCTOS RELACIONADOS CON ESTE VIDEO:"]
-    hay_amazon = False
-    hay_ml = False
-    for p in productos:
-        nombre = p.get("nombre", "Producto")
-        nota = p.get("nota", "")
-        sufijo_nota = f" — {nota}" if nota else ""
-        lineas.append(f"• {nombre}{sufijo_nota}")
-        if _tiene_enlace_real(p.get("amazon_url", "")):
-            lineas.append(f"   Amazon (enlace de afiliado): {p['amazon_url']}")
-            hay_amazon = True
-        if _tiene_enlace_real(p.get("mercadolibre_url", "")):
-            lineas.append(f"   Mercado Libre (enlace de afiliado): {p['mercadolibre_url']}")
-            hay_ml = True
-    lineas.append("")
+    hay_amazon = any(_tiene_enlace_real(p.get("amazon_url", "")) for p in productos)
+    hay_ml = any(_tiene_enlace_real(p.get("mercadolibre_url", "")) for p in productos)
 
+    lineas = ["🛒 PRODUCTOS RELACIONADOS CON ESTE VIDEO (contiene enlaces de afiliado):"]
     avisos = []
     if hay_amazon:
         avisos.append(texto_amazon)
@@ -126,7 +119,18 @@ def construir_bloque_afiliados(productos: list, ruta_catalogo: str = RUTA_CATALO
         avisos.append(texto_ml)
     if avisos:
         lineas.append(" ".join(avisos))
-        lineas.append("")
+    lineas.append("")
+
+    for p in productos:
+        nombre = p.get("nombre", "Producto")
+        nota = p.get("nota", "")
+        sufijo_nota = f" — {nota}" if nota else ""
+        lineas.append(f"• {nombre}{sufijo_nota}")
+        if _tiene_enlace_real(p.get("amazon_url", "")):
+            lineas.append(f"   Amazon (enlace de afiliado): {p['amazon_url']}")
+        if _tiene_enlace_real(p.get("mercadolibre_url", "")):
+            lineas.append(f"   Mercado Libre (enlace de afiliado): {p['mercadolibre_url']}")
+    lineas.append("")
 
     return "\n".join(lineas)
 

@@ -94,9 +94,12 @@ def _tarjeta_cta_final(destino_png, titulo_video_largo: str, resolucion=RESOLUCI
         draw.text(((resolucion[0]-tw)/2, resolucion[1]/2 - int(220*escala) + i*int(90*escala)), texto,
                    font=font, fill=(255, 210, 0))
 
-    tw = draw.textlength("Link en la descripción", font=font_chica)
-    draw.text(((resolucion[0]-tw)/2, resolucion[1]/2 - int(20*escala)), "Link en la descripción",
+    tw = draw.textlength("Y suscríbete, es gratis", font=font_chica)
+    draw.text(((resolucion[0]-tw)/2, resolucion[1]/2 - int(60*escala)), "Y suscríbete, es gratis",
                font=font_chica, fill=(255, 255, 255))
+    tw2 = draw.textlength("Link en la descripción", font=font_chica)
+    draw.text(((resolucion[0]-tw2)/2, resolucion[1]/2 + int(10*escala)), "Link en la descripción",
+               font=font_chica, fill=(200, 200, 200))
 
     # título del video largo, envuelto en varias líneas
     max_w = resolucion[0] * 0.8
@@ -123,9 +126,15 @@ def _tarjeta_cta_final(destino_png, titulo_video_largo: str, resolucion=RESOLUCI
 
 def _armar_mini_guion(guion: dict) -> dict:
     """Construye un guion reducido para el Short: gancho + primeros beats
-    jugosos del capítulo 1 + un beat final de llamada a la acción."""
+    jugosos del capítulo 1 + un beat final de llamada a la acción.
+
+    Se excluyen a propósito los beats de llamado a suscripción (ver
+    agents/suscripcion_cta.py): esos 3 momentos son para el video LARGO;
+    el Short ya tiene su propia tarjeta final de cierre (ver
+    _tarjeta_cta_final), que además ahora también invita a suscribirse."""
     primer_capitulo = guion["capitulos"][0]
-    beats_originales = primer_capitulo.get("beats", [])[:MAX_BEATS_SHORT]
+    beats_disponibles = [b for b in primer_capitulo.get("beats", []) if not b.get("es_llamado_suscripcion")]
+    beats_originales = beats_disponibles[:MAX_BEATS_SHORT]
 
     beats_short = []
     if guion.get("gancho"):

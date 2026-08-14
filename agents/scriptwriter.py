@@ -374,6 +374,17 @@ def generar_guion(idea: dict) -> dict:
                     f"Por seguridad, no se incluirán referencias en este video.")
         guion["referencias"] = []
 
+    # Regla de negocio NO NEGOCIABLE del canal: SIEMPRE 3 momentos pidiendo
+    # suscripción (inicio, mitad, final). Se aplica aquí en código (no se le
+    # deja la tarea solo al LLM) para que ocurra el 100% de las veces, con el
+    # presentador fijo del canal en pantalla. Ver agents/suscripcion_cta.py.
+    try:
+        from agents.suscripcion_cta import agregar_llamados_a_suscripcion
+        guion = agregar_llamados_a_suscripcion(guion)
+    except Exception as e:
+        log(AGENT, f"Aviso: no se pudieron insertar los llamados a suscripción ({e}). "
+                    f"El video se genera igual, pero revisa este punto.")
+
     return guion
 
 
