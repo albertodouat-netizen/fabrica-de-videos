@@ -194,6 +194,34 @@ def _llamar_ollama(prompt, modelo):
 # (nunca relleno/repetición) hasta acercarse al objetivo. ---
 PALABRAS_POR_MINUTO_HABLADO = 140
 
+# Versión CONDENSADA de las reglas, solo para las rondas de extensión.
+# Por qué existe (hallazgo real de la auditoría): la versión completa
+# (agents/viral_strategist.REGLAS_PARA_GUIONISTA) pesa ~1200 tokens: al
+# repetirla completa en cada una de hasta 10 rondas de extensión por video,
+# se choca con el límite de Groq de tokens-por-minuto (confirmado en vivo:
+# errores 429 durante pruebas con varias rondas seguidas). Esta versión
+# corta mantiene solo las reglas que de verdad hay que recordar en cada
+# ronda, ahorrando tokens sin perder calidad.
+REGLAS_EXTENSION_RESUMIDAS = """
+Recuerda (resumen de las reglas ya usadas en este guion):
+- Frases cortas (máximo 20 palabras), sin relleno tipo "es importante
+  entender que...", directo a la acción.
+- El campo "texto" es SOLO texto plano narrable: nada de asteriscos,
+  guiones, numerales, ni marcas de tiempo.
+- Cada beat = 1-2 frases + su propio "visual" en INGLÉS, específico y
+  filmable con cámara real (nunca dibujos ni animaciones ni diagramas).
+- Nunca repitas una palabra clave visual ya usada.
+"""
+
+
+def _fuentes_recortadas_para_extension(fuentes_texto: str, max_caracteres: int = 900) -> str:
+    """Versión corta de las fuentes científicas, solo para no repetir el
+    bloque completo (a veces >2000 caracteres) en cada ronda de extensión."""
+    if len(fuentes_texto) <= max_caracteres:
+        return fuentes_texto
+    return fuentes_texto[:max_caracteres] + "\n[...resto de fuentes ya usadas en capítulos anteriores...]"
+
+
 PROMPT_EXTENSION = """Ya escribiste este guion en español sobre {nicho}, inspirado en el ángulo de: "{titulo_ref}".
 
 Título ya elegido: "{titulo}"
@@ -239,9 +267,20 @@ def _contar_palabras_guion(guion: dict) -> int:
     return total
 
 
-def _resumen_capitulos_para_extension(guion: dict) -> str:
+def _resumen_capitulos_para_extension(guion: dict, max_detallados: int = 6) -> str:
+    """Resumen de los capítulos ya escritos, para que el LLM no los repita.
+    Para no hacer crecer el prompt sin límite en rondas avanzadas de
+    extensión (varios capítulos ya escritos), solo se detallan los más
+    recientes; los más antiguos solo aparecen por su título (suficiente
+    para evitar que se repita el mismo tema, sin gastar tantos tokens)."""
+    capitulos = guion.get("capitulos", [])
     lineas = []
-    for cap in guion.get("capitulos", []):
+    antiguos = capitulos[:-max_detallados] if len(capitulos) > max_detallados else []
+    recientes = capitulos[-max_detallados:] if len(capitulos) > max_detallados else capitulos
+    if antiguos:
+        titulos = ", ".join(c.get("nombre", "") for c in antiguos)
+        lineas.append(f"(Temas ya cubiertos antes, no los repitas: {titulos})")
+    for cap in recientes:
         resumen_texto = " ".join(b.get("texto", "") for b in cap.get("beats", []))[:280]
         lineas.append(f"- {cap.get('nombre', '')}: {resumen_texto}")
     return "\n".join(lineas)
@@ -273,7 +312,7 @@ def _intentar_llamar_llm(prompt: str, cfg: dict, provider_preferido: str):
 
 
 def _asegurar_duracion_minima(guion: dict, cfg: dict, idea: dict, fuentes_texto: str,
-                               max_intentos: int = 10) -> dict:
+                               max_intentos: int = 8) -> dict:
     dur_min = cfg["estrategia"]["duracion_minima_min"]
     dur_max = cfg["estrategia"]["duracion_objetivo_min"]
     palabras_min = int(dur_min * PALABRAS_POR_MINUTO_HABLADO)
@@ -299,7 +338,9 @@ def _asegurar_duracion_minima(guion: dict, cfg: dict, idea: dict, fuentes_texto:
             resumen_capitulos=_resumen_capitulos_para_extension(guion),
             palabras_actuales=palabras_antes, duracion_actual=palabras_antes / PALABRAS_POR_MINUTO_HABLADO,
             dur_min=dur_min, dur_max=dur_max, palabras_min=palabras_min, palabras_max=palabras_max,
-            n_capitulos_nuevos=n_nuevos, fuentes_cientificas=fuentes_texto, reglas_retencion=REGLAS_PARA_GUIONISTA,
+            n_capitulos_nuevos=n_nuevos,
+            fuentes_cientificas=_fuentes_recortadas_para_extension(fuentes_texto),
+            reglas_retencion=REGLAS_EXTENSION_RESUMIDAS,
             palabras_por_capitulo_nuevo=max(180, round(faltan_palabras / n_nuevos)),
         )
         try:
@@ -325,6 +366,13 @@ def _asegurar_duracion_minima(guion: dict, cfg: dict, idea: dict, fuentes_texto:
             log(AGENT, "La última extensión aportó muy poco contenido nuevo; se deja el guion como está "
                         "(mejor esto que arriesgar relleno repetitivo).")
             break
+
+        # Pausa breve entre rondas: Groq limita tokens-por-MINUTO (no solo
+        # por día); varias llamadas grandes seguidas sin pausa son la causa
+        # real de los 429 vistos en pruebas. Con esta pausa se reparte mejor
+        # el uso y se evita esperar los reintentos más largos (5-10s) que
+        # dispara el propio backoff cuando sí choca con el límite.
+        time.sleep(3)
 
     palabras_finales = _contar_palabras_guion(guion)
     log(AGENT, f"Duración final estimada del guion: ~{palabras_finales / PALABRAS_POR_MINUTO_HABLADO:.1f} min "
