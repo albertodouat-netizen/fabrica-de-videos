@@ -416,6 +416,25 @@ def obtener_visuales_para_guion(guion: dict, carpeta_salida: str, orientacion="l
                 beat = dict(beat)
                 beat["visual"] = "friendly person smiling warmly directly at the camera"
 
+            # Mención cruzada a otro video del canal (tráfico orgánico
+            # interno, ver agents/promocion_cruzada.py): se muestra una
+            # tarjeta con el título del video recomendado en vez de buscar
+            # stock (nada de la vida real representa "otro video del canal").
+            if beat.get("es_mencion_cruzada"):
+                from agents.promocion_cruzada import generar_tarjeta_video_relacionado
+                titulo_rel = beat.get("titulo_video_relacionado", "")
+                try:
+                    ruta_tarjeta = generar_tarjeta_video_relacionado(titulo_rel, carpeta_salida, tag=f"cap{i}_b{j}")
+                    visuales_cap.append({"tipo": "imagen", "ruta": ruta_tarjeta,
+                                          "keyword": "tarjeta de video relacionado del canal"})
+                    log(AGENT, f"Cap {i+1} beat {j+1}/{len(beats)}: mención cruzada -> tarjeta '{titulo_rel}'")
+                    continue
+                except Exception as e:
+                    log(AGENT, f"Aviso: no se pudo generar la tarjeta de video relacionado ({e}); "
+                                "se busca un visual normal de respaldo para este beat.")
+                    beat = dict(beat)
+                    beat["visual"] = "friendly person smiling and recommending something"
+
             keyword = _limpiar_palabra_clave(beat.get("visual") or cap["nombre"])
             # El contexto incluye la frase exacta Y el tema general del video
             # (para que, si hace falta generar una imagen IA, esta encaje con

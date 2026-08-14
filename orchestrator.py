@@ -39,7 +39,10 @@ from agents.thumbnail import generar_miniatura
 from agents.viral_strategist import construir_descripcion_publicacion
 from agents.musica import obtener_musica_fondo
 from agents.monetizacion import seleccionar_productos, construir_bloque_afiliados
-from agents.promocion_cruzada import obtener_videos_relacionados, construir_bloque_mas_videos
+from agents.promocion_cruzada import (
+    obtener_videos_relacionados, construir_bloque_mas_videos, agregar_mencion_video_relacionado,
+)
+
 
 AGENT = "Orquestador"
 
@@ -104,6 +107,20 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
     log(AGENT, "2/9 Redactando guion original en español, con reglas de retención (Guionista)...")
     guion = generar_guion(idea)
 
+    # Tráfico orgánico interno: buscamos AHORA (antes de narrar) otros videos
+    # ya publicados del canal relacionados con este tema, para poder
+    # mencionar uno por voz dentro del propio video (ver
+    # agents/promocion_cruzada.py) además de enlazarlo en la descripción más
+    # abajo. Si el canal todavía no tiene otros videos (por ejemplo el
+    # primer día), esto simplemente no agrega nada y el pipeline sigue igual.
+    relacionados = []
+    try:
+        relacionados = obtener_videos_relacionados(guion.get("keyword_principal", ""), guion.get("tags", []))
+        if relacionados:
+            guion = agregar_mencion_video_relacionado(guion, relacionados[0])
+    except Exception as e:
+        log(AGENT, f"Aviso: no se pudo buscar videos relacionados del canal para mencionar ({e}).")
+
     nombre_base = slugify(guion["titulo"]) + "_" + dt.datetime.now().strftime("%Y%m%d_%H%M%S")
 
     log(AGENT, "3/9 Narrando el guion (Narrador, voz gratuita)...")
@@ -136,13 +153,7 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
         log(AGENT, f"Aviso: no se pudo armar la recomendación de productos ({e}).")
         bloque_afiliados = ""
 
-    bloque_mas_videos = ""
-    if intentar_publicar:
-        try:
-            relacionados = obtener_videos_relacionados(guion.get("keyword_principal", ""), guion.get("tags", []))
-            bloque_mas_videos = construir_bloque_mas_videos(relacionados)
-        except Exception as e:
-            log(AGENT, f"Aviso: no se pudo armar la sección 'también te puede interesar' ({e}).")
+    bloque_mas_videos = construir_bloque_mas_videos(relacionados)
 
     descripcion_final = construir_descripcion_publicacion(guion, timestamps_capitulos, cfg["canal"].get("nombre", ""),
                                                            url_canal=cfg["canal"].get("url", ""),

@@ -118,6 +118,6 @@ apis:
   voz_narrador_pitch: "+0Hz"  # tono; no suele hacer falta tocarlo
 
 publicacion:
-  privacidad_default: "private"   # sube como privado/programado por seguridad; cambia a "public" cuando lo revises
+  privacidad_default: "public"    # publicación 100% autónoma y pública desde el primer segundo (decisión confirmada por el usuario)
   categoria_youtube: "22"         # People & Blogs (ver docs para otros IDs)
   programar_hora_utc: "14:00"     # hora sugerida de publicación

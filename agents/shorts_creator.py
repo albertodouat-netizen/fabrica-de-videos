@@ -129,11 +129,13 @@ def _armar_mini_guion(guion: dict) -> dict:
     jugosos del capítulo 1 + un beat final de llamada a la acción.
 
     Se excluyen a propósito los beats de llamado a suscripción (ver
-    agents/suscripcion_cta.py): esos 3 momentos son para el video LARGO;
+    agents/suscripcion_cta.py) y de mención cruzada a otro video (ver
+    agents/promocion_cruzada.py): esos momentos son para el video LARGO;
     el Short ya tiene su propia tarjeta final de cierre (ver
     _tarjeta_cta_final), que además ahora también invita a suscribirse."""
     primer_capitulo = guion["capitulos"][0]
-    beats_disponibles = [b for b in primer_capitulo.get("beats", []) if not b.get("es_llamado_suscripcion")]
+    beats_disponibles = [b for b in primer_capitulo.get("beats", [])
+                          if not b.get("es_llamado_suscripcion") and not b.get("es_mencion_cruzada")]
     beats_originales = beats_disponibles[:MAX_BEATS_SHORT]
 
     beats_short = []

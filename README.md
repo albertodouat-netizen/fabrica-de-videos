@@ -1,5 +1,21 @@
 # 🤖 Fábrica de Videos de YouTube — Equipo de Agentes IA (100% Gratis)
 
+## 🚀 Actualización: publicación pública y tráfico interno entre videos
+Por decisión explícita del dueño del canal:
+- **Los videos se publican SIEMPRE en público** (`publicacion.privacidad_default: "public"`
+  en `config.example.yaml`), de forma 100% autónoma vía el cron diario de
+  GitHub Actions. Ya no hay un paso de revisión manual antes de que el
+  video quede visible para todo el mundo: si algo sale mal en un video, se
+  entera el público al mismo tiempo que tú. Puedes revisar los logs/artefactos
+  de cada corrida en la pestaña "Actions" de GitHub para detectarlo rápido.
+- **Tráfico orgánico entre tus propios videos** (`agents/promocion_cruzada.py`):
+  además del enlace en la descripción ("🔎 TAMBIÉN TE PUEDE INTERESAR") y los
+  comentarios cruzados entre el video largo y su Short, ahora cada video
+  largo menciona EN VOZ ALTA (y con una tarjeta en pantalla) un video
+  relacionado ya publicado del canal, cerca del final, justo antes del
+  llamado final a suscribirse. Si todavía no hay otros videos publicados
+  (por ejemplo, el primer día), esto simplemente no aparece, sin romper nada.
+
 Sistema multiagente que automatiza el proceso completo descrito en el video
 "Cómo Monetizar un Canal de YouTube en 5 Días", pero **sin pagar ninguna
 herramienta** (Viralyt, ElevenLabs, CapCut Pro, Canva Pro, etc. quedan

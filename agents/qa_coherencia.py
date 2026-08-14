@@ -128,6 +128,10 @@ def verificar_y_corregir(guion: dict, visuales_info: dict, carpeta_salida: str) 
                 # mano): no tiene sentido pedirle a Gemini Vision que los
                 # "corrija" comparándolos con la frase narrada.
                 continue
+            if beat.get("es_mencion_cruzada"):
+                # Igual que arriba: la tarjeta de "también te puede
+                # interesar" es intencional, no un recurso a verificar.
+                continue
             total += 1
             keyword = visual.get("keyword", beat.get("visual", ""))
             tag = f"cap{i}_b{j}"

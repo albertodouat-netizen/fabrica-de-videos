@@ -21,14 +21,31 @@ endpoint), así que la única forma 100% automatizable de enlazar a otros
 videos es aquí, en el texto de la descripción (que además YouTube convierte
 automáticamente en un enlace en el que se puede hacer clic).
 """
+import os
+import random
 import re
 
 import googleapiclient.discovery
+from PIL import Image, ImageDraw, ImageFont
 
 from agents.utils import load_config, log
 from agents.publisher import _obtener_credenciales
 
 AGENT = "PromocionCruzada"
+
+# Marcador especial usado en el campo "visual" del beat de mención cruzada
+# (ver agregar_mencion_video_relacionado): en vez de buscar un clip de stock,
+# VisualScout (agents/visuals.py) genera una tarjeta con el título del video
+# recomendado, como sustituto casero de las "end screens" que la API de
+# YouTube no permite crear de forma automática.
+MARCADOR_VISUAL_CROSSPROMO = "TARJETA_VIDEO_RELACIONADO"
+
+FRASES_MENCION_CRUZADA = [
+    "Por cierto, si quieres profundizar más en esto, ya tengo un video completo sobre {titulo}.",
+    "Y si te interesó este tema, no te pierdas el video donde hablo sobre {titulo}.",
+    "Aviso rápido antes de terminar, también tengo un video dedicado a {titulo}, por si te sirve.",
+    "Aprovecho para contarte que en el canal también hay un video completo sobre {titulo}.",
+]
 
 
 def _palabras_clave(texto: str) -> set:
@@ -149,3 +166,102 @@ def publicar_comentario_cruzado(video_id: str, texto: str) -> bool:
                     f"No es grave, el video se publicó igual; los comentarios a veces están "
                     f"desactivados o tardan unos minutos en habilitarse tras la subida.")
         return False
+
+
+def agregar_mencion_video_relacionado(guion: dict, video_relacionado: dict) -> dict:
+    """Inserta, dentro del propio guion, un beat que menciona en voz alta un
+    video ya publicado del canal relacionado con el tema actual (tráfico
+    orgánico interno: alguien que ve un video encuentra fácil el camino a
+    otro). Se coloca cerca del final, ANTES del llamado final a suscripción
+    (ver agents/suscripcion_cta.py) para no romper el cierre del video.
+
+    'video_relacionado': dict {'video_id':..., 'titulo':...} (el primero y
+    mejor emparejado de agents.promocion_cruzada.obtener_videos_relacionados).
+    Si es None/vacío, no hace nada (el canal puede no tener aún otros videos
+    publicados, por ejemplo el primer día)."""
+    if not video_relacionado:
+        return guion
+    capitulos = guion.get("capitulos", [])
+    if not capitulos:
+        return guion
+
+    titulo_rel = video_relacionado.get("titulo", "").strip()
+    if not titulo_rel:
+        return guion
+
+    texto = random.choice(FRASES_MENCION_CRUZADA).format(titulo=titulo_rel)
+    beat = {
+        "texto": texto,
+        "visual": MARCADOR_VISUAL_CROSSPROMO,
+        "es_mencion_cruzada": True,
+        "titulo_video_relacionado": titulo_rel,
+    }
+
+    cap_final = capitulos[-1]
+    beats = cap_final.setdefault("beats", [])
+    # Si el último beat ya es el llamado final a suscripción, esta mención se
+    # inserta justo ANTES (para que el video siga cerrando con el llamado a
+    # suscribirse, que es lo más importante que debe quedar en el oído).
+    if beats and beats[-1].get("es_llamado_suscripcion"):
+        beats.insert(len(beats) - 1, beat)
+    else:
+        beats.append(beat)
+
+    log(AGENT, f"Mención cruzada agregada al guion, recomendando: '{titulo_rel}'")
+    return guion
+
+
+def _fuente_crosspromo(tam):
+    ruta = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    if os.path.exists(ruta):
+        return ImageFont.truetype(ruta, tam)
+    return ImageFont.load_default()
+
+
+def generar_tarjeta_video_relacionado(titulo_relacionado: str, carpeta_salida: str, tag: str,
+                                       resolucion=(1280, 720)) -> str:
+    """Genera (con Pillow, sin IA, siempre nítido) una tarjeta tipo 'también
+    te puede interesar' con el título del video recomendado. Es el sustituto
+    casero de las 'end screens' de YouTube, que la API no permite crear de
+    forma programática (limitación confirmada de la plataforma)."""
+    img = Image.new("RGB", resolucion, (20, 20, 25))
+    draw = ImageDraw.Draw(img)
+    font_chica = _fuente_crosspromo(38)
+    font_grande = _fuente_crosspromo(54)
+
+    encabezado = "TAMBIÉN TE PUEDE INTERESAR"
+    tw = draw.textlength(encabezado, font=font_chica)
+    draw.text(((resolucion[0] - tw) / 2, resolucion[1] / 2 - 150), encabezado,
+               font=font_chica, fill=(255, 210, 0))
+    draw.line([(resolucion[0] / 2 - 90, resolucion[1] / 2 - 100),
+               (resolucion[0] / 2 + 90, resolucion[1] / 2 - 100)], fill=(255, 210, 0), width=4)
+
+    max_w = resolucion[0] * 0.82
+    palabras = titulo_relacionado.split()
+    linea, lineas = "", []
+    for palabra in palabras:
+        prueba = (linea + " " + palabra).strip()
+        if draw.textlength(prueba, font=font_grande) > max_w:
+            lineas.append(linea)
+            linea = palabra
+        else:
+            linea = prueba
+    if linea:
+        lineas.append(linea)
+    lineas = lineas[:3]
+
+    y0 = resolucion[1] / 2 - 40
+    for i, ln in enumerate(lineas):
+        tw = draw.textlength(ln, font=font_grande)
+        draw.text(((resolucion[0] - tw) / 2, y0 + i * 66), ln, font=font_grande, fill=(255, 255, 255))
+
+    pie = "Link en la descripción de este video"
+    tw = draw.textlength(pie, font=font_chica)
+    draw.text(((resolucion[0] - tw) / 2, y0 + len(lineas) * 66 + 30), pie,
+               font=font_chica, fill=(200, 200, 200))
+
+    os.makedirs(carpeta_salida, exist_ok=True)
+    destino = os.path.join(carpeta_salida, f"{tag}_video_relacionado.jpg")
+    img.save(destino, quality=90)
+    return destino
+
