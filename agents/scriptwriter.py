@@ -148,13 +148,32 @@ def _llamar_groq(prompt, api_key):
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {"Authorization": f"Bearer {api_key}"}
     body = {
-        "model": "llama-3.1-70b-versatile",
+        # "llama-3.1-70b-versatile" fue DESCONTINUADO por Groq (confirmado
+        # en vivo en la auditoría de agosto 2026: la API devolvía 400
+        # "model_decommissioned"). Reemplazado por su sucesor recomendado.
+        "model": "llama-3.3-70b-versatile",
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.8,
     }
-    r = requests.post(url, headers=headers, json=body, timeout=60)
-    r.raise_for_status()
-    return r.json()["choices"][0]["message"]["content"]
+    ultimo_error = None
+    for intento in range(3):
+        try:
+            r = requests.post(url, headers=headers, json=body, timeout=60)
+            if r.status_code in (429, 500, 503) and intento < 2:
+                espera = 5 * (intento + 1)
+                log(AGENT, f"Groq respondió {r.status_code} (sobrecarga temporal), "
+                           f"reintentando en {espera}s...")
+                time.sleep(espera)
+                continue
+            r.raise_for_status()
+            return r.json()["choices"][0]["message"]["content"]
+        except requests.exceptions.RequestException as e:
+            ultimo_error = e
+            if intento < 2:
+                time.sleep(5 * (intento + 1))
+                continue
+            raise
+    raise ultimo_error
 
 
 def _llamar_ollama(prompt, modelo):

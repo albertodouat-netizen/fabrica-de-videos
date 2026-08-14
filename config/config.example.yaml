@@ -77,7 +77,12 @@ apis:
   # --- LLM gratuito para redactar guiones (elige UNO) ---
   # Opción recomendada: Google Gemini (capa gratuita generosa)
   #   Obtener en: https://aistudio.google.com/app/apikey
-  llm_provider: "gemini"   # gemini | groq | ollama | none (usa plantilla local sin IA)
+  # Auditoría agosto 2026: Gemini tiene solo 20 llamadas/día gratis en este
+  # proyecto (verificado en vivo); Groq da mucho más margen para escribir
+  # guiones. Por eso Groq va primero; Gemini queda como respaldo Y sigue
+  # siendo el único que puede hacer verificación visual (QA-Coherencia) y
+  # verificación científica de cifras, así que NO desactives su llave.
+  llm_provider: "groq"   # gemini | groq | ollama | none (usa plantilla local sin IA)
   gemini_api_key: "OBTENER_GRATIS_AQUI"
   # Alternativa gratuita: Groq (Llama 3 gratis, muy rápido)
   #   Obtener en: https://console.groq.com/keys
