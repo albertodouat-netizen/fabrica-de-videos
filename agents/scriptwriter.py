@@ -87,8 +87,12 @@ Instrucciones de formato:
    YouTube analiza las palabras realmente narradas, no solo el título.
 4) Una descripción para YouTube de 200-300 palabras en lenguaje NATURAL (nunca lista de
    palabras clave repetidas): la keyword_principal debe aparecer en la primera frase.
-   Además, 10 a 15 tags: el primero debe ser la keyword_principal exacta, luego
-   variaciones y términos relacionados (sin relleno ni tags que no describan el video).
+   Además, 15 a 20 tags (auditoría real de la competencia, agosto 2026: los videos que
+   mejor posicionan en este nicho usan entre 18 y 29 tags, no solo 10): el primero debe
+   ser la keyword_principal exacta, luego variaciones reales tipo pregunta que la gente
+   escribe de verdad ("cómo tomar...", "a qué hora tomar...", "para qué sirve...",
+   "beneficios de...", "cuánto tiempo tarda..."), y términos relacionados. Sin relleno
+   ni tags que no describan el video.
 5) Un disclaimer breve al final si el tema es de salud, finanzas u otro tema sensible.
 6) Un campo "audiencia_exclusiva": escribe "mujeres" SOLO si el tema es
    biológica o temáticamente exclusivo de mujeres (ej: menstruación,
@@ -407,6 +411,10 @@ def _sanitizar_guion(guion: dict) -> dict:
         "menstrua", "menopaus", "embaraz", "lactancia materna", "ginecolog",
         "ovario", "óvulo", "ovulo", "vaginal", "climaterio", "parto", "posparto",
         "endometriosis", "sop ", "síndrome de ovario poliquístico",
+        # Agregado al sumar el nuevo eje de salud sexual/hormonal (para que la
+        # voz siga siendo siempre Dalia en contenido exclusivo de mujeres):
+        "libido femenina", "deseo sexual femenino", "deseo sexual en la mujer",
+        "salud hormonal femenina",
     ]
     if not guion.get("audiencia_exclusiva"):
         texto_para_detectar = " ".join([

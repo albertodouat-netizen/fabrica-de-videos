@@ -208,6 +208,32 @@ def generar_miniatura(guion, imagen_base: str, salida_png: str) -> str:
         tw = draw.textlength(numero, font=font_num)
         draw.text((cx - tw / 2, cy - font_num.size / 1.7), numero, font=font_num, fill=(255, 255, 255))
 
+    # --- Marca de agua/logo pequeño y consistente (auditoría SEO élite,
+    # agosto 2026): varios de los canales que mejor posicionan en el nicho
+    # (ej. FisioOnline) llevan un distintivo de marca pequeño y fijo en una
+    # esquina en TODAS sus miniaturas -> ayuda al reconocimiento de marca
+    # cuando el espectador ve varios videos tuyos en la misma pantalla de
+    # resultados/sugeridos. Esquina superior izquierda, para no chocar con
+    # el texto principal (abajo) ni la insignia de número (arriba derecha).
+    marca_texto = "SALUD NATURAL DIARIA"
+    try:
+        from agents.utils import load_config
+        marca_texto = load_config()["canal"].get("nombre", marca_texto).upper()
+    except Exception:
+        pass
+    font_marca = _fuente(26)
+    tw_marca = draw.textlength(marca_texto, font=font_marca)
+    pad_marca = 12
+    overlay_marca = Image.new("RGBA", TAMANO, (0, 0, 0, 0))
+    draw_marca = ImageDraw.Draw(overlay_marca)
+    draw_marca.rounded_rectangle(
+        [20, 20, 20 + tw_marca + pad_marca * 2, 20 + font_marca.size + pad_marca * 2],
+        radius=8, fill=(0, 0, 0, 150),
+    )
+    base = Image.alpha_composite(base.convert("RGBA"), overlay_marca).convert("RGB")
+    draw = ImageDraw.Draw(base)
+    draw.text((20 + pad_marca, 20 + pad_marca), marca_texto, font=font_marca, fill=(255, 255, 255))
+
     os.makedirs(os.path.dirname(salida_png) or ".", exist_ok=True)
     base.save(salida_png, quality=95)
     try:

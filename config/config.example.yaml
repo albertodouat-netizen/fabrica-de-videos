@@ -55,9 +55,27 @@ canal:
       palabras_clave: ["yoga therapy benefits research", "meditation clinical benefits", "acupuncture evidence based"]
     - categoria: "remedios tradicionales estudiados científicamente"
       palabras_clave: ["turmeric curcumin research", "ginger health benefits research", "traditional herbal medicine evidence"]
+    - categoria: "salud en adultos mayores"
+      palabras_clave: ["senior health natural remedies", "memory support natural remedies", "healthy aging tips"]
+    - categoria: "salud sexual y hormonal"
+      # Enfoque siempre clínico/educativo (nunca explícito), igual que el resto
+      # del canal: factores de estilo de vida, alimentación y hormonas, nunca
+      # contenido sexual explícito (eso sí violaría las políticas de YouTube).
+      palabras_clave: ["natural remedies low libido", "boost testosterone naturally", "erectile dysfunction natural remedies"]
+    - categoria: "enfermedades crónicas"
+      palabras_clave: ["chronic disease natural management", "thyroid health natural remedies", "autoimmune diet natural remedies"]
+    - categoria: "salud bucal, capilar y ocular"
+      palabras_clave: ["natural remedies hair loss", "eye health natural foods", "oral health natural remedies"]
+    - categoria: "alergias y salud respiratoria"
+      palabras_clave: ["natural remedies allergies", "asthma natural remedies", "seasonal allergy natural relief"]
 
 estrategia:
-  videos_por_semana: 4          # igual que recomienda el video analizado
+  # NOTA: este número es solo informativo, NO controla la frecuencia real
+  # (eso lo hace el "cron" en .github/workflows/fabrica_videos.yml). Se deja
+  # en 7 para que coincida con la realidad: 1 video largo + 1 Short TODOS
+  # los días (decisión confirmada por el usuario), no 4 como en una versión
+  # anterior de este archivo.
+  videos_por_semana: 7
   duracion_minima_min: 15       # minutos mínimos por video (RPM más alto: habilita 2-3 anuncios intermedios)
   duracion_objetivo_min: 20
   max_suscriptores_referencia: 250000   # canales de referencia con <250k subs = nicho "joven"/viral

@@ -291,5 +291,19 @@ def construir_tags_seo(guion: dict, nombre_canal: str = "") -> list:
     for t in tags:
         if t.lower() not in [r.lower() for r in resultado]:
             resultado.append(t)
-    return resultado[:15]
+    # Límite subido de 15 a 20 (auditoría SEO élite, agosto 2026): analicé en
+    # vivo las tags REALES -no públicas en la interfaz, solo vía API- de los
+    # videos que mejor posicionan en el nicho (varios usan 18-29 tags,
+    # incluyendo muchas variaciones long-tail tipo pregunta: "a que hora
+    # tomar X", "como tomar X"). YouTube permite hasta 500 caracteres en
+    # total, no un límite fijo de cantidad, así que subir el tope aprovecha
+    # ese espacio en vez de dejarlo sin usar.
+    resultado_final = []
+    total_caracteres = 0
+    for t in resultado[:20]:
+        if total_caracteres + len(t) + 2 > 480:  # margen de seguridad bajo 500
+            break
+        resultado_final.append(t)
+        total_caracteres += len(t) + 2
+    return resultado_final
 
