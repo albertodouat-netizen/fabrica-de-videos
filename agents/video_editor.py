@@ -166,6 +166,28 @@ def _renderizar_capitulo(cap, audio_cap_info, visuales_cap, carpeta_salida, indi
 
     sub_clips = [_clip_desde_visual(v, d, carpeta_salida, resolucion)
                  for v, d in zip(visuales_cap, duraciones_beats)]
+
+    # Cifras verificadas (ver agents/investigacion_cientifica.py): se
+    # superpone un recuadro con la cifra en grande, para que el espectador
+    # la vea con claridad y no dependa solo de escucharla una vez.
+    beats_cap = cap.get("beats", [])
+    for idx, (beat, dur) in enumerate(zip(beats_cap, duraciones_beats)):
+        cifra = beat.get("cifra_verificada")
+        if not cifra or idx >= len(sub_clips):
+            continue
+        try:
+            from agents.callout_cifras import generar_overlay_cifra
+            ruta_overlay = generar_overlay_cifra(cifra, carpeta_salida, tag=f"cifra_cap{indice}_b{idx}",
+                                                  resolucion=resolucion)
+            clip_overlay = (ImageClip(ruta_overlay)
+                            .with_duration(sub_clips[idx].duration)
+                            .with_position((0, 0)))
+            sub_clips[idx] = CompositeVideoClip([sub_clips[idx], clip_overlay], size=resolucion) \
+                .with_duration(sub_clips[idx].duration)
+        except Exception as e:
+            log(AGENT, f"Aviso: no se pudo dibujar el callout de la cifra '{cifra}' ({e}); "
+                        "el video sigue igual, solo sin ese recuadro.")
+
     video_capitulo = concatenate_videoclips(sub_clips, method="chain") if len(sub_clips) > 1 else sub_clips[0]
     # Usamos la duración REAL de lo ya renderizado (no la del audio) para evitar
     # pedirle a moviepy frames más allá de lo que el clip visual realmente tiene.

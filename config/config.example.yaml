@@ -117,4 +117,4 @@ apis:
 publicacion:
   privacidad_default: "public"    # publicación 100% autónoma y pública desde el primer segundo (decisión confirmada por el usuario)
   categoria_youtube: "22"         # People & Blogs (ver docs para otros IDs)
-  programar_hora_utc: "14:00"     # hora sugerida de publicación
+  programar_hora_utc: "19:30"     # 14:30 Bogotá/Lima, 13:30 CDMX: ventana de mayor tráfico hispano (ver .github/workflows/fabrica_videos.yml)

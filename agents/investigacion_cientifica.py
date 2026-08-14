@@ -148,7 +148,37 @@ def _preguntar_gemini_si_respalda(afirmacion: str, estudios: list, gemini_key: s
         return {"respaldada": False, "indice_fuente": None}
 
 
+def _pmid_existe_de_verdad(pmid: str, titulo_esperado: str = "") -> bool:
+    """Verificación REAL de que un PMID existe, usando la API oficial de
+    NCBI E-utilities (gratis, sin key, pensada exactamente para esto).
+
+    Por qué esto reemplaza a un simple 'requests.get' a la página de
+    PubMed (bug real encontrado en la auditoría de agosto 2026): PubMed
+    devuelve el MISMO HTML de "verificando que no eres un robot" (status
+    203, sin contenido real) tanto para un PMID real como para uno
+    completamente inventado -- confirmado probando en vivo con un PMID real
+    y uno inventado, ambos "pasaban" el chequeo anterior. Con NCBI
+    E-utilities (esummary), un PMID inventado devuelve un error explícito
+    o no aparece en los resultados, así que sí distingue de verdad."""
+    try:
+        url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi"
+        r = requests.get(url, params={"db": "pubmed", "id": pmid, "retmode": "json"}, timeout=15)
+        r.raise_for_status()
+        resultado = r.json().get("result", {})
+        if pmid not in resultado.get("uids", []):
+            return False
+        info = resultado.get(pmid, {})
+        if "error" in info or not info.get("title"):
+            return False
+        return True
+    except Exception as e:
+        log(AGENT, f"Aviso verificando PMID {pmid} contra NCBI ({e}); se descarta por seguridad.")
+        return False
+
+
 def _url_funciona(url: str) -> bool:
+    """Respaldo genérico (para enlaces que no sean de PubMed): comprueba
+    que la URL cargue con un código de respuesta válido."""
     try:
         r = requests.get(url, timeout=12, allow_redirects=True,
                           headers={"User-Agent": "Mozilla/5.0"})
@@ -213,11 +243,19 @@ def verificar_y_filtrar_guion(guion: dict, estudios: list) -> dict:
     for cap in guion.get("capitulos", []):
         for beat in cap.get("beats", []):
             texto = beat.get("texto", "")
-            if not _PATRON_CIFRA.search(texto):
+            match = _PATRON_CIFRA.search(texto)
+            if not match:
                 continue
             resultado = _preguntar_gemini_si_respalda(texto, estudios, gemini_key)
             if resultado["respaldada"]:
                 referencias_usadas.add(resultado["indice_fuente"])
+                # El usuario pidió que las cifras se muestren en pantalla de
+                # forma fácil de entender, no solo mencionadas en el audio.
+                # Se marca aquí (después de confirmar que es una cifra REAL
+                # y verificada) para que agents/video_editor.py dibuje un
+                # recuadro con la cifra encima del video en ese momento
+                # exacto (ver agents/callout_cifras.py).
+                beat["cifra_verificada"] = match.group(0).strip()
             else:
                 texto_suave = _reescribir_sin_cifra(texto, gemini_key)
                 log(AGENT, f"Cifra no verificable descartada: \"{texto}\" -> \"{texto_suave}\"")
@@ -227,10 +265,14 @@ def verificar_y_filtrar_guion(guion: dict, estudios: list) -> dict:
     referencias_finales = []
     for idx in sorted(referencias_usadas):
         estudio = estudios[idx]
-        if _url_funciona(estudio["url"]):
+        # Verificación real contra NCBI (ver _pmid_existe_de_verdad): esto
+        # SÍ distingue un PMID real de uno inventado, a diferencia del
+        # chequeo anterior que probaba solo cargar la página de PubMed.
+        if _pmid_existe_de_verdad(estudio["pmid"], estudio.get("titulo", "")):
             referencias_finales.append(estudio)
         else:
-            log(AGENT, f"Referencia descartada por enlace roto: {estudio['url']}")
+            log(AGENT, f"Referencia descartada: el PMID {estudio['pmid']} no se pudo "
+                        f"confirmar como real contra NCBI ({estudio['url']}).")
 
     guion["referencias"] = referencias_finales
     log(AGENT, f"{len(referencias_finales)} referencia(s) científica(s) verificada(s), "
