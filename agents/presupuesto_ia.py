@@ -61,6 +61,14 @@ def registrar_uso_gemini(cantidad: int = 1) -> None:
     save_state(estado)
 
 
+def gemini_disponible(cantidad: int = 1) -> bool:
+    """¿Quedan al menos `cantidad` llamadas de Gemini dentro del límite
+    conservador de hoy? Usado por la investigación científica para decidir
+    si puede gastar 1 llamada en refinar la relevancia de los estudios."""
+    usados = gemini_usados_hoy()
+    return (LIMITE_DIARIO_GEMINI_CONSERVADOR - usados) >= cantidad
+
+
 def gemini_disponibles_para_qa() -> int:
     """Cuántas llamadas de Gemini le quedan disponibles a QA-Coherencia
     HOY, después de reservar cupo para el Guionista y la ciencia. Nunca

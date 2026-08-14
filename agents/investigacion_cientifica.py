@@ -45,45 +45,418 @@ def _limpiar_html(texto: str) -> str:
     return re.sub(r"<[^>]+>", "", texto or "").strip()
 
 
-def buscar_estudios(tema: str, max_resultados: int = 6) -> list:
-    """Busca estudios REALES en Europe PMC (gratis, sin key, base de datos
-    médica reconocida). Descarta cualquier resultado sin resumen real
-    disponible: sin resumen no hay forma de verificar nada, así que no sirve.
-    """
-    params = {
-        "query": f"{tema} AND (SRC:MED)",
-        "format": "json",
-        "pageSize": max_resultados * 3,
-        "resultType": "core",
-    }
+# ---------------------------------------------------------------------------
+# CORRECCIÓN CRÍTICA (auditoría con evidencia real, agosto 2026):
+# antes se buscaba en Europe PMC con el TÍTULO EN ESPAÑOL del video
+# ("Alimentos Para La Visión...") y la base de datos, que está en INGLÉS,
+# devolvía estudios de revistas hispanas SIN NINGUNA RELACIÓN con el tema
+# (comprobado en vivo: para el video de visión devolvió un estudio de
+# "salud planetaria" y otro de enfermería sobre cuidadores). Por eso los
+# videos publicados NO llevaban referencias reales en la descripción.
+# Solución en 3 pasos, todo gratis y sin API key:
+#   1) Traducir el tema a inglés (endpoint gratuito de Google Translate).
+#   2) Buscar con palabras clave en inglés + HAS_ABSTRACT:y.
+#   3) FILTRAR POR RELEVANCIA: solo se aceptan estudios cuyo título/resumen
+#      realmente contengan las palabras clave del tema. Si un estudio no
+#      tiene relación clara, se descarta (mejor 0 referencias que citar en
+#      pantalla una revista que no habla del tema: eso destruiría la
+#      credibilidad que se quiere construir).
+# ---------------------------------------------------------------------------
+
+_STOPWORDS_EN = {
+    "the", "a", "an", "and", "or", "with", "for", "your", "you", "these",
+    "this", "that", "those", "of", "to", "in", "on", "how", "why", "what",
+    "is", "are", "it", "its", "from", "at", "by", "my", "our", "their",
+    "than", "more", "most", "best", "improve", "improves", "improving",
+    "better", "boost", "boosts", "day", "days", "step", "steps", "tips",
+    "guide", "naturally", "natural", "health", "healthy", "will", "can",
+    "into", "about", "without", "just", "only", "every", "daily",
+}
+
+
+def _traducir_a_ingles(texto: str) -> str:
+    """Traducción gratuita ES->EN (mismo endpoint público que usa el widget
+    de Google Translate, sin API key). Si falla, devuelve el texto original
+    para no bloquear nunca la generación del video."""
     try:
-        r = requests.get(EUROPEPMC_URL, params=params, timeout=20)
+        r = requests.get(
+            "https://translate.googleapis.com/translate_a/single",
+            params={"client": "gtx", "sl": "es", "tl": "en", "dt": "t", "q": texto},
+            timeout=12,
+        )
         r.raise_for_status()
         data = r.json()
+        traduccion = " ".join(seg[0] for seg in data[0] if seg and seg[0]).strip()
+        return traduccion or texto
     except Exception as e:
-        log(AGENT, f"No se pudo consultar Europe PMC para '{tema}': {e}. "
-                    f"Este video no incluirá cifras específicas (por seguridad).")
-        return []
+        log(AGENT, f"Aviso: no se pudo traducir el tema a inglés ({e}); "
+                    f"se busca con el texto original.")
+        return texto
+
+
+def _palabras_clave_en(texto_en: str, max_palabras: int = 5) -> list:
+    """Extrae las palabras con contenido real (sin stopwords ni números)
+    del tema ya traducido al inglés."""
+    palabras = re.findall(r"[a-zA-Z]{4,}", texto_en.lower())
+    vistas, resultado = set(), []
+    for p in palabras:
+        if p in _STOPWORDS_EN or p in vistas:
+            continue
+        vistas.add(p)
+        resultado.append(p)
+        if len(resultado) >= max_palabras:
+            break
+    return resultado
+
+
+# Estudios que NO sirven para un canal de salud humana aunque compartan
+# palabras clave con el tema (comprobado en vivo: buscar "foods vision"
+# devolvía un paper de inteligencia artificial por "computer vision", y
+# "oyster mushroom" devolvía papers de cultivo agrícola y alimentación
+# animal). Si alguno de estos términos aparece en el TÍTULO, se descarta.
+_LISTA_NEGRA_TITULO = [
+    "artificial intelligence", "machine learning", "deep learning",
+    "computer vision", "neural network", "food industry", "packaging",
+    "supply chain", "cultivation", "veterinary", "poultry", "livestock",
+    "cattle", "broiler", "feed additive", "mushroom-based feed",
+    "in vitro", "cell line", "mice", "rats", "murine", "zebrafish",
+    # Tecnología/industria de alimentos (no es salud humana):
+    "feature extraction", "rt-detr", "detection model", "coating",
+    "by-product", "by-products", "agri-food", "cold plasma", "uvc",
+    "shelf life", "shelf-life", "contamination", "postharvest",
+    "post-harvest", "biosensor", "spectroscopy", "food safety",
+]
+
+# Señales de que el estudio SÍ es de salud/nutrición humana (al menos una
+# debe aparecer en el título o el resumen).
+_SENALES_SALUD_HUMANA = [
+    "patient", "human", "adult", "participant", "clinical", "randomized",
+    "trial", "diet", "dietary", "nutrition", "nutrient", "supplement",
+    "intake", "consumption", "cohort", "meta-analysis", "systematic review",
+    "health outcome", "symptom", "treatment", "therapy", "prevention",
+]
+
+
+def _estudio_es_relevante(keywords: list, titulo: str, resumen: str) -> bool:
+    """Un estudio solo se acepta si:
+      a) su título/resumen contiene al menos 2 de las palabras clave del
+         tema (o todas, si el tema tiene menos de 2),
+      b) su título no cae en la lista negra (IA, agricultura, animales...),
+      c) tiene al menos una señal de ser un estudio de salud humana.
+    Se toleran plurales simples (vision/visions) comparando también la raíz."""
+    titulo_l = (titulo or "").lower()
+    texto = f"{titulo_l} {(resumen or '').lower()}"
+
+    for prohibido in _LISTA_NEGRA_TITULO:
+        if prohibido in titulo_l:
+            return False
+
+    if not any(senal in texto for senal in _SENALES_SALUD_HUMANA):
+        return False
+
+    if not keywords:
+        return True
+    aciertos = 0
+    aciertos_en_titulo = 0
+    for k in keywords:
+        raiz = k[:-1] if k.endswith("s") else k
+        if raiz in texto:
+            aciertos += 1
+        if raiz in titulo_l:
+            aciertos_en_titulo += 1
+    necesarios = min(2, len(keywords))
+    # Al menos una palabra clave del tema debe estar en el TÍTULO del
+    # estudio (comprobado en vivo: sin esta condición se colaban papers de
+    # otros campos cuyo resumen mencionaba las palabras de pasada).
+    return aciertos >= necesarios and aciertos_en_titulo >= 1
+
+
+def _consultar_europepmc(query: str, page_size: int) -> list:
+    params = {
+        "query": query,
+        "format": "json",
+        "pageSize": page_size,
+        "resultType": "core",
+    }
+    r = requests.get(EUROPEPMC_URL, params=params, timeout=20)
+    r.raise_for_status()
+    return r.json().get("resultList", {}).get("result", [])
+
+
+def buscar_estudios(tema: str, max_resultados: int = 6) -> list:
+    """Busca estudios REALES en Europe PMC (gratis, sin key, base de datos
+    médica reconocida), traduciendo primero el tema a inglés (el idioma real
+    de la base) y quedándose SOLO con estudios relevantes al tema. Descarta
+    cualquier resultado sin resumen real disponible: sin resumen no hay
+    forma de verificar nada, así que no sirve.
+    """
+    tema_en = _traducir_a_ingles(tema)
+    keywords = _palabras_clave_en(tema_en)
+
+    intentos = []
+    if keywords:
+        intentos.append(" AND ".join(keywords) + " AND (SRC:MED) AND HAS_ABSTRACT:y")
+        if len(keywords) > 3:
+            # Segundo intento menos estricto, con las 3 palabras más importantes
+            intentos.append(" AND ".join(keywords[:3]) + " AND (SRC:MED) AND HAS_ABSTRACT:y")
+    # Último recurso: comportamiento anterior (tema tal cual), por si la
+    # traducción falló por completo. El filtro de relevancia sigue aplicando.
+    intentos.append(f"{tema} AND (SRC:MED)")
+
+    items = []
+    for query in intentos:
+        try:
+            items = _consultar_europepmc(query, max_resultados * 4)
+        except Exception as e:
+            log(AGENT, f"No se pudo consultar Europe PMC ('{query[:60]}...'): {e}.")
+            items = []
+        if len(items) >= 2:
+            break
 
     estudios = []
-    for item in data.get("resultList", {}).get("result", []):
+    descartados = 0
+    for item in items:
         abstract = item.get("abstractText")
         pmid = item.get("pmid")
         if not abstract or not pmid:
             continue
+        titulo = (item.get("title") or "").strip()
+        resumen = _limpiar_html(abstract)
+        if not _estudio_es_relevante(keywords, titulo, resumen):
+            descartados += 1
+            continue
         estudios.append({
             "pmid": pmid,
-            "titulo": (item.get("title") or "").strip(),
+            "titulo": titulo,
             "autores": item.get("authorString", ""),
             "revista": (item.get("journalInfo", {}) or {}).get("journal", {}).get("title")
                        or item.get("journalTitle", "") or "",
             "anio": item.get("pubYear", ""),
             "url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/",
-            "resumen": _limpiar_html(abstract),
+            "resumen": resumen,
         })
-        if len(estudios) >= max_resultados:
+        if len(estudios) >= max_resultados * 2:
             break
-    log(AGENT, f"'{tema}': {len(estudios)} estudio(s) real(es) con resumen disponible.")
+
+    # Capa final de precisión: UNA sola llamada a Gemini que lee títulos y
+    # resúmenes y responde cuáles estudios hablan DE VERDAD del tema del
+    # video (comprobado en vivo: el filtro por palabras clave dejaba pasar
+    # p.ej. un paper de huella de carbono para un video de visión, porque
+    # las palabras coincidían de casualidad). Si Gemini no está disponible,
+    # se usa el resultado del filtro por palabras tal cual (nunca bloquea).
+    estudios = _filtrar_relevancia_con_gemini(tema, estudios)[:max_resultados]
+
+    # Segundo intento inteligente: si el revisor rechazó todo (o no se
+    # encontró nada), se le pide al MISMO LLM gratuito una consulta de
+    # búsqueda médica en inglés bien formulada (p.ej. para "Alimentos para
+    # la visión" propone términos como "eye health" o "macular
+    # degeneration" que la traducción literal no contiene) y se busca de
+    # nuevo. El resultado pasa por el mismo revisor de relevancia.
+    if not estudios:
+        estudios = _reintento_con_query_de_llm(tema, max_resultados)
+
+    log(AGENT, f"'{tema}' (buscado en inglés como '{tema_en[:60]}'): "
+                f"{len(estudios)} estudio(s) relevante(s) con resumen disponible"
+                + (f", {descartados} descartado(s) por no tener relación clara con el tema." if descartados else "."))
+    return estudios
+
+
+def _reintento_con_query_de_llm(tema: str, max_resultados: int) -> list:
+    """Pide al LLM una consulta PubMed/Europe PMC óptima en inglés para el
+    tema y busca de nuevo. La consulta solo define QUÉ se busca; los
+    estudios devueltos siguen siendo 100% reales (vienen de Europe PMC) y
+    siguen pasando por el revisor de relevancia."""
+    prompt = (
+        f"Tema de un video de salud en español: \"{tema}\".\n\n"
+        f"Escribe UNA consulta de búsqueda para PubMed en inglés que encuentre "
+        f"estudios en humanos sobre este tema. Usa 2-4 términos médicos "
+        f"conectados con AND (puedes agrupar sinónimos con OR entre "
+        f"paréntesis). Ejemplo de formato: (spinach OR lutein) AND \"eye health\". "
+        f"Responde ÚNICAMENTE con la consulta, sin explicaciones."
+    )
+    try:
+        cfg = load_config()
+        respuesta = None
+        groq_key = cfg["apis"].get("groq_api_key", "")
+        gemini_key = cfg["apis"].get("gemini_api_key", "")
+        if groq_key and "OBTENER_GRATIS" not in groq_key:
+            try:
+                respuesta = _relevancia_con_groq(prompt, groq_key)
+            except Exception:
+                respuesta = None
+        if respuesta is None and gemini_key and "OBTENER_GRATIS" not in gemini_key:
+            try:
+                from agents.presupuesto_ia import gemini_disponible
+                if gemini_disponible(1):
+                    respuesta = _relevancia_con_gemini(prompt, gemini_key)
+            except Exception:
+                respuesta = None
+        if not respuesta:
+            return []
+        query_llm = respuesta.strip().strip('`').splitlines()[0].strip()
+        if not query_llm or len(query_llm) > 300:
+            return []
+        log(AGENT, f"Reintentando búsqueda científica con consulta experta: {query_llm}")
+        items = _consultar_europepmc(f"({query_llm}) AND (SRC:MED) AND HAS_ABSTRACT:y",
+                                      max_resultados * 3)
+        estudios = []
+        for item in items:
+            abstract = item.get("abstractText")
+            pmid = item.get("pmid")
+            if not abstract or not pmid:
+                continue
+            titulo = (item.get("title") or "").strip()
+            titulo_l = titulo.lower()
+            if any(p in titulo_l for p in _LISTA_NEGRA_TITULO):
+                continue
+            estudios.append({
+                "pmid": pmid,
+                "titulo": titulo,
+                "autores": item.get("authorString", ""),
+                "revista": (item.get("journalInfo", {}) or {}).get("journal", {}).get("title")
+                           or item.get("journalTitle", "") or "",
+                "anio": item.get("pubYear", ""),
+                "url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/",
+                "resumen": _limpiar_html(abstract),
+            })
+            if len(estudios) >= max_resultados * 2:
+                break
+        return _filtrar_relevancia_con_gemini(tema, estudios)[:max_resultados]
+    except Exception as e:
+        log(AGENT, f"Aviso: el reintento con consulta experta no funcionó ({e}); "
+                    f"este video irá sin citas específicas.")
+        return []
+
+
+def _prompt_relevancia(tema: str, estudios: list) -> str:
+    lineas = []
+    for i, e in enumerate(estudios, 1):
+        lineas.append(f"[{i}] \"{e['titulo']}\" — {e['resumen'][:220]}")
+    return (
+        f"Tema de un video de salud en español: \"{tema}\".\n\n"
+        f"Estudios científicos candidatos (título y comienzo del resumen):\n\n"
+        + "\n\n".join(lineas)
+        + "\n\n¿Cuáles de estos estudios tratan DIRECTAMENTE sobre el tema del "
+        f"video (mismo alimento/nutriente/práctica Y mismo beneficio de salud "
+        f"en humanos)? Sé estricto: si un estudio es de otro campo (industria, "
+        f"agricultura, animales, tecnología) o solo coincide de pasada, NO lo "
+        f"incluyas. Responde ÚNICAMENTE con los números separados por comas "
+        f"(ej: 1,3) o con NINGUNO si ningún estudio es directamente relevante."
+    )
+
+
+def _interpretar_respuesta_relevancia(texto: str, estudios: list):
+    """Devuelve la lista elegida, [] si NINGUNO, o None si no se entendió."""
+    texto = (texto or "").strip().upper()
+    if "NINGUNO" in texto:
+        return []
+    indices = [int(n) - 1 for n in re.findall(r"\d+", texto)]
+    elegidos = [estudios[i] for i in indices if 0 <= i < len(estudios)]
+    return elegidos if elegidos else None
+
+
+def _relevancia_con_gemini(prompt: str, gemini_key: str) -> str:
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+    r = None
+    for espera in (0, 5, 10):
+        if espera:
+            log(AGENT, f"Gemini respondió 429 (sobrecarga temporal) refinando relevancia; "
+                        f"reintentando en {espera}s...")
+            time.sleep(espera)
+        r = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=30)
+        if r.status_code != 429:
+            break
+    r.raise_for_status()
+    try:
+        from agents.presupuesto_ia import registrar_uso_gemini
+        registrar_uso_gemini(1)
+    except Exception:
+        pass
+    return r.json()["candidates"][0]["content"]["parts"][0]["text"]
+
+
+def _relevancia_con_groq(prompt: str, groq_key: str) -> str:
+    r = None
+    for espera in (0, 5, 10):
+        if espera:
+            log(AGENT, f"Groq respondió 429 (sobrecarga temporal) refinando relevancia; "
+                        f"reintentando en {espera}s...")
+            time.sleep(espera)
+        r = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {groq_key}"},
+            json={
+                "model": "llama-3.3-70b-versatile",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0,
+            },
+            timeout=30,
+        )
+        if r.status_code != 429:
+            break
+    r.raise_for_status()
+    return r.json()["choices"][0]["message"]["content"]
+
+
+def _filtrar_relevancia_con_gemini(tema: str, estudios: list) -> list:
+    """Selección final de relevancia temática con UNA llamada a un LLM
+    gratuito (Gemini primero; si falla o no hay cuota, Groq de respaldo).
+    Es tarea de LECTURA/COMPARACIÓN (no de generación), así que no puede
+    'inventar' estudios: solo puede elegir entre los reales encontrados.
+    Se revisa INCLUSO si quedó un solo candidato (comprobado en vivo: para
+    el video de visión, el único candidato que pasó el filtro de palabras
+    era un paper de huella de carbono sin relación con la salud ocular)."""
+    if not estudios:
+        return estudios
+
+    cfg = load_config()
+    prompt = _prompt_relevancia(tema, estudios)
+
+    # 1) Gemini (respetando el presupuesto diario real de 20 llamadas/día).
+    gemini_key = cfg["apis"].get("gemini_api_key", "")
+    if gemini_key and "OBTENER_GRATIS" not in gemini_key:
+        puede = True
+        try:
+            from agents.presupuesto_ia import gemini_disponible
+            puede = gemini_disponible(1)
+        except Exception:
+            pass
+        if puede:
+            try:
+                resultado = _interpretar_respuesta_relevancia(
+                    _relevancia_con_gemini(prompt, gemini_key), estudios)
+                if resultado is not None:
+                    if not resultado:
+                        log(AGENT, "El revisor IA confirmó que ningún candidato trata directamente "
+                                    "el tema: este video irá sin cifras/citas específicas "
+                                    "(mejor que citar algo sin relación).")
+                    else:
+                        log(AGENT, f"El revisor IA (Gemini) confirmó {len(resultado)} de "
+                                    f"{len(estudios)} candidato(s) como directamente relevantes.")
+                    return resultado
+            except Exception as e:
+                log(AGENT, f"Aviso: Gemini no pudo refinar la relevancia ({e}); se prueba con Groq.")
+
+    # 2) Groq de respaldo (misma capa gratuita que usa el Guionista).
+    groq_key = cfg["apis"].get("groq_api_key", "")
+    if groq_key and "OBTENER_GRATIS" not in groq_key:
+        try:
+            resultado = _interpretar_respuesta_relevancia(
+                _relevancia_con_groq(prompt, groq_key), estudios)
+            if resultado is not None:
+                if not resultado:
+                    log(AGENT, "El revisor IA confirmó que ningún candidato trata directamente "
+                                "el tema: este video irá sin cifras/citas específicas "
+                                "(mejor que citar algo sin relación).")
+                else:
+                    log(AGENT, f"El revisor IA (Groq) confirmó {len(resultado)} de "
+                                f"{len(estudios)} candidato(s) como directamente relevantes.")
+                return resultado
+        except Exception as e:
+            log(AGENT, f"Aviso: Groq tampoco pudo refinar la relevancia ({e}).")
+
+    log(AGENT, "Sin revisor IA disponible: se usa solo el filtro por palabras clave "
+                "(los estudios igual fueron verificados como reales).")
     return estudios
 
 

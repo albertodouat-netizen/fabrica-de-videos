@@ -123,11 +123,20 @@ def agregar_llamados_a_suscripcion(guion: dict) -> dict:
     if not capitulos:
         return guion
 
-    # --- INICIO: justo después del gancho, como primer beat del capítulo 1.
-    # Se pone ahí (no antes del gancho) para no debilitar el gancho, que es
-    # lo que retiene al espectador en los primeros segundos.
+    # --- INICIO: después de los primeros beats de contenido del capítulo 1.
+    # CORRECCIÓN (auditoría con video real, agosto 2026): antes se insertaba
+    # como PRIMER beat del capítulo 1, y como la voz del gancho se narra
+    # encima del primer beat, el banner SUSCRÍBETE terminaba EN PANTALLA
+    # durante los primeros 5-15 segundos del video (comprobado extrayendo
+    # fotogramas reales del video publicado). Eso es exactamente uno de los
+    # "asesinos de retención" que la investigación prohíbe: pedir
+    # suscripción antes de dar valor. Ahora el aviso entra después de los
+    # 2 primeros beats de contenido (~20-30 segundos), cuando el gancho ya
+    # cumplió su trabajo.
     cap_inicio = capitulos[0]
-    cap_inicio.setdefault("beats", []).insert(0, _beat_cta(random.choice(FRASES_INICIO), "inicio"))
+    beats_inicio = cap_inicio.setdefault("beats", [])
+    posicion_inicio = min(2, len(beats_inicio))
+    beats_inicio.insert(posicion_inicio, _beat_cta(random.choice(FRASES_INICIO), "inicio"))
 
     # --- MITAD: al principio del capítulo que queda más cerca de la mitad
     # del video (si solo hay 1 capítulo, se reutiliza el mismo capítulo,
@@ -137,7 +146,7 @@ def agregar_llamados_a_suscripcion(guion: dict) -> dict:
     if indice_mitad == 0 and len(capitulos) > 1:
         indice_mitad = 1
     cap_mitad = capitulos[indice_mitad]
-    posicion_mitad = 1 if cap_mitad is cap_inicio else 0
+    posicion_mitad = (posicion_inicio + 1) if cap_mitad is cap_inicio else 0
     cap_mitad.setdefault("beats", []).insert(posicion_mitad, _beat_cta(random.choice(FRASES_MITAD), "mitad"))
 
     # --- FINAL: al final del último capítulo.

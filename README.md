@@ -136,6 +136,44 @@ esto se garantiza en CÓDIGO, no se le deja solo a la IA:
   nada: el video simplemente no incluye estas citas (mejor no citar que
   citar algo sin verificar).
 
+### 🎯 Búsqueda científica de precisión (auditoría con video real, 14-ago-2026)
+Al revisar el video real publicado ese día se descubrió que la descripción
+NO traía referencias científicas. Causa raíz encontrada con pruebas en
+vivo: se buscaba en Europe PMC con el título EN ESPAÑOL del video, y la
+base (que está en inglés) devolvía estudios de revistas hispanas sin
+ninguna relación con el tema. `agents/investigacion_cientifica.py` ahora:
+
+1. **Traduce el tema a inglés** (endpoint gratuito de Google Translate,
+   sin API key) antes de buscar.
+2. Busca con **palabras clave en inglés** + `HAS_ABSTRACT:y`.
+3. Aplica un **filtro de relevancia en 3 capas**: palabras clave del tema
+   presentes en el título/resumen, lista negra de campos ajenos (IA,
+   agricultura, animales, industria alimentaria...), y señales de estudio
+   de salud humana (pacientes, ensayo clínico, dieta, etc.).
+4. Un **revisor IA** (1 llamada a Gemini, con Groq de respaldo) lee los
+   candidatos y confirma cuáles tratan DIRECTAMENTE el tema. Es tarea de
+   lectura, no de generación: no puede inventar estudios.
+5. Si nada pasa el filtro, pide al LLM una **consulta médica experta en
+   inglés** (p.ej. `(lutein OR zeaxanthin) AND "visual acuity"` para un
+   video de visión) y reintenta una vez.
+6. Si aún así no hay estudios relevantes, el video va **sin citas** (mejor
+   que citar una revista que no habla del tema, lo que destruiría la
+   credibilidad).
+
+Probado en vivo: para "Alimentos Para La Visión" ahora devuelve estudios
+reales de luteína/carotenoides y función visual en humanos (Journal of
+Ophthalmology, BMJ Open...), en vez de papers sin relación.
+
+### 📵 El banner SUSCRÍBETE ya no aparece durante el gancho (misma auditoría)
+Extrayendo fotogramas del video real publicado se comprobó que el banner
+de suscripción salía en pantalla durante los primeros ~15 segundos (el
+CTA de inicio era el primer beat del capítulo 1 y la voz del gancho se
+narra encima de ese beat). Eso es uno de los "asesinos de retención"
+documentados: pedir suscripción antes de dar valor.
+`agents/suscripcion_cta.py` ahora inserta el CTA de inicio DESPUÉS de los
+2 primeros beats de contenido (~20-30 segundos), sin tocar los CTA de
+mitad y final.
+
 ### 🎣 Gancho reforzado con datos reales de retención (auditoría agosto 2026)
 `agents/viral_strategist.py` fue actualizado con una investigación real
 sobre qué hace que alguien se quede viendo un video en sus primeros
