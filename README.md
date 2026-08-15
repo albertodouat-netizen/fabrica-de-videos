@@ -197,6 +197,25 @@ se encontraron y corrigieron 3 defectos reales:
    (en `agents/video_editor.py`) reparte el sobrante proporcionalmente
    entre todos los cortes.
 
+### ⏰ Corrida perdida del 15-ago-2026: causa real y doble corrección
+El 15-ago no se publicó video. Diagnóstico con el log real de GitHub:
+
+1. **La corrida del 14-ago terminó "failed" PERO el video SÍ se publicó**:
+   falló únicamente el último paso ("Recordar ideas ya usadas"), porque el
+   usuario subió un paquete de actualización MIENTRAS el robot corría, y el
+   `git push` de la memoria fue rechazado ("fetch first"). Corregido en el
+   workflow: ahora hace `git pull --rebase` + 3 reintentos antes de push.
+   ⚠️ Consecuencia real de ese fallo: `data/estado.json` no se guardó, así
+   que el robot puede repetir la idea del día anterior una vez (se
+   autocorrige en la siguiente corrida exitosa).
+2. **El 15-ago GitHub se saltó el cron de las 19:30** (limitación
+   documentada de GitHub Actions: los horarios programados no están
+   garantizados y en horas de carga se saltan). Corregido con un **cron de
+   respaldo a las 21:45 UTC** + un **candado anti-duplicados**
+   (`scripts/verificar_si_ya_publico_hoy.py`): si el horario principal ya
+   publicó hoy, la corrida de respaldo termina en segundos sin generar
+   nada. Probado en ambos casos (con y sin publicación previa).
+
 ### 🔬 Agente 28: Portada REAL del estudio en pantalla (auditoría élite 14-ago-2026)
 Resultado de una auditoría brutal pedida por el dueño del canal: hasta esa
 fecha, la "toma del documento" en las citas científicas era metraje de
