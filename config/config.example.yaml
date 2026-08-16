@@ -5,7 +5,8 @@
 
 canal:
   nombre: "Salud Natural Diaria"   # <- cámbialo por el nombre real que le pongas a tu canal
-  url: "https://www.youtube.com/channel/UCp96gCIthtbOAnhFpezcAHg"  # enlace directo a tu canal (para el CTA de suscripción en la descripción)
+  url: "https://www.youtube.com/channel/UCp96gCIthtbOAnhFpezcAHg"
+  channel_id: "UCp96gCIthtbOAnhFpezcAHg"  # usado por el respondedor de comentarios para reconocer los comentarios propios  # enlace directo a tu canal (para el CTA de suscripción en la descripción)
   idioma_destino: "es"          # idioma en el que se publica
   idioma_investigacion: "en"    # idioma donde se buscan ideas ganadoras (mercado más grande = más datos)
   # SEO multilingüe (gratis, recomendado por el experto de YouTube analizado):

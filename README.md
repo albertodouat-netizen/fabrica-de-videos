@@ -197,6 +197,28 @@ se encontraron y corrigieron 3 defectos reales:
    (en `agents/video_editor.py`) reparte el sobrante proporcionalmente
    entre todos los cortes.
 
+### 💬 Agente 30: Respondedor de comentarios (estrategia de visualizaciones, 16-ago-2026)
+La interacción (comentarios/respuestas) es una de las señales principales
+que usa el algoritmo para recomendar videos. `agents/responde_comentarios.py`:
+
+- En cada corrida diaria (incluso los días sin publicación) lee los
+  comentarios de los últimos videos del canal REAL (no solo de la memoria
+  local) y responde a los espectadores.
+- Respuestas generadas con Groq (breves, cálidas, específicas del
+  comentario), con plantilla amable de respaldo si el LLM no está
+  disponible. Pasan también por el filtro de seguridad médica.
+- REGLA YMYL: si el comentario pide consejo médico personalizado
+  (síntomas, dosis, "puedo dejar mi medicamento"), responde con empatía y
+  remite al médico. Nunca da consejo personalizado.
+- Ignora spam (enlaces, WhatsApp/Telegram), los comentarios del propio
+  canal (cross-promo) y los ya respondidos (registro en data/estado.json
+  + verificación en vivo de respuestas previas).
+- Máximo 10 respuestas por corrida (ritmo humano, no ráfaga de bot).
+- Probado en vivo: reconoció correctamente que los 4 comentarios actuales
+  del canal son propios y no respondió ninguno.
+- Integrado como paso propio en el workflow (corre aunque no toque
+  publicar video, con continue-on-error para nunca bloquear nada).
+
 ### 🔔 Vigilante de publicaciones: alerta al celular/correo si el robot no publica (16-ago-2026)
 Pedido del usuario: "¿cómo me entero si GitHub se salta la publicación?".
 Solución 100% gratis usando las notificaciones nativas de GitHub:
