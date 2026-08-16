@@ -2,14 +2,42 @@ name: Fabrica de Videos YouTube (100% gratis y automatico)
 
 # Se ejecuta solo, sin que toques nada, según el horario definido abajo.
 # GitHub Actions da GRATIS ~2000 minutos/mes en repos privados (e ilimitado
-# en repos públicos), más que suficiente para 4 videos/semana (~15-25 min
-# cada corrida: guion, voz, ~80 clips de stock, verificación de coherencia,
-# edición, miniatura, subtítulos, playlist, video largo + Short).
+# en repos públicos). AVISO (actualizado tras subir el objetivo de duración
+# a 15-20 min por video): al ser videos más largos, cada corrida ahora usa
+# más tiempo (guion más extenso con varias rondas de "extensión" real,
+# muchos más recursos visuales por video, más tiempo de renderizado). Si
+# corres 1 video/día, esto se acerca más al límite gratuito mensual que
+# antes; vigila la pestaña "Actions" de GitHub de vez en cuando (te avisa
+# ahí mismo si te vas quedando sin minutos) y, si hace falta, baja
+# `duracion_objetivo_min` en config.yaml o cambia el repositorio a público
+# (minutos ilimitados) para tener más margen sin gastar nada de dinero.
 on:
   schedule:
-    # Lunes, Miércoles, Viernes y Domingo a las 14:00 UTC (4 videos/semana,
-    # igual que recomienda la estrategia). Ajusta a tu gusto: https://crontab.guru
-    - cron: "0 14 * * 1,3,5,0"
+    # Hora elegida con base en investigación real de comportamiento de
+    # audiencia en YouTube (agosto 2026): la ventana con mejor tráfico para
+    # una audiencia hispanohablante es entre semana, 2pm-4pm hora LOCAL del
+    # espectador, publicando 2-3 horas ANTES del pico de la tarde/noche (para
+    # que el algoritmo ya tenga señales de interacción cuando llega ese pico).
+    # 19:30 UTC = 14:30 en Bogotá/Lima/Quito, 13:30 en Ciudad de México,
+    # 15:30 en Buenos Aires/Santiago: cae justo en esa ventana para la
+    # audiencia hispanohablante más grande (Latinoamérica). Ajusta este
+    # valor si en el futuro tu YouTube Analytics muestra otro patrón real
+    # para TU audiencia específica (Estudio > Audiencia > "Cuándo tus
+    # espectadores están en YouTube" tiene la última palabra).
+    # FRECUENCIA: 1 video CADA 2 DÍAS (decisión del usuario, 16-ago-2026,
+    # para alejarse del perfil de "contenido producido en masa" de la
+    # política de contenido inauténtico de YouTube). El cron corre todos
+    # los días, pero el candado (scripts/verificar_si_ya_publico_hoy.py)
+    # solo deja publicar si han pasado al menos 2 días desde el último
+    # video. Así el día exacto no depende de si GitHub saltó un cron.
+    - cron: "30 19 * * *"
+    # Horario de RESPALDO (añadido 15-ago-2026): los cron de GitHub Actions
+    # NO están garantizados -- en horas de alta carga se retrasan o se
+    # SALTAN por completo (limitación documentada de GitHub; pasó de verdad
+    # el 15-ago-2026: no hubo ninguna corrida a las 19:30). Si el primer
+    # horario corrió bien, este segundo se da cuenta (candado de abajo,
+    # paso "Evitar doble publicación") y termina sin publicar nada.
+    - cron: "45 21 * * *"
   workflow_dispatch: {}   # también puedes lanzarlo manualmente desde la pestaña "Actions"
 
 permissions:
@@ -18,7 +46,7 @@ permissions:
 jobs:
   generar_y_publicar_video:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 110
     steps:
       - name: Clonar repositorio
         uses: actions/checkout@v4
@@ -49,9 +77,17 @@ jobs:
           echo "$CLIENT_SECRET_B64" | base64 -d > config/client_secret.json
           echo "$TOKEN_JSON_B64" | base64 -d > config/token.json
           python3 scripts/aplicar_secretos.py
+
+      - name: Evitar doble publicación (candado del horario de respaldo)
+        id: candado
+        run: python3 scripts/verificar_si_ya_publico_hoy.py
+
       - name: Diagnostico - confirmar canal conectado (rapido, antes de gastar tiempo)
+        if: steps.candado.outputs.ya_publico != 'true'
         run: python3 scripts/diagnostico_canal.py
+
       - name: Ejecutar el equipo de agentes (video largo + Short + publicación)
+        if: steps.candado.outputs.ya_publico != 'true'
         run: python3 orchestrator.py --videos 1
 
       - name: Guardar video, miniatura y logs como respaldo descargable
@@ -71,4 +107,15 @@ jobs:
           git config user.email "robot@localhost"
           git add data/estado.json
           git diff --cached --quiet || git commit -m "Actualiza memoria del robot [skip ci]"
-          git push
+          # CORRECCIÓN (fallo real del 14-ago-2026): si el repositorio recibió
+          # commits DESPUÉS de que esta corrida empezó (por ejemplo, el usuario
+          # subiendo un paquete de actualización mientras el robot generaba el
+          # video), el push directo era rechazado ("fetch first") y el paso
+          # fallaba. Ahora se trae lo nuevo con rebase (la memoria del robot
+          # es un archivo que solo escribe el robot, así que no hay conflicto
+          # real posible) y se reintenta el push hasta 3 veces.
+          for intento in 1 2 3; do
+            git pull --rebase origin main && git push && break
+            echo "Push rechazado (intento $intento), reintentando en 10s..."
+            sleep 10
+          done
