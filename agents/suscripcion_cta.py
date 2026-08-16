@@ -61,6 +61,10 @@ FRASES_INICIO = [
     "Dato rápido antes de empezar. Suscribirte es gratis y así no te pierdes los próximos videos de salud natural.",
     "Si es tu primera vez aquí, dale a suscribirte. Publicamos contenido nuevo sobre salud natural todos los días.",
     "Antes de entrar de lleno al tema, suscríbete al canal. Es gratis y te va a servir para lo que viene.",
+    "Por cierto, si estos temas te interesan, suscribirte toma dos segundos y no cuesta nada.",
+    "Un favor pequeño antes de continuar, suscríbete al canal. Me ayuda a seguir trayendo información verificada.",
+    "Si valoras la información con respaldo científico real, suscríbete. Es la mejor forma de no perderte nada.",
+    "Aprovecho para recordarte que suscribirte es gratis, y así este contenido te llega apenas sale.",
 ]
 
 FRASES_MITAD = [
@@ -68,6 +72,10 @@ FRASES_MITAD = [
     "Vamos a la mitad. Si te gusta lo que estás aprendiendo, suscríbete al canal, es gratis y ayuda mucho.",
     "Antes de seguir con la siguiente parte, un favor rápido, suscríbete al canal si te está gustando el video.",
     "Seguimos. Si quieres más contenido como este, suscribirte es la mejor forma de asegurarte de verlo.",
+    "Ya que llegaste hasta aquí, es buen momento para suscribirte si aún no lo has hecho. Sigamos.",
+    "Pausa de tres segundos, si esto te está aportando, dale a suscribirte. Listo, continuemos con lo bueno.",
+    "Lo que viene es la parte más práctica del video. Suscríbete si no quieres perderte contenido así cada día.",
+    "Si estás aprendiendo algo nuevo hoy, el botón de suscribirse es la forma más simple de apoyar este trabajo.",
 ]
 
 FRASES_FINAL = [
@@ -75,6 +83,10 @@ FRASES_FINAL = [
     "Eso fue todo por hoy. Suscríbete al canal para no perderte los próximos videos, es completamente gratis.",
     "Espero que te haya servido. Antes de irte, suscríbete al canal, así vuelves a encontrar contenido como este.",
     "Gracias por ver hasta el final. Suscríbete gratis al canal, así seguimos ayudándote a cuidar tu salud de forma natural.",
+    "Llegar hasta el final dice mucho de ti. Suscríbete y mañana nos volvemos a encontrar con un tema nuevo.",
+    "Si algo de lo de hoy te sirvió, la mejor forma de agradecerlo es suscribiéndote. Nos vemos en el próximo video.",
+    "Mañana hay video nuevo a la misma hora. Suscríbete para que no se te pase.",
+    "Este canal crece gracias a personas como tú. Suscríbete gratis y acompáñanos en el próximo tema.",
 ]
 
 # Frase de marca (mantra de cierre): a diferencia de las frases de arriba

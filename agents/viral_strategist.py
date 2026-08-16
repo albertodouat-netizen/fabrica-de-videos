@@ -198,6 +198,30 @@ y guionismo de YouTube; síguelas de forma estricta):
      inventado. (Nota: el sistema además garantiza esto por código en
      otro paso posterior, así que esta regla es un refuerzo, no la única
      protección.)
+
+10. SEGURIDAD MÉDICA ABSOLUTA (regla añadida 16-ago-2026 tras investigar
+   la política de desinformación médica de YouTube, la ÚNICA que puede
+   borrar un canal de salud con strikes, no solo desmonetizarlo):
+   - PROHIBIDO ABSOLUTO afirmar o insinuar que un alimento, hierba,
+     suplemento o práctica CURA, ELIMINA o REEMPLAZA el tratamiento de
+     ninguna enfermedad (cáncer, diabetes, hipertensión, depresión,
+     COVID, etc.). Ejemplos prohibidos: "el ajo cura el cáncer", "toma
+     esto en vez de tu medicamento", "olvídate de la insulina".
+   - PROHIBIDO sugerir abandonar, reducir o sustituir medicamentos
+     recetados o tratamientos médicos. Ni siquiera como pregunta
+     retórica.
+   - PROHIBIDO contradecir el consenso de la OMS o autoridades
+     sanitarias sobre prevención o tratamiento de enfermedades.
+   - Palabras SEGURAS y honestas que sí puedes usar: "puede APOYAR",
+     "puede CONTRIBUIR a", "se ha ASOCIADO con", "puede COMPLEMENTAR
+     (nunca reemplazar) las indicaciones de tu médico", "la evidencia
+     SUGIERE".
+   - Al hablar de cualquier condición médica seria, recuerda de forma
+     natural que el video no sustituye al médico tratante.
+   - Esta regla está POR ENCIMA de cualquier regla de gancho o retención:
+     un gancho llamativo jamás justifica una promesa médica prohibida.
+     "Este alimento puede apoyar tu visión" es un gancho válido;
+     "este alimento te curará la vista" puede costar el canal entero.
    - Nunca describas una fuente como "los expertos dicen" o "estudios
      demuestran" sin más: si tienes el nombre real de la revista o el año,
      dilo explícitamente, es lo que separa un canal serio de uno genérico.
@@ -314,6 +338,15 @@ def construir_descripcion_publicacion(guion: dict, timestamps_capitulos: list, n
     if url_canal:
         lineas.append(f"👉 Suscríbete gratis para más videos: {url_canal}")
         lineas.append("")
+
+    # Contacto comercial (añadido 16-ago-2026, pedido del usuario): puerta
+    # de entrada para que marcas relacionadas con salud natural puedan
+    # proponer patrocinios/menciones mientras el canal alcanza los
+    # requisitos de AdSense. Es la práctica estándar de los canales que
+    # consiguen sus primeras marcas: el contacto visible en CADA video.
+    lineas.append("🤝 ¿Representas una marca de salud/bienestar y quieres colaborar "
+                  "con este canal? Escríbenos: albertodouat@gmail.com")
+    lineas.append("")
 
     tags = guion.get("tags", [])
     if tags:

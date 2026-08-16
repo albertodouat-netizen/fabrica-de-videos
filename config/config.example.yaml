@@ -72,10 +72,12 @@ canal:
 estrategia:
   # NOTA: este número es solo informativo, NO controla la frecuencia real
   # (eso lo hace el "cron" en .github/workflows/fabrica_videos.yml). Se deja
-  # en 7 para que coincida con la realidad: 1 video largo + 1 Short TODOS
-  # los días (decisión confirmada por el usuario), no 4 como en una versión
-  # anterior de este archivo.
-  videos_por_semana: 7
+  # en 3-4 para que coincida con la realidad (decisión del usuario,
+  # 16-ago-2026): 1 video largo + 1 Short CADA 2 DÍAS, para alejarse del
+  # perfil de "producción en masa" de la política de contenido inauténtico
+  # de YouTube. La frecuencia real la controla el candado
+  # scripts/verificar_si_ya_publico_hoy.py (DIAS_ENTRE_VIDEOS = 2).
+  videos_por_semana: 4
   duracion_minima_min: 15       # minutos mínimos por video (RPM más alto: habilita 2-3 anuncios intermedios)
   duracion_objetivo_min: 20
   max_suscriptores_referencia: 250000   # canales de referencia con <250k subs = nicho "joven"/viral

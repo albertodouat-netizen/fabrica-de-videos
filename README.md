@@ -197,6 +197,67 @@ se encontraron y corrigieron 3 defectos reales:
    (en `agents/video_editor.py`) reparte el sobrante proporcionalmente
    entre todos los cortes.
 
+### 📅 Tres ajustes de estrategia pedidos por el dueño del canal (16-ago-2026)
+1. **3-5 citas científicas distribuidas por TODO el video** (antes máx. 2):
+   la primera poco después de la introducción, otras a la mitad y la
+   última cerca del cierre (`agents/citas_cientificas.py` reparte las
+   posiciones uniformemente entre capítulos). Probado: con 5 estudios en
+   un guion de 8 capítulos caen en los capítulos 2, 3, 5, 7 y 8. TODAS
+   las frases mencionan que el enlace está en la descripción.
+2. **Frecuencia: 1 video cada 2 días** (antes diario): decisión preventiva
+   contra el perfil de "producción en masa" de la política de contenido
+   inauténtico. El cron corre a diario, pero el candado
+   (`scripts/verificar_si_ya_publico_hoy.py`, `DIAS_ENTRE_VIDEOS = 2`)
+   solo deja publicar si pasaron ≥2 días desde el último video. Probado
+   con 4 escenarios (hoy/ayer/hace 2 días/hace 3): todos correctos.
+   Ventaja extra: la cuota diaria de Gemini rinde el doble por video.
+3. **Contacto comercial para marcas en cada descripción**: línea "🤝
+   ¿Representas una marca de salud/bienestar...?" con el correo del canal,
+   la puerta de entrada estándar para patrocinios antes de AdSense.
+
+### 🛡️ Agente 29: Seguridad Médica + investigación de riesgo de penalización (16-ago-2026)
+Investigación completa (políticas oficiales + casos reales) sobre si publicar
+1 video IA diario puede hacer que penalicen o cierren el canal. Hallazgos:
+
+**Lo que NO cierra el canal (pero quita monetización):**
+- Política de "contenido inauténtico" (renombrada así el 15-jul-2025):
+  contenido producido en masa/repetitivo/con plantilla. Se aplica a nivel
+  de CANAL. En enero 2026 YouTube terminó 16 canales "AI slop" (35M subs,
+  4.700M vistas, ~$10M/año) — pero eran granjas industriales de decenas de
+  videos diarios idénticos. Hubo daño colateral documentado: un canal de
+  historias bíblicas (588K subs) y uno educativo legítimo desmonetizados.
+- Señales que YouTube busca: misma estructura en todos los videos, misma
+  voz sintética sin edición, visuales de plantilla, volumen imposible de
+  producir con criterio humano.
+- **1 video/día NO es el problema** (canales humanos publican diario);
+  el problema es que todos los videos "se vean iguales".
+
+**Lo que SÍ puede cerrar un canal de salud (strikes → terminación):**
+- La política de DESINFORMACIÓN MÉDICA: afirmar que algo "cura"
+  enfermedades, sugerir sustituir tratamientos médicos, contradecir a la
+  OMS (ejemplos oficiales de YouTube: "el ajo cura el cáncer", "vitamina C
+  en vez de radioterapia").
+- Falta de divulgación de contenido sintético realista en temas de salud.
+
+**Ajustes aplicados:**
+1. **Nuevo `agents/seguridad_medica.py` (Agente 29)**: última línea de
+   defensa determinista. Revisa gancho, beats, título y descripción y
+   corrige automáticamente promesas de cura ("cura el cáncer" → "puede
+   apoyar el bienestar en...") y sugerencias de abandonar tratamientos
+   (→ "siempre como complemento y nunca en reemplazo de lo que te indique
+   tu médico"). Probado con 10 casos: 10/10 correctos, sin falsos
+   positivos. Integrado al final de `generar_guion()`.
+2. **Regla 10 "SEGURIDAD MÉDICA ABSOLUTA"** en las reglas del guionista
+   (el LLM recibe la prohibición explícita con ejemplos).
+3. **Variedad anti-plantilla**: las frases fijas de CTA de suscripción
+   (inicio/mitad/final) y de citas científicas pasaron de 4 a 8 variantes
+   cada una, reduciendo el patrón repetitivo entre videos diarios.
+
+**Factores que ya nos protegían** (verificados en esta revisión): guion
+único por video con investigación científica propia, keyword y visuales
+distintos por tema, duración variable, divulgación de IA en descripción,
+voz rotativa entre 4 narradores, disclaimer médico obligatorio.
+
 ### ⏰ Corrida perdida del 15-ago-2026: causa real y doble corrección
 El 15-ago no se publicó video. Diagnóstico con el log real de GitHub:
 

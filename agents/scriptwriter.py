@@ -740,6 +740,20 @@ def generar_guion(idea: dict) -> dict:
         log(AGENT, f"Aviso: no se pudo insertar el llamado a interacción ({e}). "
                     f"El video se genera igual, pero revisa este punto.")
 
+    # ÚLTIMA LÍNEA DE DEFENSA (añadida 16-ago-2026): revisión determinista
+    # de seguridad médica sobre TODO el texto final (gancho, beats, título,
+    # descripción). La política de desinformación médica de YouTube es la
+    # única que puede cerrar un canal de salud con strikes (no solo
+    # desmonetizar): promesas de cura o sugerencias de abandonar
+    # tratamientos se corrigen aquí automáticamente, venga el texto del
+    # LLM que venga. Ver agents/seguridad_medica.py.
+    try:
+        from agents.seguridad_medica import verificar_guion_seguro
+        guion = verificar_guion_seguro(guion)
+    except Exception as e:
+        log(AGENT, f"Aviso: no se pudo ejecutar la revisión de seguridad médica ({e}). "
+                    f"Revisa este punto: es la protección contra strikes de salud.")
+
     return guion
 
 

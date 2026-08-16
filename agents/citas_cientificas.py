@@ -67,16 +67,23 @@ DOCUMENTO_VISUALES = [
 # Frases 100% deterministas (no las escribe el LLM): solo insertan datos
 # YA verificados como reales (nombre de revista real, año real). Nunca se
 # inventa un hallazgo ni una cifra nueva aquí.
+# TODAS las frases mencionan explícitamente que el enlace está en la
+# descripción (pedido del usuario, 16-ago-2026): el espectador debe saber
+# siempre dónde comprobar la fuente por sí mismo.
 FRASES_CON_REVISTA_Y_ANIO = [
-    "Esto no es una opinión mía, es ciencia real. Estos hallazgos fueron publicados en la revista {revista}, en el año {anio}.",
-    "Para que confíes en lo que te estoy contando, este dato viene de un estudio real, publicado en la revista {revista}, en {anio}.",
-    "Vale la pena aclararlo, esta información tiene respaldo científico. Fue publicada en la revista {revista}, en el año {anio}.",
+    "Esto no es una opinión mía, es ciencia real. Estos hallazgos fueron publicados en la revista {revista}, en el año {anio}, y el enlace está en la descripción.",
+    "Para que confíes en lo que te estoy contando, este dato viene de un estudio real, publicado en la revista {revista}, en {anio}. Encuentras el enlace en la descripción del video.",
+    "Vale la pena aclararlo, esta información tiene respaldo científico. Fue publicada en la revista {revista}, en el año {anio}, y te dejo el enlace en la descripción.",
     "Si quieres revisarlo tú mismo, dejo el enlace al estudio original en la descripción. Fue publicado en la revista {revista}, en {anio}.",
+    "Y esto que estás viendo en pantalla es el estudio original, publicado en {revista} en {anio}. El enlace está en la descripción.",
+    "Aquí no trabajamos con rumores. Este hallazgo aparece en la revista {revista}, publicado en {anio}, y puedes leerlo tú mismo con el enlace de la descripción.",
+    "La fuente de esto es un artículo científico de la revista {revista}, del año {anio}. Lo dejo enlazado en la descripción para que lo compruebes.",
+    "Detrás de este dato hay investigación de verdad, publicada en {revista} en el año {anio}. El enlace completo está en la descripción.",
 ]
 
 FRASES_SOLO_REVISTA = [
     "Esto tiene respaldo científico real, publicado en la revista {revista}. Dejo el enlace al estudio original en la descripción.",
-    "Este dato no me lo estoy inventando, proviene de una investigación real publicada en la revista {revista}.",
+    "Este dato no me lo estoy inventando, proviene de una investigación real publicada en la revista {revista}. El enlace está en la descripción.",
 ]
 
 FRASES_GENERICAS = [
@@ -178,7 +185,7 @@ def agregar_citas_cientificas_en_guion(guion: dict, estudios: list) -> dict:
     # citar el mismo estudio dos veces de formas distintas en el video.
     ya_citados_pmid = {r.get("pmid") for r in guion.get("referencias", [])}
 
-    estudios_a_citar = _elegir_estudios_para_citar(estudios, ya_citados_pmid, max_n=2)
+    estudios_a_citar = _elegir_estudios_para_citar(estudios, ya_citados_pmid, max_n=5)
     if not estudios_a_citar:
         return guion
 
@@ -203,13 +210,26 @@ def agregar_citas_cientificas_en_guion(guion: dict, estudios: list) -> dict:
 
     visuales_asignados = set()
 
-    # Posiciones aproximadas: una cita cerca del primer cuarto del video
-    # (refuerza credibilidad temprano, sin debilitar el gancho inicial) y,
-    # si hay una segunda, cerca de los dos tercios (antes del cierre).
+    # Posiciones distribuidas a lo largo de TODO el video (pedido explícito
+    # del usuario, 16-ago-2026): la primera cita poco después de la breve
+    # introducción (nunca pisando el gancho), otras repartidas por la mitad,
+    # y la última cerca del final. Con 3-5 estudios reales disponibles, el
+    # espectador escucha el respaldo científico al inicio, a la mitad y al
+    # cierre, no solo una vez.
     n = len(capitulos)
-    posiciones = [max(1, n // 4)]
-    if len(estudios_verificados) > 1:
-        posiciones.append(max(posiciones[0] + 1, (n * 2) // 3))
+    k = len(estudios_verificados)
+    if k == 1:
+        posiciones = [max(1, n // 4)]
+    else:
+        # k posiciones repartidas uniformemente entre el primer capítulo
+        # después de la intro (índice 1) y el último (índice n-1).
+        inicio_pos, fin_pos = 1, max(1, n - 1)
+        if k == 2:
+            posiciones = [inicio_pos, fin_pos]
+        else:
+            paso = (fin_pos - inicio_pos) / (k - 1) if k > 1 else 0
+            posiciones = [min(fin_pos, max(inicio_pos, round(inicio_pos + paso * i)))
+                          for i in range(k)]
 
     referencias_nuevas = list(guion.get("referencias", []))
     citas_insertadas = 0
