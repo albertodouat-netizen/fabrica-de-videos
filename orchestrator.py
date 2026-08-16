@@ -293,12 +293,47 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
     return ruta_video
 
 
+def publicar_short_independiente():
+    """Modo de los días SIN video largo (ver --solo-short-independiente):
+    genera y publica un Short con contenido completo y propio, alineado a
+    un video largo ya existente (ver agents/short_independiente.py)."""
+    from agents.short_independiente import crear_short_independiente
+    resultado = crear_short_independiente()
+    if not resultado:
+        log(AGENT, "Hoy no se publica Short independiente (sin material o sin LLM).")
+        return
+
+    from agents.publisher import publicar_video
+    guion_short = {"titulo": resultado["titulo"],
+                   "tags": ["Salud Natural Diaria", "salud natural", "Shorts"],
+                   "disclaimer": "Este contenido es informativo y no sustituye una consulta médica."}
+    log(AGENT, "Publicando el Short independiente en YouTube...")
+    short_id = publicar_video(resultado["ruta"], None, guion_short, resultado["descripcion"])
+    if short_id and resultado.get("video_largo_id"):
+        from agents.promocion_cruzada import publicar_comentario_cruzado
+        publicar_comentario_cruzado(
+            short_id, f"👉 Mira el video COMPLETO del tema aquí: "
+                      f"https://www.youtube.com/watch?v={resultado['video_largo_id']}"
+        )
+        log(AGENT, f"🔗 Short independiente publicado: https://youtube.com/shorts/{short_id}")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--videos", type=int, default=1, help="Cuántos videos generar en esta ejecución")
     parser.add_argument("--no-publicar", action="store_true", help="No subir a YouTube, solo generar")
     parser.add_argument("--sin-short", action="store_true", help="No generar el Short, solo el video largo")
+    parser.add_argument("--solo-short-independiente", action="store_true",
+                        help="Publicar solo un Short independiente (días sin video largo)")
     args = parser.parse_args()
+
+    if args.solo_short_independiente:
+        try:
+            publicar_short_independiente()
+        except Exception:
+            log(AGENT, "❌ Error publicando el Short independiente:")
+            traceback.print_exc()
+        return
 
     for i in range(args.videos):
         log(AGENT, f"===== Generando video {i+1}/{args.videos} =====")

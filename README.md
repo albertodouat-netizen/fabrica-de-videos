@@ -197,6 +197,37 @@ se encontraron y corrigieron 3 defectos reales:
    (en `agents/video_editor.py`) reparte el sobrante proporcionalmente
    entre todos los cortes.
 
+### 🎬 Agente 31: Short independiente diario + humanización (16-ago-2026)
+Estrategia de crecimiento acordada con el usuario: los días SIN video
+largo (frecuencia: largo cada 2 días), se publica UN Short con **contenido
+completo y propio** — no un teaser recortado:
+
+- **Alineado a un video largo YA publicado** (rotación por el menos usado):
+  el tema sale del largo, pero el guion es nuevo (otro ángulo, otro dato).
+  El comentario del Short enlaza a ese video largo (link clicable real,
+  verificado por API con `<a href>`).
+- **4 formatos rotativos** (dato sorprendente / mito vs verdad / top 3 /
+  consejo práctico), nunca el mismo dos días seguidos, con cierres
+  variados (al largo / a suscribirse / curiosidad / pregunta). Duración
+  objetivo variable (22-42s). Temperatura alta del LLM para máxima
+  variación entre Shorts (defensas anti-"contenido inauténtico").
+- **Humanización del guion**: reglas de oralidad en el prompt (pregunta
+  retórica, una expresión coloquial natural, frases cortas de habla real,
+  prohibido lenguaje de folleto).
+- **Humanización de la voz** (`agents/voice.py`): variación aleatoria de
+  velocidad por video (±2%) — los narradores humanos no graban siempre a
+  la misma velocidad exacta; la uniformidad perfecta es señal de "voz
+  sintética sin edición".
+- Con verificación científica cuando hay estudios + filtro de seguridad
+  médica. Si no hay LLM disponible, NO publica relleno de plantilla.
+- Candado propio del día (el cron de respaldo no duplica el Short).
+- Integrado en el workflow: corre solo cuando el candado dice que no toca
+  video largo. Probado en vivo: guion generado con estudio real de
+  probióticos, formato mito-vs-verdad, corregido por seguridad médica.
+- Corrección adicional a `agents/seguridad_medica.py`: el reemplazo de
+  frases de riesgo ahora sustituye la ORACIÓN completa (antes podía dejar
+  frases enredadas, visto en prueba real).
+
 ### 💬 Agente 30: Respondedor de comentarios (estrategia de visualizaciones, 16-ago-2026)
 La interacción (comentarios/respuestas) es una de las señales principales
 que usa el algoritmo para recomendar videos. `agents/responde_comentarios.py`:

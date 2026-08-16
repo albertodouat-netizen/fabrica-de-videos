@@ -104,11 +104,21 @@ def _revisar_texto(texto: str) -> tuple:
         m = patron.search(corregido)
         if m:
             problemas.append(f"sugerencia de sustituir tratamiento: \"{m.group(0)[:70]}\"")
-            # Aquí no hay reescritura parcial segura: se reemplaza la frase
-            # completa por el mensaje responsable estándar.
-            corregido = patron.sub(
-                "siempre como complemento y nunca en reemplazo de lo que te indique tu médico",
-                corregido)
+            # Aquí no hay reescritura parcial segura: se reemplaza la
+            # ORACIÓN COMPLETA que contiene la frase peligrosa por el
+            # mensaje responsable estándar (corregido 16-ago-2026: el
+            # reemplazo parcial anterior producía frases enredadas tipo
+            # "sin siempre como complemento... médico médicos" -- visto en
+            # una prueba real).
+            oraciones = re.split(r"(?<=[.!?])\s+", corregido)
+            nuevas = []
+            for oracion in oraciones:
+                if patron.search(oracion):
+                    nuevas.append("Recuerda que esto es siempre un complemento y nunca "
+                                   "un reemplazo de lo que te indique tu médico.")
+                else:
+                    nuevas.append(oracion)
+            corregido = " ".join(nuevas)
 
     return corregido, problemas
 

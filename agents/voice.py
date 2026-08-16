@@ -115,6 +115,19 @@ def narrar_guion(guion: dict, carpeta_salida: str, nombre_base: str) -> dict:
     cfg = load_config()
     voz = _elegir_voz(guion, cfg)
     rate = cfg["apis"].get("voz_narrador_rate", "-8%")
+    # HUMANIZACIÓN (16-ago-2026): pequeña variación aleatoria de velocidad
+    # por video (+/-2%). Una voz que narra SIEMPRE a la misma velocidad
+    # exacta es una de las señales de "voz sintética sin edición" que la
+    # política de contenido inauténtico usa como indicio; los narradores
+    # humanos varían naturalmente entre grabaciones. La variación es por
+    # VIDEO (no por frase), así que dentro de un mismo video la voz se
+    # mantiene consistente.
+    try:
+        import random as _random
+        base = int(rate.replace("%", ""))
+        rate = f"{base + _random.choice([-2, -1, 0, 1, 2]):+d}%"
+    except Exception:
+        pass
     pitch = cfg["apis"].get("voz_narrador_pitch", "+0Hz")
     os.makedirs(carpeta_salida, exist_ok=True)
 
