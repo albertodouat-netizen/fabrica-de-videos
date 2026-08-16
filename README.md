@@ -197,6 +197,30 @@ se encontraron y corrigieron 3 defectos reales:
    (en `agents/video_editor.py`) reparte el sobrante proporcionalmente
    entre todos los cortes.
 
+### 🔔 Vigilante de publicaciones: alerta al celular/correo si el robot no publica (16-ago-2026)
+Pedido del usuario: "¿cómo me entero si GitHub se salta la publicación?".
+Solución 100% gratis usando las notificaciones nativas de GitHub:
+
+- Nuevo workflow `vigilante.yml`: corre todos los días a las 8:00 am
+  (Colombia), una hora MUY distinta de las corridas de publicación, y
+  ejecuta `scripts/vigilante_publicaciones.py`.
+- El script revisa la memoria del robot: si la última publicación tiene
+  más de 3 días (frecuencia de 2 días + 1 de gracia), el workflow
+  **termina en error a propósito** → GitHub envía automáticamente un
+  correo al dueño del repo ("Vigilante de publicaciones: failed") y una
+  notificación push si tiene la app de GitHub en el celular.
+- Si todo está en orden, termina en verde y no molesta.
+- Probado con 4 escenarios (1, 3, 4 y 7 días sin publicar): 4/4
+  correctos (alerta exactamente cuando debe).
+
+Para recibir las alertas (1 minuto, una sola vez):
+1. **Correo**: GitHub → foto de perfil → Settings → Notifications →
+   en "Actions" dejar activado el aviso de workflows fallidos por email
+   (suele venir activado por defecto).
+2. **Celular (recomendado)**: instalar la app **GitHub** (Android/iPhone),
+   iniciar sesión, y permitir notificaciones. Los fallos de workflows
+   llegan como notificación push.
+
 ### 📅 Tres ajustes de estrategia pedidos por el dueño del canal (16-ago-2026)
 1. **3-5 citas científicas distribuidas por TODO el video** (antes máx. 2):
    la primera poco después de la introducción, otras a la mitad y la
