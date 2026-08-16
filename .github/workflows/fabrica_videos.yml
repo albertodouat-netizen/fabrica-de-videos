@@ -90,6 +90,24 @@ jobs:
         if: steps.candado.outputs.ya_publico != 'true'
         run: python3 orchestrator.py --videos 1
 
+      # Días de "descanso" del video largo: se publica UN Short
+      # independiente con contenido completo y propio, alineado a un video
+      # largo ya existente (estrategia de crecimiento acordada 16-ago-2026:
+      # presencia diaria en el feed de Shorts, el canal de descubrimiento
+      # real de un canal nuevo, sin aumentar la frecuencia de largos).
+      # El candado de doble corrida del mismo día lo cubre el propio
+      # orquestador: solo corre cuando ya_publico == 'true' (no tocaba
+      # largo) y el paso guarda su propia marca del día en estado.json.
+      - name: Short independiente (días sin video largo)
+        if: steps.candado.outputs.ya_publico == 'true'
+        continue-on-error: true
+        run: python3 orchestrator.py --solo-short-independiente
+
+      - name: Responder comentarios de espectadores (interacción = algoritmo)
+        if: always()
+        continue-on-error: true
+        run: python3 -c "import sys; sys.path.insert(0,'.'); from agents.responde_comentarios import responder_comentarios_pendientes; responder_comentarios_pendientes()"
+
       - name: Guardar video, miniatura y logs como respaldo descargable
         if: always()
         uses: actions/upload-artifact@v4
