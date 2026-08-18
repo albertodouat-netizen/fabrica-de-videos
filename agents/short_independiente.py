@@ -69,6 +69,17 @@ REGLAS DE HUMANIZACIÓN (muy importantes, esto debe sonar a persona real, no a r
 - PROHIBIDO: saludos genéricos ("hola amigos"), presentar el canal, pedir suscripción (el cierre lo pongo yo).
 - El primer segundo es TODO: arranca directo con el dato/pregunta más fuerte.
 
+REGLA DE LOS PRIMEROS 3 SEGUNDOS (añadida 19-ago-2026 con datos REALES del canal:
+un Short llegó a 710 personas pero el 66% deslizó en los primeros ~9 segundos;
+otro Short con mejor arranque retuvo el 63%):
+- El PRIMER beat debe ser IMPOSIBLE de ignorar: una afirmación que rompa una
+  creencia común, una cifra concreta, o una pregunta que duela ("¿por qué sigues
+  cansado si duermes 8 horas?").
+- El primer beat NUNCA empieza con contexto ("la salud de nuestros ojos es
+  importante...") ni con el nombre del tema. Empieza con el CHOQUE.
+- Piensa así: la persona está deslizando Shorts a toda velocidad; tienes UNA
+  frase para que el dedo se detenga.
+
 REGLAS DE SEGURIDAD MÉDICA (obligatorias):
 - NUNCA digas que algo cura, elimina o revierte una enfermedad.
 - NUNCA sugieras reemplazar medicamentos o tratamientos.

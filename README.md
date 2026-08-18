@@ -250,6 +250,21 @@ que usa el algoritmo para recomendar videos. `agents/responde_comentarios.py`:
 - Integrado como paso propio en el workflow (corre aunque no toque
   publicar video, con continue-on-error para nunca bloquear nada).
 
+### 📈 Primer análisis con datos REALES de audiencia (19-ago-2026)
+Estadísticas reales de los primeros 28 días (YouTube Analytics del usuario):
+
+- **Un Short independiente llegó a 710 vistas** (65% del tráfico total del
+  canal): el algoritmo SÍ distribuye los Shorts del canal. Pero su
+  retención fue débil (33%, deslizaban a los ~9s) — era el Short con
+  fondos degradados vacíos que la auditoría del 18-ago corrigió.
+- El Short con mejor arranque retuvo 63,5% (excelente para Shorts).
+- Los largos aún tienen muestra mínima (3-8 vistas), pero "Setas Ostra"
+  logró 41,5% de porcentaje visto — señal temprana buena para un largo.
+- Lección aplicada: nueva "REGLA DE LOS PRIMEROS 3 SEGUNDOS" en el prompt
+  del Short independiente (el primer beat debe romper una creencia o doler,
+  nunca abrir con contexto; datos: 710 personas llegaron, 66% se fue en
+  segundos por un arranque débil + visuales vacíos).
+
 ### 🎬 Auditoría de producción del 18-ago-2026 (defectos vistos por el usuario en el video real)
 El usuario revisó el video largo "Gayatri Mantra" (19m44s) y su Short y
 reportó 4 defectos. Auditoría con storyboards reales del video publicado +
