@@ -132,7 +132,7 @@ def verificar_y_corregir(guion: dict, visuales_info: dict, carpeta_salida: str) 
         beats = cap.get("beats", [])
         visuales_cap = visuales_info["visuales_por_capitulo"][i]
         for j, (beat, visual) in enumerate(zip(beats, visuales_cap)):
-            if beat.get("es_llamado_suscripcion") or beat.get("es_mencion_cruzada"):
+            if beat.get("es_llamado_suscripcion") or beat.get("es_mencion_cruzada") or beat.get("es_intro_marca"):
                 # Las tarjetas gráficas de suscripción y de "también te
                 # puede interesar" son intencionales, no hay que verificarlas.
                 continue

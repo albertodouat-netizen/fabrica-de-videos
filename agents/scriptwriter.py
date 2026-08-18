@@ -756,6 +756,18 @@ def generar_guion(idea: dict) -> dict:
         log(AGENT, f"Aviso: no se pudo insertar el llamado a interacción ({e}). "
                     f"El video se genera igual, pero revisa este punto.")
 
+    # INTRO DE MARCA (pedido del usuario, 19-ago-2026): logo del canal +
+    # bienvenida + promesa científica + invitación a suscribirse, como
+    # primerísimo beat (~10s). El gancho del guion suena inmediatamente
+    # después. Ver agents/intro_marca.py (incluye el razonamiento de por
+    # qué esta intro NO mata la retención: es promesa de valor, no bumper).
+    try:
+        from agents.intro_marca import agregar_intro_marca
+        guion = agregar_intro_marca(guion)
+    except Exception as e:
+        log(AGENT, f"Aviso: no se pudo insertar la intro de marca ({e}). "
+                    f"El video se genera igual, solo sin ese refuerzo de marca.")
+
     # ÚLTIMA LÍNEA DE DEFENSA (añadida 16-ago-2026): revisión determinista
     # de seguridad médica sobre TODO el texto final (gancho, beats, título,
     # descripción). La política de desinformación médica de YouTube es la

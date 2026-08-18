@@ -219,11 +219,14 @@ def agregar_citas_cientificas_en_guion(guion: dict, estudios: list) -> dict:
     n = len(capitulos)
     k = len(estudios_verificados)
     if k == 1:
-        posiciones = [max(1, n // 4)]
+        # Una sola cita: va TEMPRANO (capítulo 0), justo después del gancho
+        # (orden pedido por el usuario 19-ago-2026: intro de marca → gancho
+        # → mención de la investigación científica base → contenido).
+        posiciones = [0]
     else:
-        # k posiciones repartidas uniformemente entre el primer capítulo
-        # después de la intro (índice 1) y el último (índice n-1).
-        inicio_pos, fin_pos = 1, max(1, n - 1)
+        # La PRIMERA cita va temprano (capítulo 0, tras el gancho: orden
+        # pedido por el usuario) y las demás repartidas hasta el final.
+        inicio_pos, fin_pos = 0, max(1, n - 1)
         if k == 2:
             posiciones = [inicio_pos, fin_pos]
         else:

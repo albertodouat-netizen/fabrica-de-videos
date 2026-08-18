@@ -210,7 +210,7 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
     primera_imagen = None
     for i, cap in enumerate(guion["capitulos"]):
         for j, beat in enumerate(cap.get("beats", [])):
-            if beat.get("es_llamado_suscripcion") or beat.get("es_mencion_cruzada") or beat.get("es_llamado_interaccion") or beat.get("es_cita_cientifica"):
+            if beat.get("es_llamado_suscripcion") or beat.get("es_mencion_cruzada") or beat.get("es_llamado_interaccion") or beat.get("es_cita_cientifica") or beat.get("es_intro_marca"):
                 continue
             primera_imagen = visuales_info["visuales_por_capitulo"][i][j]["ruta"]
             break

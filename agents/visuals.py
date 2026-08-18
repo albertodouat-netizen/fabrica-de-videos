@@ -566,6 +566,23 @@ def obtener_visuales_para_guion(guion: dict, carpeta_salida: str, orientacion="l
             # interno, ver agents/promocion_cruzada.py): se muestra una
             # tarjeta con el título del video recomendado en vez de buscar
             # stock (nada de la vida real representa "otro video del canal").
+            # Intro de marca (ver agents/intro_marca.py): tarjeta con el
+            # LOGO REAL del canal + promesa científica. Es la primerísima
+            # escena del video (pedido del usuario, 19-ago-2026).
+            if beat.get("es_intro_marca"):
+                try:
+                    from agents.intro_marca import generar_tarjeta_intro
+                    ruta_intro = generar_tarjeta_intro(carpeta_salida)
+                    visuales_cap.append({"tipo": "imagen", "ruta": ruta_intro,
+                                          "keyword": "tarjeta de intro de marca del canal"})
+                    log(AGENT, f"Cap {i+1} beat {j+1}/{len(beats)}: intro de marca -> tarjeta con logo real")
+                    continue
+                except Exception as e:
+                    log(AGENT, f"Aviso: no se pudo generar la tarjeta de intro ({e}); "
+                                "se busca un visual normal para este beat.")
+                    beat = dict(beat)
+                    beat["visual"] = "fresh green herbs and plants bright natural light"
+
             # Cita científica (ver agents/citas_cientificas.py): desde la
             # auditoría élite del 14-ago-2026, si el estudio citado es de
             # ACCESO ABIERTO se muestra la PORTADA REAL del estudio

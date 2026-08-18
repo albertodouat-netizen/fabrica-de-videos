@@ -250,6 +250,28 @@ que usa el algoritmo para recomendar videos. `agents/responde_comentarios.py`:
 - Integrado como paso propio en el workflow (corre aunque no toque
   publicar video, con continue-on-error para nunca bloquear nada).
 
+### 🎬 Agente 32: Intro de marca con logo (pedido del usuario, 19-ago-2026)
+El video largo ahora abre con una presentación de marca de ~10 segundos:
+
+- **Tarjeta visual con el LOGO REAL del canal** (descargado de YouTube a
+  assets/logo_canal.jpg): logo circular con halo sobre degradado verde de
+  marca + "SALUD NATURAL DIARIA" + "Información real, respaldada por
+  estudios científicos" + "Fuentes enlazadas en la descripción".
+- **Voz con promesa impactante** (4 variantes rotativas anti-plantilla),
+  las 3 ideas en ~10s: bienvenida + promesa de credibilidad científica
+  ("aquí no repetimos rumores...") + invitación a suscribirse.
+- **Orden final del arranque** (verificado con prueba integrada):
+  1. Intro de marca (logo + promesa + suscripción)
+  2. Gancho del video (reordenado: ahora es un beat después de la intro;
+     antes voice.py lo narraba primero y habría quedado al revés)
+  3. Primer golpe de contenido
+  4. Mención de la investigación científica base (la primera cita
+     científica ahora va SIEMPRE temprana, en el capítulo 1)
+- Por qué esta intro no mata la retención (el riesgo de los "bumpers"):
+  dura ~10s, la voz da la promesa de valor DESDE el primer segundo (no es
+  un logo mudo) y el texto es gancho de credibilidad, no saludo genérico.
+- Excluida de: QA de coherencia, miniatura base y mini-guion del Short.
+
 ### 📈 Primer análisis con datos REALES de audiencia (19-ago-2026)
 Estadísticas reales de los primeros 28 días (YouTube Analytics del usuario):
 
