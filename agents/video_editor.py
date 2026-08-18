@@ -191,6 +191,28 @@ def _renderizar_capitulo(cap, audio_cap_info, visuales_cap, carpeta_salida, indi
     # escucharlo una vez en el audio (pedido explícito del usuario, para
     # dar más peso y veracidad a la información).
     beats_cap = cap.get("beats", [])
+
+    # MÚSICA DE MEDITACIÓN EN LA INTRO DE MARCA (pedido del usuario,
+    # 19-ago-2026): si este capítulo contiene el beat de intro de marca
+    # (siempre el beat 0 del capítulo 0), se mezcla un pad relajante bajo
+    # la voz de la bienvenida, SOLO durante ese beat. La mezcla se hace en
+    # la PISTA DE AUDIO del capítulo (no en el sub-clip: el audio del
+    # sub-clip se descartaría más abajo cuando el capítulo recibe la
+    # narración completa con with_audio). Ver agents/musica_intro.py:
+    # Jamendo si hay client_id, o pad sintetizado local 100% libre de
+    # derechos como respaldo garantizado.
+    musica_intro_mezcla = None   # (ruta, duracion_del_beat_intro)
+    for idx, (beat, dur) in enumerate(zip(beats_cap, duraciones_beats)):
+        if beat.get("es_intro_marca") and idx == 0:
+            try:
+                from agents.musica_intro import obtener_musica_intro
+                ruta_mi = obtener_musica_intro(carpeta_salida, duracion=dur + 2.0)
+                if ruta_mi:
+                    musica_intro_mezcla = (ruta_mi, dur)
+            except Exception as e:
+                log(AGENT, f"Aviso: no se pudo preparar la música de la intro ({e}).")
+            break
+
     for idx, (beat, dur) in enumerate(zip(beats_cap, duraciones_beats)):
         cifra = beat.get("cifra_verificada")
         cita_fuente = beat.get("cita_fuente")
@@ -240,6 +262,25 @@ def _renderizar_capitulo(cap, audio_cap_info, visuales_cap, carpeta_salida, indi
                         "el video sigue igual, solo sin ese banner.")
 
     video_capitulo = concatenate_videoclips(sub_clips, method="chain") if len(sub_clips) > 1 else sub_clips[0]
+
+    # Mezcla real de la música de la intro sobre la narración del capítulo
+    # (ver preparación arriba): pad al 22% de volumen solo durante el beat
+    # de intro, la voz sigue al 100%.
+    if musica_intro_mezcla is not None:
+        try:
+            import moviepy.audio.fx as afx
+            from moviepy import CompositeAudioClip
+            ruta_mi, dur_intro = musica_intro_mezcla
+            pad = (AudioFileClip(ruta_mi)
+                   .with_duration(min(dur_intro, AudioFileClip(ruta_mi).duration))
+                   .with_effects([afx.MultiplyVolume(0.22)]))
+            audio_clip = CompositeAudioClip([audio_clip, pad.with_start(0)])
+            log(AGENT, f"Música de meditación mezclada bajo la voz de la intro "
+                        f"({dur_intro:.1f}s, volumen 22%).")
+        except Exception as e:
+            log(AGENT, f"Aviso: no se pudo mezclar la música de la intro ({e}); "
+                        "la intro va solo con voz.")
+
     # Usamos la duración REAL de lo ya renderizado (no la del audio) para evitar
     # pedirle a moviepy frames más allá de lo que el clip visual realmente tiene.
     audio_clip = audio_clip.with_duration(min(duracion_cap, duracion_visual_real)) if audio_clip.duration > duracion_visual_real else audio_clip

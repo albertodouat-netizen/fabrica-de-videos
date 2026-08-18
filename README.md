@@ -250,6 +250,25 @@ que usa el algoritmo para recomendar videos. `agents/responde_comentarios.py`:
 - Integrado como paso propio en el workflow (corre aunque no toque
   publicar video, con continue-on-error para nunca bloquear nada).
 
+### 🎵 Agente 33: Música de meditación en la intro (19-ago-2026)
+La intro de marca ahora lleva música relajante de fondo bajo la voz:
+
+- **Doble vía, siempre gratis**: pista de meditación de Jamendo (si hay
+  client_id) o, como respaldo garantizado, un **pad ambiental sintetizado
+  localmente** (progresión C-Am-F-G con armónicos suaves, ataque lento,
+  fundidos de entrada/salida) — 100% original, generado matemáticamente,
+  sin copyright de terceros y sin depender de internet.
+- Mezclado al 22% de volumen bajo la voz, SOLO durante el beat de intro
+  (medido en render real: el pad suena en la intro y calla después).
+- La mezcla se hace en la pista de audio del capítulo (no en el sub-clip,
+  cuyo audio se descarta al montar la narración).
+- HALLAZGO de esta sesión: `jamendo_client_id` sigue con el placeholder
+  ("OBTENER_GRATIS_AQUI"), así que TODOS los videos hasta ahora salieron
+  sin música de fondo general. Si se desea música en todo el video,
+  crear el client_id gratis en https://devportal.jamendo.com/ y añadirlo
+  como secret JAMENDO_CLIENT_ID en GitHub. Mientras tanto, la intro SÍ
+  tendrá siempre su música (pad local).
+
 ### 🎬 Agente 32: Intro de marca con logo (pedido del usuario, 19-ago-2026)
 El video largo ahora abre con una presentación de marca de ~10 segundos:
 
