@@ -88,6 +88,22 @@ Instrucciones de formato:
          office" (la oficina no encaja con un canal de salud natural). Todas las
          escenas del guion deben poder pertenecer al mismo video sin sentirse fuera
          de lugar entre sí.
+         REGLA DE ORO DEL VISUAL (auditoría con video real, 18-ago-2026, defecto
+         visto por el dueño del canal): el visual debe representar LA IDEA COMPLETA
+         del beat, NUNCA una palabra suelta de la frase. Pregúntate: "si alguien ve
+         esta escena SIN audio, ¿entiende de qué se está hablando?".
+         - Ejemplo REAL del error: el beat hablaba de "la calma que produce el
+           sonido" y el visual era "green leaves" (¡hojas!) solo porque la
+           naturaleza suena calmada. INCORRECTO.
+         - Correcto para ese beat: "person with closed eyes listening with
+           headphones, peaceful face" (una persona EXPERIMENTANDO la calma del
+           sonido: esa es la idea).
+         - Si el beat habla de un EFECTO en las personas (calma, energía, dolor,
+           sueño), el visual debe mostrar a UNA PERSONA experimentándolo.
+         - Si el beat habla de un ALIMENTO/REMEDIO, muestra el alimento o a alguien
+           usándolo/consumiéndolo.
+         - Si el beat es abstracto (ciencia, estadística), muestra el contexto
+           concreto más cercano (investigador, documento, persona midiendo algo).
    Pensado para que el conjunto dure entre {dur_min} y {dur_max} minutos hablado en total
    (aprox 140 palabras/min). Menciona la keyword_principal DE FORMA NATURAL y hablada
    dentro de los primeros 60 segundos del guion (primer o segundo beat del capítulo 1):

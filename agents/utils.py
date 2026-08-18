@@ -61,6 +61,12 @@ def limpiar_texto_para_voz(texto: str) -> str:
     # Markdown de énfasis
     t = t.replace("**", "").replace("__", "").replace("*", "").replace("_", "")
     t = t.replace("#", "").replace("`", "")
+    # EMOJIS (bug real oído el 18-ago-2026: la voz narró el título de un
+    # Short con "😱 #Shorts" y edge-tts leyó el emoji y la almohadilla en
+    # voz alta: "...cara de terror, almohadilla, shorts"). Se eliminan
+    # todos los emojis y pictogramas del texto narrable.
+    t = re.sub(r"[\U0001F000-\U0001FAFF\U00002600-\U000027BF\U0001F1E6-\U0001F1FF"
+               r"\U00002190-\U000021FF\U00002B00-\U00002BFF\uFE0F]+", " ", t)
     # Guiones largos usados como pausas -> coma (para que no se lean como "guion")
     t = t.replace(" - ", ", ").replace("—", ",").replace("–", ",")
     # Colapsar espacios extra que hayan quedado

@@ -250,6 +250,41 @@ que usa el algoritmo para recomendar videos. `agents/responde_comentarios.py`:
 - Integrado como paso propio en el workflow (corre aunque no toque
   publicar video, con continue-on-error para nunca bloquear nada).
 
+### 🎬 Auditoría de producción del 18-ago-2026 (defectos vistos por el usuario en el video real)
+El usuario revisó el video largo "Gayatri Mantra" (19m44s) y su Short y
+reportó 4 defectos. Auditoría con storyboards reales del video publicado +
+reproducción de cada bug en código:
+
+1. **"Almohadilla, terror, short" narrado al final** ✅ CORREGIDO
+   Causa: la mención cruzada narra el título del video recomendado; ese
+   título era un Short con "😱 #Shorts" y el beat se agrega DESPUÉS de la
+   sanitización del guionista (nadie lo limpiaba). Doble corrección:
+   `promocion_cruzada.py` limpia el título antes de narrarlo (fuera
+   hashtags/emojis) y `utils.limpiar_texto_para_voz()` ahora elimina TODOS
+   los emojis (antes solo quitaba #, y edge-tts leía el emoji en voz alta).
+2. **Espacios sin imagen (fondos degradados vacíos)** ✅ CORREGIDO
+   Causa: cada imagen IA requiere verificación de seguridad con Gemini,
+   pero la cuota (16/día) se agota con ~50 beats por video; sin
+   verificación disponible, TODAS las imágenes IA se descartaban "por
+   precaución" → degradado vacío. Corrección: **verificación selectiva**  —
+   escenas SIN personas (comida, plantas, paisajes, objetos: riesgo NSFW
+   ~cero) se aceptan sin verificación; escenas CON personas siguen
+   exigiendo verificación real (la seguridad manda). Probado en vivo:
+   escena de té sin persona aceptada; escena con persona sin Gemini
+   disponible, descartada.
+3. **Imágenes que coinciden con palabras pero no con la IDEA** ✅ CORREGIDO
+   (ej. real: "la calma que causa el sonido" mostraba hojas). Triple
+   corrección: (a) nueva REGLA DE ORO DEL VISUAL en el prompt del
+   guionista con ese ejemplo real ("si alguien ve la escena SIN audio,
+   ¿entiende de qué se habla?"); (b) umbral de relevancia del stock subido
+   de 0.34 a 0.50 (si el stock no coincide en ≥50% de las palabras, se
+   genera imagen IA a medida); (c) el prompt de imagen IA ya no fuerza
+   "persona en cocina" en escenas sin personas (causaba composiciones
+   incoherentes en escenas de objetos/plantas).
+4. **Imágenes IA horizontales en Shorts verticales** ✅ CORREGIDO
+   Se generaban siempre en 1280x720 aunque el Short es 9:16; ahora el
+   tamaño sigue la orientación (720x1280 para Shorts).
+
 ### 🔎 Auditoría del 17-ago-2026: el "video largo perdido" y el filtro anti-repetidos
 Reconstrucción con evidencia real (API + RSS + correo de alerta del usuario):
 

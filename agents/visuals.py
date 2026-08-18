@@ -102,7 +102,12 @@ def _puntaje_relevancia(keyword: str, texto_meta: str) -> float:
 # ver con el contenido": preferimos SIEMPRE una imagen IA generada a medida
 # para esa frase exacta (ver _generar_imagen_ia) antes que un video/foto de
 # stock que coincide poco o nada.
-UMBRAL_RELEVANCIA_MINIMA_STOCK = 0.34
+# Subido de 0.34 a 0.50 (auditoría con video real, 18-ago-2026): con 0.34
+# seguían pasando visuales que coincidían en UNA palabra suelta con la
+# keyword ("leaves" para "calming sound of leaves") pero no con la idea.
+# Con 0.50 el stock debe coincidir en al menos la mitad de las palabras
+# clave; si no, se genera imagen IA a medida (más fiel a la idea).
+UMBRAL_RELEVANCIA_MINIMA_STOCK = 0.50
 
 
 def _buscar_pexels_video(query, api_key, por_pagina=6, orientacion="landscape"):
@@ -197,6 +202,20 @@ def _sanear_descripcion_para_ia(texto: str) -> str:
     return texto
 
 
+_PALABRAS_PERSONA = re.compile(
+    r"\b(person|people|man|men|woman|women|human|face|body|girl|boy|child|"
+    r"children|kid|lady|guy|hand|hands|arm|leg|skin|portrait|selfie|"
+    r"persona|gente|hombre|mujer|niñ[oa]|rostro|cara|cuerpo|piel|mano)\b",
+    re.IGNORECASE)
+
+
+def _prompt_tiene_persona(texto: str) -> bool:
+    """¿La escena pedida incluye personas o partes del cuerpo? Se usa para
+    decidir si una imagen IA necesita verificación visual obligatoria
+    (ver nota de verificación selectiva en _generar_imagen_ia)."""
+    return bool(_PALABRAS_PERSONA.search(texto or ""))
+
+
 def _generar_imagen_ia(descripcion: str, destino_jpg: str, tamano=(1280, 720),
                         contexto: str = "") -> bool:
     """Genera una imagen FOTORREALISTA a medida con Pollinations.ai (100%
@@ -222,13 +241,26 @@ def _generar_imagen_ia(descripcion: str, destino_jpg: str, tamano=(1280, 720),
     _imagen_es_seguro_gemini), con reintentos con otra semilla si falla."""
     descripcion = _sanear_descripcion_para_ia(descripcion)
     base = f"{descripcion}. {contexto}".strip(". ").strip()
+    # PROMPT CONDICIONAL (auditoría con video real, 18-ago-2026): antes el
+    # prompt SIEMPRE añadía "persona real... persona vestida con camiseta...
+    # ambiente tipo cocina", incluso para escenas de plantas, comida o
+    # paisajes. Resultado real visto por el usuario: imágenes incoherentes
+    # (pedías "calma/sonido" y salían hojas con encuadres raros). Ahora el
+    # refuerzo de "persona vestida" solo se añade si la escena SÍ incluye
+    # personas; si no, se pide explícitamente una escena SIN personas.
+    if _prompt_tiene_persona(base):
+        refuerzo = (
+            "persona real (no dibujo, no animación, no 3D), "
+            "encuadre de la cintura hacia arriba o solo manos/rostro, persona vestida "
+            "con camiseta o camisa casual, ambiente cotidiano y cálido, "
+            "nunca un estudio de figura ni retrato de cuerpo aislado, "
+        )
+    else:
+        refuerzo = "escena sin personas, enfoque en el objeto o ambiente descrito, "
     prompt = (
         f"{base}, fotografía realista tipo documental, cámara real, luz natural, "
         f"alta definición, composición cinematográfica, sin texto, sin marca de agua, "
-        f"sin logotipos, persona real (no dibujo, no animación, no 3D), "
-        f"encuadre de la cintura hacia arriba o solo manos/rostro, persona vestida "
-        f"con camiseta o camisa casual, ambiente cotidiano tipo cocina u hogar, "
-        f"nunca un estudio de figura ni retrato de cuerpo aislado, "
+        f"sin logotipos, {refuerzo}"
         f"contenido apto para todo público, familiar, profesional"
     )
     prompt_codificado = urllib.parse.quote(prompt)
@@ -261,11 +293,23 @@ def _generar_imagen_ia(descripcion: str, destino_jpg: str, tamano=(1280, 720),
             log(AGENT, f"Imagen IA descartada por seguridad para '{descripcion}' "
                         f"(intento {intento+1}/3); probando con otra semilla...")
         except Exception as e:
-            # Si la verificación de seguridad falla técnicamente (sin key de
-            # Gemini, sin cuota, etc.), no podemos confirmar que sea segura,
-            # así que por precaución NO se acepta esta imagen en concreto.
+            # VERIFICACIÓN SELECTIVA (auditoría con video real, 18-ago-2026):
+            # antes, si Gemini no estaba disponible (cuota agotada: pasa
+            # siempre, un video tiene ~50 beats y la cuota son 16 llamadas),
+            # se descartaban TODAS las imágenes IA "por precaución", y el
+            # video quedaba lleno de fondos degradados vacíos (defecto real
+            # visto por el usuario). El riesgo real de NSFW solo existe en
+            # imágenes CON PERSONAS (incidente original: "human body
+            # figure"). Ahora: si el prompt NO pide personas (comida,
+            # plantas, objetos, paisajes), la imagen se acepta sin
+            # verificación (riesgo ~cero); si pide personas y no hay
+            # Gemini, se descarta como antes (la seguridad manda).
+            if not _prompt_tiene_persona(base):
+                log(AGENT, f"Imagen IA aceptada sin verificación Gemini (escena sin "
+                            f"personas, riesgo mínimo): '{descripcion[:50]}'")
+                return True
             log(AGENT, f"Aviso: no se pudo verificar la seguridad de la imagen IA ({e}); "
-                        f"se descarta por precaución.")
+                        f"se descarta por precaución (la escena incluye personas).")
         try:
             os.remove(destino_jpg)
         except OSError:
@@ -458,7 +502,12 @@ class BuscadorVisualesUnicos:
         # stock gratuito casi nunca tiene la escena exacta que pide el guion,
         # y una imagen mal relacionada es peor que una generada a propósito.
         destino_ia = os.path.join(carpeta_salida, f"{tag}_{slugify(keyword)}_ia.jpg")
-        if _generar_imagen_ia(keyword, destino_ia, contexto=contexto):
+        # Tamaño según orientación (bug real visto en el Short del 18-ago:
+        # las imágenes IA se generaban SIEMPRE en 1280x720 horizontal,
+        # también para Shorts verticales 1080x1920, quedando diminutas o
+        # recortadas sobre el fondo).
+        tamano_ia = (720, 1280) if self.orientacion == "portrait" else (1280, 720)
+        if _generar_imagen_ia(keyword, destino_ia, tamano=tamano_ia, contexto=contexto):
             log(AGENT, f"'{keyword}': no había stock con buena coincidencia, se generó una imagen IA a medida.")
             return {"tipo": "imagen", "ruta": destino_ia, "keyword": keyword}
 
@@ -480,7 +529,8 @@ class BuscadorVisualesUnicos:
         except OSError:
             pass
         destino_ia = os.path.join(carpeta_salida, f"{tag}_{slugify(keyword)}_ia_v2.jpg")
-        if _generar_imagen_ia(keyword, destino_ia, contexto=contexto):
+        tamano_ia = (720, 1280) if self.orientacion == "portrait" else (1280, 720)
+        if _generar_imagen_ia(keyword, destino_ia, tamano=tamano_ia, contexto=contexto):
             return {"tipo": "imagen", "ruta": destino_ia, "keyword": keyword}
         # Si por algún motivo Pollinations falla justo en este momento, como
         # red de seguridad reintentamos el flujo normal (stock -> IA -> fondo).

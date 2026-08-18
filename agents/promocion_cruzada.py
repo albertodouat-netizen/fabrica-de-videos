@@ -189,7 +189,19 @@ def agregar_mencion_video_relacionado(guion: dict, video_relacionado: dict) -> d
     if not titulo_rel:
         return guion
 
-    texto = random.choice(FRASES_MENCION_CRUZADA).format(titulo=titulo_rel)
+    # LIMPIEZA PARA VOZ (bug real oído por el usuario el 18-ago-2026: la
+    # voz dijo "almohadilla... shorts" al final del video). Causa: el
+    # título del video recomendado era un Short y traía "😱 #Shorts"; este
+    # beat se agrega DESPUÉS de la sanitización del guionista, así que
+    # nadie lo limpiaba. Se limpia aquí mismo: fuera emojis, hashtags y
+    # cualquier símbolo no narrable.
+    import re as _re
+    titulo_narrable = titulo_rel
+    titulo_narrable = _re.sub(r"#\w+", "", titulo_narrable)          # hashtags (#Shorts)
+    titulo_narrable = _re.sub(r"[^\w\sáéíóúÁÉÍÓÚñÑüÜ¿?¡!,.:]", "", titulo_narrable)  # emojis/símbolos
+    titulo_narrable = _re.sub(r"\s{2,}", " ", titulo_narrable).strip(" .,:")
+
+    texto = random.choice(FRASES_MENCION_CRUZADA).format(titulo=titulo_narrable)
     beat = {
         "texto": texto,
         "visual": MARCADOR_VISUAL_CROSSPROMO,
