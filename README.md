@@ -250,6 +250,56 @@ que usa el algoritmo para recomendar videos. `agents/responde_comentarios.py`:
 - Integrado como paso propio en el workflow (corre aunque no toque
   publicar video, con continue-on-error para nunca bloquear nada).
 
+### 🔎 Auditoría del 17-ago-2026: el "video largo perdido" y el filtro anti-repetidos
+Reconstrucción con evidencia real (API + RSS + correo de alerta del usuario):
+
+1. El 16-ago a las 8:00am el vigilante v1 envió una FALSA alarma (memoria
+   local congelada en el 9-ago). El usuario, correctamente, lanzó un "Run
+   workflow" manual.
+2. Esa corrida SÍ publicó video largo (v4YH_bZELF0, "Música Relajante") +
+   su Short a las ~9:40am. PERO el tema era una REPETICIÓN de "Música
+   Relajante" (la memoria vieja no recordaba los temas ya usados) y ese
+   video largo fue borrado después (ya no existe en YouTube), dejando a su
+   Short huérfano.
+3. El 17-ago la corrida normal funcionó EXACTAMENTE como fue diseñada: el
+   candado v2 detectó "largo publicado ayer 16 → no toca" y publicó el
+   Short independiente (Setas Ostra, formato dato-sorprendente, enlazado
+   al largo real de setas que sí existe). No fue un fallo: fue la
+   frecuencia cada-2-días operando (el largo del 16, aunque luego borrado,
+   contaba como publicado ese día en el RSS al momento de la corrida...
+   y tras el borrado, el último largo visible pasó a ser el del 15, por lo
+   que el 17 igualmente tocaba largo pero la corrida ya había pasado).
+
+Correcciones aplicadas:
+- **Filtro anti-repetidos contra el canal REAL** (`orchestrator.py`):
+  antes de elegir tema, lee los títulos ya publicados en el canal y
+  descarta ideas que coincidan en ≥50% de sus palabras clave. Probado con
+  7 casos (música/setas/intestino repetidos vs magnesio/ayuno/cúrcuma
+  nuevos): 7/7 correctos. Esto elimina de raíz las repeticiones de tema
+  aunque la memoria local esté desactualizada.
+- **Short huérfano del 16-ago reparado por API**: su descripción y su
+  comentario ahora apuntan al video largo de música real (NYlWbbAxh7s).
+
+### 🔧 Falsa alarma del vigilante corregida: ahora mira el canal REAL (16-ago-2026, tarde)
+La mañana del 16-ago el vigilante envió una alerta cuando el canal SÍ
+estaba publicando. Causa raíz: leía `data/estado.json` (la memoria local),
+que quedó congelada en el 9-ago cuando un push de la memoria falló, aunque
+las corridas siguientes publicaron bien. Diagnóstico y corrección:
+
+- **Vigilante v2** (`scripts/vigilante_publicaciones.py`): ahora consulta
+  el **feed RSS público del canal de YouTube** (fuente de verdad real, sin
+  API key ni cuota) y solo usa la memoria local como respaldo. Verificado
+  en vivo: reconoce el Short publicado hoy y responde "todo en orden".
+- **Candado de frecuencia v2** (`scripts/verificar_si_ya_publico_hoy.py`):
+  mismo cambio; identifica el último video LARGO real (excluye títulos
+  con #Shorts) y decide con esa fecha. Sin esta corrección, la memoria
+  vieja habría dado luz verde al largo TODOS los días, rompiendo la
+  frecuencia de 1 cada 2 días.
+- Bug adicional encontrado y corregido en la misma sesión: en el feed de
+  YouTube `<published>` viene ANTES de `<media:title>` dentro de cada
+  `<entry>`; un regex secuencial cruzaba entradas y desfasaba fechas por
+  un día. Ahora se parsea cada `<entry>` por separado.
+
 ### 🔔 Vigilante de publicaciones: alerta al celular/correo si el robot no publica (16-ago-2026)
 Pedido del usuario: "¿cómo me entero si GitHub se salta la publicación?".
 Solución 100% gratis usando las notificaciones nativas de GitHub:

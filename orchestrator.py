@@ -50,16 +50,75 @@ AGENT = "Orquestador"
 CATEGORIAS_RECIENTES_A_EVITAR = 4  # cuántos videos anteriores se toman en cuenta para variar el tema
 
 
+def _titulos_ya_publicados_en_canal(cfg) -> set:
+    """Títulos REALES ya publicados en el canal (auditoría 17-ago-2026):
+    la memoria local de 'ideas_usadas' puede quedar desactualizada si un
+    push de la memoria falla (pasó del 14 al 16-ago), y eso causó que se
+    repitiera el tema 'Música Relajante' que el usuario ya había borrado.
+    El canal real es la fuente de verdad: se leen los títulos publicados
+    y se comparan por palabras clave (no por igualdad exacta)."""
+    titulos = set()
+    try:
+        import pickle
+        import googleapiclient.discovery
+        from google.auth.transport.requests import Request
+        with open(cfg["apis"]["oauth_token_path"], "rb") as f:
+            creds = pickle.load(f)
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        yt = googleapiclient.discovery.build("youtube", "v3", credentials=creds)
+        canal_id = cfg.get("canal", {}).get("channel_id", "")
+        playlist = "UU" + canal_id[2:] if canal_id.startswith("UC") else ""
+        if playlist:
+            r = yt.playlistItems().list(part="snippet", playlistId=playlist,
+                                         maxResults=50).execute()
+            for it in r.get("items", []):
+                titulos.add(it["snippet"]["title"].lower())
+    except Exception as e:
+        log(AGENT, f"Aviso: no se pudieron leer los títulos reales del canal ({e}); "
+                    f"se usa solo la memoria local.")
+    return titulos
+
+
+def _tema_parece_repetido(titulo_idea: str, titulos_canal: set) -> bool:
+    """Compara por palabras significativas: si >=60% de las palabras clave
+    de la idea ya están en el título de un video del canal, se considera
+    repetida (evita repetir 'Música Relajante...' con otro envoltorio)."""
+    stop = {"de", "del", "la", "el", "los", "las", "para", "con", "en", "y",
+            "a", "un", "una", "que", "tu", "su", "al", "cómo", "como", "por",
+            "qué", "the", "for", "your", "to", "of", "and", "in", "how"}
+    palabras_idea = {p for p in titulo_idea.lower().split() if p not in stop and len(p) > 3}
+    if not palabras_idea:
+        return False
+    for titulo_canal in titulos_canal:
+        palabras_canal = set(titulo_canal.split())
+        coincidencias = sum(1 for p in palabras_idea
+                            if any(p in pc or pc in p for pc in palabras_canal))
+        # Umbral 50% (ajustado en pruebas reales del 17-ago: con 60%,
+        # "Setas Ostra: Beneficios Comprobados" pasaba como "nuevo" pese a
+        # que el canal ya tiene dos videos de setas ostra).
+        if coincidencias / len(palabras_idea) >= 0.5:
+            return True
+    return False
+
+
 def elegir_idea_no_usada(ideas, estado):
-    """Elige la mejor idea que (a) no se haya usado antes y (b) tenga
-    estudios científicos reales disponibles para respaldarla (ver
+    """Elige la mejor idea que (a) no se haya usado antes NI se parezca a
+    un video ya publicado en el canal real, y (b) tenga estudios
+    científicos reales disponibles para respaldarla (ver
     agents/investigacion_cientifica.py) — si un tema no se puede validar
     con evidencia real, se descarta y se prueba con el siguiente candidato."""
     usadas = set(estado.get("ideas_usadas", []))
     from agents.investigacion_cientifica import buscar_estudios
+    cfg = load_config()
+    titulos_canal = _titulos_ya_publicados_en_canal(cfg)
 
     for idea in ideas:
         if idea["titulo"] in usadas:
+            continue
+        if _tema_parece_repetido(idea["titulo"], titulos_canal):
+            log(AGENT, f"Idea descartada por parecerse a un video YA publicado en el "
+                        f"canal real: '{idea['titulo']}'")
             continue
         try:
             estudios = buscar_estudios(idea["titulo"])
