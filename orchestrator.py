@@ -51,12 +51,15 @@ CATEGORIAS_RECIENTES_A_EVITAR = 4  # cuántos videos anteriores se toman en cuen
 
 
 def _titulos_ya_publicados_en_canal(cfg) -> set:
-    """Títulos REALES ya publicados en el canal (auditoría 17-ago-2026):
-    la memoria local de 'ideas_usadas' puede quedar desactualizada si un
-    push de la memoria falla (pasó del 14 al 16-ago), y eso causó que se
-    repitiera el tema 'Música Relajante' que el usuario ya había borrado.
-    El canal real es la fuente de verdad: se leen los títulos publicados
-    y se comparan por palabras clave (no por igualdad exacta)."""
+    """Títulos REALES ya publicados en el canal, CON FECHA (auditoría
+    17-ago-2026 + ventanas de tiempo del 19-ago): la memoria local puede
+    quedar desactualizada si un push falla, así que el canal real es la
+    fuente de verdad. Devuelve un set de tuplas (titulo_lower, dias_desde
+    _publicacion) para que el filtro anti-repetidos pueda aplicar ventanas
+    de tiempo (un tema similar vuelve a ser elegible cuando su video
+    "envejece"; decisión del usuario: variedad en caliente, reciclaje con
+    el tiempo)."""
+    import datetime as _dt
     titulos = set()
     try:
         import pickle
@@ -70,36 +73,152 @@ def _titulos_ya_publicados_en_canal(cfg) -> set:
         canal_id = cfg.get("canal", {}).get("channel_id", "")
         playlist = "UU" + canal_id[2:] if canal_id.startswith("UC") else ""
         if playlist:
-            r = yt.playlistItems().list(part="snippet", playlistId=playlist,
+            r = yt.playlistItems().list(part="snippet,contentDetails", playlistId=playlist,
                                          maxResults=50).execute()
+            ahora = _dt.datetime.now(_dt.timezone.utc)
             for it in r.get("items", []):
-                titulos.add(it["snippet"]["title"].lower())
+                pub = it["contentDetails"].get("videoPublishedAt") or it["snippet"].get("publishedAt", "")
+                try:
+                    fecha = _dt.datetime.fromisoformat(pub.replace("Z", "+00:00"))
+                    dias = (ahora - fecha).days
+                except Exception:
+                    dias = 0  # sin fecha legible: tratarlo como reciente (cauteloso)
+                titulos.add((it["snippet"]["title"].lower(), dias))
     except Exception as e:
         log(AGENT, f"Aviso: no se pudieron leer los títulos reales del canal ({e}); "
                     f"se usa solo la memoria local.")
     return titulos
 
 
+
+# Mapa bilingüe de CONCEPTOS temáticos (bug real del 18-ago-2026: las ideas
+# del trend_scout vienen EN INGLÉS y los títulos del canal EN ESPAÑOL, así
+# que la comparación por palabras daba cero coincidencias y "Relaxing
+# Music..." pasaba como tema nuevo aunque el canal ya tuviera DOS videos de
+# "Música Relajante..."). Cada fila agrupa términos equivalentes en ambos
+# idiomas; si la idea y un título del canal comparten un mismo CONCEPTO
+# central, el tema se considera repetido sin importar el idioma.
+_CONCEPTOS_BILINGUES = [
+    {"music", "musica", "música", "song", "songs", "sound", "sounds",
+     "sonido", "sonidos", "mantra", "mantras", "frequency", "frequencies",
+     "frecuencia", "frecuencias", "asmr", "binaural", "hz"},
+    {"relaxing", "relajante", "relajación", "relajacion", "calm", "calma",
+     "calming", "meditation", "meditación", "meditacion", "zen"},
+    {"stress", "estrés", "estres", "anxiety", "ansiedad"},
+    {"sleep", "dormir", "sueño", "sueno", "insomnia", "insomnio"},
+    {"gut", "intestino", "intestinal", "digestion", "digestión", "digestivo",
+     "microbiome", "microbioma"},
+    {"mushroom", "mushrooms", "seta", "setas", "hongo", "hongos", "oyster",
+     "ostra", "reishi", "shiitake"},
+    {"magnesium", "magnesio"},
+    {"turmeric", "cúrcuma", "curcuma", "curcumin", "curcumina"},
+    {"inflammation", "inflamación", "inflamacion", "antiinflamatoria",
+     "anti-inflammatory", "antiinflamatorio"},
+    {"vision", "visión", "vista", "eye", "eyes", "ojos", "ocular"},
+    {"fasting", "ayuno"},
+    {"ginger", "jengibre"},
+    {"honey", "miel"},
+    {"garlic", "ajo"},
+    {"tea", "té", "infusion", "infusión"},
+]
+
+
+def _conceptos_de(texto: str) -> set:
+    """Conjunto de índices de conceptos bilingües presentes en un texto."""
+    palabras = set(texto.lower().split())
+    palabras |= {p.strip("¿?¡!.,:;()") for p in palabras}
+    encontrados = set()
+    for i, grupo in enumerate(_CONCEPTOS_BILINGUES):
+        if palabras & grupo:
+            encontrados.add(i)
+    return encontrados
+
+
 def _tema_parece_repetido(titulo_idea: str, titulos_canal: set) -> bool:
-    """Compara por palabras significativas: si >=60% de las palabras clave
-    de la idea ya están en el título de un video del canal, se considera
-    repetida (evita repetir 'Música Relajante...' con otro envoltorio)."""
+    """Compara idea vs títulos ya publicados, CON VENTANA DE TIEMPO
+    (decisión del usuario 19-ago-2026: variedad en caliente, reciclaje
+    después). titulos_canal es un set de tuplas (titulo, dias_desde_pub).
+    Un título del canal solo bloquea si su video tiene MENOS de
+    VENTANA_TEMA_SIMILAR_DIAS días; los videos viejos liberan su tema.
+
+    Dos capas de comparación:
+    1) CONCEPTOS BILINGÜES: si comparten 2+ conceptos centrales (o 1 si es
+       el único concepto de la idea), es repetido aunque estén en idiomas
+       distintos ("Relaxing Music for Stress" vs "Música Relajante Para
+       Reducir El Estrés" comparten música+relajación+estrés).
+    2) Palabras literales (para temas fuera del mapa): si ≥50% de las
+       palabras clave de la idea aparecen en un título del canal."""
+    # Compatibilidad: aceptar tanto tuplas (titulo, dias) como strings sueltos
+    normalizados = []
+    for item in titulos_canal:
+        if isinstance(item, tuple):
+            normalizados.append(item)
+        else:
+            normalizados.append((str(item), 0))
+
+    # Solo los títulos RECIENTES bloquean (ventana de tiempo)
+    recientes = [(t, d) for t, d in normalizados if d < VENTANA_TEMA_SIMILAR_DIAS]
+
+    conceptos_idea = _conceptos_de(titulo_idea)
+    for titulo_canal, _dias in recientes:
+        conceptos_canal = _conceptos_de(titulo_canal)
+        comunes = conceptos_idea & conceptos_canal
+        if len(comunes) >= 2:
+            return True
+        if len(comunes) == 1 and len(conceptos_idea) == 1:
+            return True
+
     stop = {"de", "del", "la", "el", "los", "las", "para", "con", "en", "y",
             "a", "un", "una", "que", "tu", "su", "al", "cómo", "como", "por",
             "qué", "the", "for", "your", "to", "of", "and", "in", "how"}
     palabras_idea = {p for p in titulo_idea.lower().split() if p not in stop and len(p) > 3}
     if not palabras_idea:
         return False
-    for titulo_canal in titulos_canal:
-        palabras_canal = set(titulo_canal.split())
+    for titulo_canal, _dias in recientes:
+        # Solo palabras con contenido real también del lado del canal (bug
+        # visto en prueba del 19-ago: "tu" de "...Para Tu Salud" coincidía
+        # como subcadena dentro de "TUrmeric" y bloqueaba un tema nuevo).
+        palabras_canal = {p for p in titulo_canal.split() if len(p) > 3 and p not in stop}
         coincidencias = sum(1 for p in palabras_idea
                             if any(p in pc or pc in p for pc in palabras_canal))
-        # Umbral 50% (ajustado en pruebas reales del 17-ago: con 60%,
-        # "Setas Ostra: Beneficios Comprobados" pasaba como "nuevo" pese a
-        # que el canal ya tiene dos videos de setas ostra).
         if coincidencias / len(palabras_idea) >= 0.5:
             return True
     return False
+
+
+# VENTANAS DE TIEMPO PARA REPETIR TEMAS (ajustado 19-ago-2026 por decisión
+# explícita del usuario: "los videos siguientes deben ser diferentes a los
+# publicados, pero después de un tiempo se puede publicar un video similar,
+# obviamente no del tema exacto").
+#
+#   - VENTANA_TEMA_SIMILAR_DIAS: un tema que comparte conceptos con un video
+#     ya publicado vuelve a ser ELEGIBLE cuando ese video cumple esta edad.
+#     Con 90 días, el canal puede revisitar "magnesio" con otro ángulo un
+#     trimestre después, que es lo que hacen los canales grandes.
+#   - VENTANA_TEMA_MUSICA_DIAS: ventana MÁS LARGA para el caso especial de
+#     música/sonidos/mantras (el usuario borró esos videos DOS veces; no es
+#     un veto eterno, pero sí una cuarentena larga). Pasado ese tiempo, una
+#     idea de música podría volver a considerarse (p. ej. una NOTICIA sobre
+#     musicoterapia), y siempre con el anti-repetidos normal encima.
+VENTANA_TEMA_SIMILAR_DIAS = 90
+VENTANA_TEMA_MUSICA_DIAS = 180
+
+_CONCEPTO_MUSICA = 0  # índice 0 del mapa: music/song/sound/mantra/...
+
+# Fecha del último incidente de música (los 2 borrados): la cuarentena de
+# música corre desde aquí aunque los videos ya no existan en el canal.
+_INICIO_CUARENTENA_MUSICA = "2026-08-18"
+
+
+def _tema_esta_vetado(titulo_idea: str) -> bool:
+    """Cuarentena de música: activa solo mientras no hayan pasado
+    VENTANA_TEMA_MUSICA_DIAS desde el último incidente. No es eterna."""
+    if _CONCEPTO_MUSICA not in _conceptos_de(titulo_idea):
+        return False
+    import datetime as _dt
+    inicio = _dt.date.fromisoformat(_INICIO_CUARENTENA_MUSICA)
+    dias_pasados = (_dt.date.today() - inicio).days
+    return dias_pasados < VENTANA_TEMA_MUSICA_DIAS
 
 
 def elegir_idea_no_usada(ideas, estado):
@@ -115,6 +234,10 @@ def elegir_idea_no_usada(ideas, estado):
 
     for idea in ideas:
         if idea["titulo"] in usadas:
+            continue
+        if _tema_esta_vetado(idea["titulo"]):
+            log(AGENT, f"Idea descartada por TEMA VETADO (música/sonidos/mantras, "
+                        f"borrado 2 veces por el usuario): '{idea['titulo']}'")
             continue
         if _tema_parece_repetido(idea["titulo"], titulos_canal):
             log(AGENT, f"Idea descartada por parecerse a un video YA publicado en el "

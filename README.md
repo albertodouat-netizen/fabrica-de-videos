@@ -250,6 +250,47 @@ que usa el algoritmo para recomendar videos. `agents/responde_comentarios.py`:
 - Integrado como paso propio en el workflow (corre aunque no toque
   publicar video, con continue-on-error para nunca bloquear nada).
 
+### ⏳ Ventanas de tiempo para repetir temas (ajuste del usuario, 19-ago-2026)
+El usuario precisó la política: "los videos siguientes deben ser diferentes
+a los publicados, pero después de un tiempo se puede publicar un video
+similar (no del tema exacto)". Implementado con ventanas de tiempo:
+
+- **Temas normales — 90 días**: un tema que comparte conceptos con un video
+  del canal solo se bloquea mientras ese video tenga <90 días. Después, el
+  tema queda LIBERADO para revisitarse con otro ángulo (lo que hacen los
+  canales grandes). Los títulos del canal ahora se leen CON su fecha de
+  publicación para calcular la edad real.
+- **Música/sonidos/mantras — cuarentena de 180 días** (no veto eterno):
+  corre desde el último incidente (18-ago-2026, segundo borrado). Desde
+  ~feb-2027, una idea de música (p. ej. una noticia sobre musicoterapia)
+  podría volver a considerarse, pasando igual por el anti-repetidos.
+- Probado con 8 casos (incluye: magnesio con video de 100 días → liberado;
+  setas con video de 5 días → bloqueado; música → cuarentena; y simulación
+  de cuarentena vencida → elegible): 8/8 correctos.
+- Bug corregido en la misma sesión: palabras cortas del canal ("tu")
+  coincidían como subcadena en palabras nuevas ("TUrmeric") y bloqueaban
+  temas genuinamente nuevos.
+
+### 🚫 Por qué se repitió "música relajante" OTRA VEZ y doble corrección definitiva (18-ago-2026, noche)
+El robot volvió a elegir tema de música/relajación pese al filtro
+anti-repetidos del día anterior. Causa raíz encontrada y demostrada con
+prueba en vivo: **las ideas del buscador de tendencias vienen EN INGLÉS**
+("Relaxing Music To Relieve Stress...") y los títulos del canal están EN
+ESPAÑOL ("Música Relajante Para...") → la comparación por palabras daba
+CERO coincidencias y todo pasaba como "nuevo". Doble corrección:
+
+1. **Filtro bilingüe por CONCEPTOS**: mapa de ~16 grupos de términos
+   equivalentes ES/EN (música/music/mantra, estrés/stress/anxiety,
+   setas/mushroom/hongo, intestino/gut/microbiome...). Si la idea y un
+   título del canal comparten 2+ conceptos centrales, es repetida sin
+   importar el idioma. Probado: "Relaxing Music To Relieve Stress" vs
+   "Música Relajante Para Reducir El Estrés" → REPETIDO ✓.
+2. **VETO PERMANENTE al tema música/sonidos/mantras/frecuencias/ASMR**:
+   el usuario borró ese tipo de video DOS veces (música relajante y
+   Gayatri Mantra); el canal es de salud natural con evidencia, no de
+   música ambiental. Ninguna idea con ese concepto central vuelve a
+   elegirse. Probado con 10 casos (6 vetados, 4 permitidos): 10/10.
+
 ### 🎵 Agente 33: Música de meditación en la intro (19-ago-2026)
 La intro de marca ahora lleva música relajante de fondo bajo la voz:
 
