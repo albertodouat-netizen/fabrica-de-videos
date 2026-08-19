@@ -84,30 +84,27 @@ def _ajustar_duraciones_a_ritmo(duraciones: list, total_real: float,
     n = len(duraciones)
     if n == 0:
         return duraciones
-    valores = [min(max(d, min_seg), max_seg) for d in duraciones]
 
-    for _ in range(4):
-        diff = total_real - sum(valores)
-        if abs(diff) < 0.05:
-            break
-        margenes = [(max_seg - v) for v in valores] if diff > 0 else [(v - min_seg) for v in valores]
-        total_margen = sum(margenes)
-        if total_margen <= 0.01:
-            # Último recurso: repartir lo que queda entre TODOS los cortes en
-            # proporción a su duración (auditoría con Short real, 14-ago-2026:
-            # antes se botaba todo el sobrante en el ÚLTIMO corte, y el Short
-            # publicado terminó con una misma imagen estática en pantalla
-            # durante ~20 segundos mientras la voz seguía narrando).
-            total_actual = sum(valores)
-            if total_actual > 0:
-                factor = total_real / total_actual
-                valores = [max(0.5, v * factor) for v in valores]
-            else:
-                valores[-1] = max(0.5, valores[-1] + diff)
-            break
-        for i in range(n):
-            valores[i] += diff * (margenes[i] / total_margen)
-        valores = [min(max(v, min_seg), max_seg) for v in valores]
+    # SINCRONIZACIÓN PRIMERO (reescrito 18-ago-2026 tras el reclamo real del
+    # usuario: "no están sincronizadas algunas imágenes con la voz, como la
+    # de la investigación o la de suscripción"). El diseño anterior
+    # comprimía cada corte a un rango de "ritmo" (3-9s) y luego repartía la
+    # diferencia entre TODOS los cortes (water filling). Consecuencia real:
+    # si el beat de la cita científica duraba 14s de voz, su visual se
+    # recortaba a 9s y los 5s sobrantes se regalaban a otros cortes → desde
+    # ese punto, CADA visual quedaba corrido respecto a su voz.
+    #
+    # Ahora: cada visual dura EXACTAMENTE lo que dura su beat de audio
+    # (duraciones ya medidas del MP3 real por agents/voice.py). Solo se
+    # aplica un ajuste proporcional fino si la suma difiere del total real
+    # por redondeos (milisegundos), repartido de forma uniforme para no
+    # desplazar ningún beat de su voz. El "ritmo" visual ya viene dado por
+    # la propia estructura de beats (1-2 frases = 5-12s naturales).
+    valores = [max(0.5, float(d)) for d in duraciones]
+    suma = sum(valores)
+    if suma > 0 and abs(total_real - suma) > 0.05:
+        factor = total_real / suma
+        valores = [v * factor for v in valores]
 
     return valores
 
@@ -142,8 +139,27 @@ def _clip_desde_visual(visual, duracion, carpeta_tmp, resolucion=RESOLUCION):
             if clip.duration >= duracion:
                 clip = clip.subclipped(0, duracion)
             else:
-                copias = int(duracion // clip.duration) + 1
-                clip = concatenate_videoclips([clip] * copias, method="chain").subclipped(0, duracion)
+                # ANTI-LOOP (auditoría 18-ago-2026, defecto real: "vuelven a
+                # repetirse algunos videos como en un loop"). Antes, un clip
+                # de stock de 4s en un beat de 12s se repetía 3 veces de
+                # corrido y el ojo lo nota de inmediato. Ahora:
+                #   - Si el clip cubre >=60% del beat: se reproduce UNA vez y
+                #     se sostiene el último fotograma congelado con Ken Burns
+                #     imperceptible (mejor que verlo reiniciarse).
+                #   - Si es muy corto (<60%): UNA pasada normal + una pasada
+                #     EN REVERSA (efecto "boomerang", continuo y sin salto) y
+                #     se recorta a la duración exacta.
+                if clip.duration >= duracion * 0.6:
+                    ultimo = clip.to_ImageClip(t=max(0, clip.duration - 0.05)) \
+                                 .with_duration(duracion - clip.duration)
+                    clip = concatenate_videoclips([clip, ultimo], method="chain")
+                else:
+                    import moviepy.video.fx as vfx
+                    reversa = clip.with_effects([vfx.TimeMirror()])
+                    ida_vuelta = concatenate_videoclips([clip, reversa], method="chain")
+                    copias = int(duracion // ida_vuelta.duration) + 1
+                    clip = concatenate_videoclips([ida_vuelta] * copias, method="chain")
+                clip = clip.subclipped(0, duracion)
             clip = clip.without_audio().with_duration(duracion)
             return _cubrir_resolucion(clip, resolucion)
         except Exception as e:

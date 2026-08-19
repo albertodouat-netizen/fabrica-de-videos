@@ -250,6 +250,36 @@ que usa el algoritmo para recomendar videos. `agents/responde_comentarios.py`:
 - Integrado como paso propio en el workflow (corre aunque no toque
   publicar video, con continue-on-error para nunca bloquear nada).
 
+### 🔧 Auditoría profunda de los 5 defectos del video "Remedios Naturales Insomnio" (18-ago-2026, noche)
+El usuario reportó 5 problemas en el video de 11m40s. Causa raíz y corrección de cada uno:
+
+1. **Duración 11m40s (< 15 min)** → la constante PALABRAS_POR_MINUTO_HABLADO
+   estaba en 140 (estimación de manual), pero midiendo el video REAL la voz
+   narra ~180 palabras/min. Recalibrada a 185 + margen del 8% sobre el
+   mínimo: el guion de 15 min ahora exige ~2997 palabras (antes 2100).
+2. **Espacios sin imágenes** → Pollinations devolvía 429 en ráfagas de ~50
+   peticiones. Triple defensa: pausa de 2s entre peticiones + espera
+   creciente ante 429 (5s/10s) + 4º intento con el modelo "turbo" (cola
+   distinta, verificado en vivo). Y NUEVO penúltimo recurso: si aun así no
+   hay imagen, se REUTILIZA un visual real ya descargado del mismo video
+   (una escena repetida es mejor que un degradado vacío de 20s).
+3. **Imágenes desincronizadas de la voz** → _ajustar_duraciones_a_ritmo
+   comprimía cortes largos a 9s y regalaba el sobrante a otros cortes,
+   corriendo TODOS los visuales respecto a su voz desde ese punto.
+   REESCRITO: cada visual dura EXACTAMENTE lo que dura su beat de audio
+   (medido del MP3 real); solo ajuste proporcional fino por redondeos.
+   Probado: desvío 0 ms. (subtitulos.py y shorts usan la misma función →
+   también quedan sincronizados.)
+4. **Videos repetidos "en loop"** → un clip de stock de 4s en un beat de
+   12s se repetía 3 veces de corrido. Ahora: si el clip cubre ≥60% del
+   beat, una sola pasada + último fotograma sostenido; si es más corto,
+   efecto "boomerang" (ida + reversa, continuo, sin salto visible).
+5. **Menciones de investigación sin portada** → se citaban estudios SIN
+   acceso abierto (sin PDF legal que mostrar). Ahora: si hay al menos un
+   estudio de acceso abierto, SOLO se citan esos (cada mención tendrá su
+   portada real en pantalla); si no hay ninguno, se usa el visual de
+   documento genérico y el log lo explica.
+
 ### ⏳ Ventanas de tiempo para repetir temas (ajuste del usuario, 19-ago-2026)
 El usuario precisó la política: "los videos siguientes deben ser diferentes
 a los publicados, pero después de un tiempo se puede publicar un video

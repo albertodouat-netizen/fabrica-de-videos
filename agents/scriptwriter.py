@@ -220,7 +220,14 @@ def _llamar_ollama(prompt, modelo):
 # más fuerte en el prompt (no garantiza nada), se MIDE la duración real del
 # guion ya escrito y, si falta, se le pide al LLM contenido NUEVO adicional
 # (nunca relleno/repetición) hasta acercarse al objetivo. ---
-PALABRAS_POR_MINUTO_HABLADO = 140
+# CALIBRADO CON DATOS REALES (auditoría 18-ago-2026): el valor anterior
+# (140) era una estimación de manual; midiendo videos REALES publicados,
+# la voz de edge-tts con rate -8% narra ~180 palabras/minuto en español.
+# Con 140, un guion "de 15 minutos" (2100 palabras) duraba solo ~11m40s
+# (defecto real reportado por el usuario). Con 185 (los 180 medidos + un
+# pequeño margen), el objetivo de 15 minutos exige ~2775 palabras y el
+# video real SÍ llega al mínimo.
+PALABRAS_POR_MINUTO_HABLADO = 185
 
 # Versión CONDENSADA de las reglas, solo para las rondas de extensión.
 # Por qué existe (hallazgo real de la auditoría): la versión completa
@@ -343,7 +350,10 @@ def _asegurar_duracion_minima(guion: dict, cfg: dict, idea: dict, fuentes_texto:
                                max_intentos: int = 8) -> dict:
     dur_min = cfg["estrategia"]["duracion_minima_min"]
     dur_max = cfg["estrategia"]["duracion_objetivo_min"]
-    palabras_min = int(dur_min * PALABRAS_POR_MINUTO_HABLADO)
+    # +8% de margen sobre el mínimo (auditoría 18-ago-2026): apuntar JUSTO al
+    # mínimo dejaba el video por debajo cuando la voz real iba algo más
+    # rápida que la estimación. Mejor quedar en 16 min que en 14.
+    palabras_min = int(dur_min * PALABRAS_POR_MINUTO_HABLADO * 1.08)
     palabras_max = int(dur_max * PALABRAS_POR_MINUTO_HABLADO)
     provider_preferido = cfg["apis"].get("llm_provider", "gemini")
 

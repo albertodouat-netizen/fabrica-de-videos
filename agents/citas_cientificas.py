@@ -151,7 +151,25 @@ def _elegir_estudios_para_citar(estudios: list, ya_citados_pmid: set, max_n: int
     resto = [e for e in candidatos if e not in con_revista_y_anio]
     oa = [e for e in con_revista_y_anio if e.get("acceso_abierto")]
     no_oa = [e for e in con_revista_y_anio if not e.get("acceso_abierto")]
-    ordenados = oa + no_oa + resto
+
+    # REGLA REFORZADA (auditoría 18-ago-2026, reclamo del usuario: "cuando
+    # menciona las investigaciones no muestra la portada como habíamos
+    # quedado"). Causa: se citaban también estudios SIN acceso abierto, que
+    # no tienen PDF legal para mostrar, y esos beats salían con stock
+    # genérico. Ahora: si hay AL MENOS un estudio de acceso abierto (con
+    # portada mostrable), SOLO se citan estudios de acceso abierto — cada
+    # mención tendrá su portada real en pantalla. Los estudios sin PDF
+    # siguen sumando como referencias en la descripción (eso lo hace el
+    # verificador de cifras), pero no se mencionan en voz alta sin imagen.
+    if oa:
+        ordenados = oa
+    else:
+        # Sin ningún estudio de acceso abierto: mejor citar con visual de
+        # documento genérico que no citar nada (la credibilidad hablada
+        # sigue siendo valiosa; el log lo deja claro para el diagnóstico).
+        log(AGENT, "Ningún estudio con PDF de acceso abierto disponible para este tema: "
+                    "las citas usarán el visual de documento genérico (sin portada real).")
+        ordenados = no_oa + resto
     return ordenados[:max_n]
 
 

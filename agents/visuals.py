@@ -28,6 +28,7 @@ Fuentes 100% gratuitas (con key gratis, sin tarjeta de crédito):
 import os
 import random
 import re
+import time
 import urllib.parse
 import requests
 from PIL import Image, ImageDraw, ImageFont
@@ -271,13 +272,27 @@ def _generar_imagen_ia(descripcion: str, destino_jpg: str, tamano=(1280, 720),
     # adicional, aunque la auditoría de agosto 2026 confirmó en vivo que
     # 'safe=true' NO bloquea de forma confiable el contenido NSFW por sí
     # solo -- por eso la verificación con Gemini es la que de verdad manda.
-    for intento in range(3):
+    # ANTI-429 (auditoría 18-ago-2026, defecto real "espacios sin imágenes"):
+    # Pollinations se satura con ráfagas (50 beats seguidos = 429 en cadena
+    # y el video quedaba lleno de degradados vacíos). Tres defensas nuevas:
+    #   1) PAUSA entre peticiones (2s): reparte la carga, evita el rate-limit.
+    #   2) Si un intento devuelve 429, espera creciente (5s, 10s) y reintenta.
+    #   3) Doble modelo: si "flux" falla los 3 intentos, se prueba "turbo"
+    #      (mismo servicio, cola distinta y más rápida; verificado en vivo).
+    time.sleep(2)
+    for intento in range(4):
         semilla = random.randint(1, 999999)
+        modelo = "flux" if intento < 3 else "turbo"
         url = (f"https://image.pollinations.ai/prompt/{prompt_codificado}"
                f"?width={tamano[0]}&height={tamano[1]}&nologo=true&seed={semilla}"
-               f"&safe=true&model=flux")
+               f"&safe=true&model={modelo}")
         try:
-            r = requests.get(url, timeout=40)
+            r = requests.get(url, timeout=60)
+            if r.status_code == 429:
+                espera = 5 * (intento + 1)
+                log(AGENT, f"Pollinations saturado (429); esperando {espera}s antes de reintentar...")
+                time.sleep(espera)
+                r = requests.get(url, timeout=60)
             r.raise_for_status()
             if len(r.content) < 5000:  # respuesta sospechosamente pequeña (error disfrazado de imagen)
                 continue
@@ -511,7 +526,27 @@ class BuscadorVisualesUnicos:
             log(AGENT, f"'{keyword}': no había stock con buena coincidencia, se generó una imagen IA a medida.")
             return {"tipo": "imagen", "ruta": destino_ia, "keyword": keyword}
 
-        # Último recurso: nada disponible en ningún banco para esta keyword
+        # Penúltimo recurso (nuevo, 18-ago-2026, tras el reclamo del usuario
+        # "espacios sin imágenes... inaceptable"): antes de resignarse a un
+        # degradado vacío, REUTILIZAR una imagen/video REAL ya descargado
+        # para OTRO beat de este mismo video (elige al azar entre lo que ya
+        # está en la carpeta). Una escena real repetida es infinitamente
+        # mejor que un fondo vacío de 20 segundos.
+        try:
+            ya_descargados = [f for f in os.listdir(carpeta_salida)
+                              if f.lower().endswith((".jpg", ".jpeg", ".png", ".mp4"))
+                              and "_fallback" not in f and "intro_marca" not in f]
+            if ya_descargados:
+                elegido = random.choice(ya_descargados)
+                ruta_reuso = os.path.join(carpeta_salida, elegido)
+                log(AGENT, f"'{keyword}': sin stock ni imagen IA disponibles; se REUTILIZA "
+                            f"un visual real de este mismo video ({elegido}) en vez de un fondo vacío.")
+                tipo_reuso = "video" if elegido.lower().endswith(".mp4") else "imagen"
+                return {"tipo": tipo_reuso, "ruta": ruta_reuso, "keyword": keyword}
+        except Exception:
+            pass
+
+        # Último recurso absoluto: nada descargado aún en todo el video
         destino_png = os.path.join(carpeta_salida, f"{tag}_{slugify(keyword)}_fallback.png")
         _generar_fondo_local(keyword, destino_png)
         return {"tipo": "imagen", "ruta": destino_png, "keyword": keyword}
