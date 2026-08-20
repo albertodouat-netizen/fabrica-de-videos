@@ -20,6 +20,7 @@ import asyncio
 import os
 import random
 import edge_tts
+import requests
 from mutagen.mp3 import MP3
 from moviepy import AudioFileClip, AudioClip, concatenate_audioclips
 
@@ -67,6 +68,57 @@ def _asegurar_puntuacion(texto: str) -> str:
     if texto and texto[-1] not in ".?!…":
         texto += "."
     return texto
+
+
+def _sintetizar_intro_gemini(texto: str, salida_mp3: str, femenina: bool = False) -> bool:
+    """VOZ PREMIUM para la intro de marca (19-ago-2026): Gemini TTS gratis,
+    verificado en vivo con la llave del usuario. Se usa SOLO para el beat de
+    la intro (una llamada por video, cuota mínima): una voz de "locutor de
+    marca" distinta en la intro es un patrón profesional (como los jingles),
+    pero el CUERPO del video mantiene siempre la misma voz edge-tts para no
+    desorientar. Si falla (cuota, red), devuelve False y la intro se narra
+    con edge-tts como siempre: nunca bloquea el video."""
+    import base64
+    import wave
+
+    cfg = load_config()
+    key = cfg["apis"].get("gemini_api_key", "") or ""
+    if not key or "OBTENER_GRATIS" in key:
+        return False
+    voz_gemini = "Kore" if femenina else "Charon"  # probadas en vivo 19-ago-2026
+    try:
+        r = requests.post(
+            f"https://generativelanguage.googleapis.com/v1beta/models/"
+            f"gemini-2.5-flash-preview-tts:generateContent?key={key}",
+            json={"contents": [{"parts": [{"text":
+                    "Narra con voz cálida, cercana y profesional de locutor "
+                    "latino de bienestar: " + texto}]}],
+                  "generationConfig": {
+                      "responseModalities": ["AUDIO"],
+                      "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig":
+                          {"voiceName": voz_gemini}}}}},
+            timeout=90)
+        r.raise_for_status()
+        part = r.json()["candidates"][0]["content"]["parts"][0]
+        pcm = base64.b64decode(part["inlineData"]["data"])
+        if len(pcm) < 10000:
+            return False
+        # PCM 16-bit 24kHz mono -> WAV -> MP3 (para que el resto del
+        # pipeline lo trate exactamente igual que los mp3 de edge-tts)
+        wav_tmp = salida_mp3 + ".tmp.wav"
+        w = wave.open(wav_tmp, "wb")
+        w.setnchannels(1); w.setsampwidth(2); w.setframerate(24000)
+        w.writeframes(pcm); w.close()
+        clip = AudioFileClip(wav_tmp)
+        clip.write_audiofile(salida_mp3, logger=None)
+        clip.close()
+        os.remove(wav_tmp)
+        log(AGENT, f"Intro de marca narrada con voz premium Gemini TTS ({voz_gemini}) ✓")
+        return True
+    except Exception as e:
+        log(AGENT, f"Aviso: Gemini TTS no disponible para la intro ({type(e).__name__}); "
+                    f"se narra con edge-tts como siempre.")
+        return False
 
 
 async def _sintetizar(texto: str, voz: str, salida_mp3: str, rate: str = "-8%", pitch: str = "+0Hz"):
@@ -145,11 +197,27 @@ def narrar_guion(guion: dict, carpeta_salida: str, nombre_base: str) -> dict:
         # Cada beat se sintetiza POR SEPARADO: así la duración de cada uno
         # se MIDE de verdad (no se estima por letras) y se puede insertar
         # una pausa real y controlada entre ideas.
+        # ¿Este capítulo arranca con la intro de marca? (beat marcado por
+        # intro_marca.py). Ojo: si hay gancho, textos_beats trae el gancho
+        # en la posición 0 y los beats corren una posición.
+        desplaza = 1 if (i == 0 and guion.get("gancho")) else 0
+
         rutas_beats_mp3 = []
         duraciones_habla = []
         for k, texto in enumerate(textos_beats):
             ruta_beat = os.path.join(carpeta_salida, f"{nombre_base}_cap{i}_beat{k}.mp3")
-            asyncio.run(_sintetizar(texto, voz, ruta_beat, rate=rate, pitch=pitch))
+            # VOZ PREMIUM SOLO EN LA INTRO DE MARCA (19-ago-2026): Gemini
+            # TTS gratis (1 llamada/video). Si falla, edge-tts normal.
+            es_intro = False
+            idx_beat = k - desplaza
+            if i == 0 and 0 <= idx_beat < len(beats):
+                es_intro = bool(beats[idx_beat].get("es_intro_marca"))
+            usada_premium = False
+            if es_intro:
+                femenina = guion.get("audiencia_exclusiva") == "mujeres"
+                usada_premium = _sintetizar_intro_gemini(texto, ruta_beat, femenina)
+            if not usada_premium:
+                asyncio.run(_sintetizar(texto, voz, ruta_beat, rate=rate, pitch=pitch))
             rutas_beats_mp3.append(ruta_beat)
             duraciones_habla.append(_duracion_mp3(ruta_beat))
 

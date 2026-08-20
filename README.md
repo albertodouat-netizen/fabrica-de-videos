@@ -1,5 +1,44 @@
 # 🤖 Fábrica de Videos de YouTube — Equipo de Agentes IA (100% Gratis)
 
+## 🛡️ ARSENAL COMPLETO INTEGRADO (19-ago-2026, noche) — el sistema queda blindado
+El usuario consiguió y verificó (todas probadas EN VIVO) las llaves del arsenal:
+Jamendo, Mistral, OpenRouter, Cloudflare (token + account), Pixabay y NVIDIA.
+Cerebras quedó DESCARTADO (ahora exige tarjeta de crédito, verificado en vivo).
+
+Qué se integró (todo probado en vivo con las llaves reales):
+1. **`agents/llm_cascada.py` (nuevo)**: cascada universal de 5 cerebros
+   Groq → Gemini → Mistral Large → OpenRouter (4 modelos :free) → NVIDIA
+   (102 modelos). La usan: guionista (guion + extensión), Short
+   independiente, respondedor de comentarios y revisor de relevancia
+   científica. PROBADO: simulé Groq y Gemini muertos a la vez (el desastre
+   del 19-ago) y la cascada respondió con Mistral sin pestañear.
+2. **Música de fondo POR FIN ACTIVA** (`agents/musica.py`): filtro de
+   Jamendo corregido (ccnc=false + ccnd=false del lado del servidor: solo
+   licencias CC-BY / BY-SA, seguras incluso cuando el canal se monetice),
+   rotación de tags si uno no tiene pistas (probado: 'corporate' devuelve
+   0), y filtro anti-fuera-de-contexto (la primera prueba eligió "Happy
+   Holiday Christmas" para un video de salud; ahora se descartan pistas
+   navideñas/festivas por nombre).
+3. **Imágenes premium** (`agents/visuals.py` → `_generar_imagen_cloudflare`):
+   Cloudflare Workers AI como proveedor PREFERIDO antes de Pollinations.
+   FLUX.1 Schnell para paisaje (1024x1024 + recorte central a 16:9, la API
+   rechaza width/height — verificado) y SDXL nativo para Shorts verticales
+   (720x1280 probado). ~230 imágenes/día gratis. Escenas con personas
+   siguen pasando por la verificación Gemini (fallan cerradas).
+4. **Voz premium en la intro** (`agents/voice.py` → `_sintetizar_intro_gemini`):
+   la intro de marca se narra con Gemini TTS (voz Charon, o Kore para
+   audiencia femenina) con dirección de actuación ("voz cálida de locutor
+   latino de bienestar"). 1 llamada por video = cuota mínima. Si falla,
+   edge-tts como siempre (nunca bloquea).
+5. **Agente 35 "Vigía de Recursos"** (`scripts/vigia_recursos.py` +
+   `.github/workflows/vigia_recursos.yml`): cada lunes 12:00 UTC prueba EN
+   VIVO los 12 recursos del arsenal; si hay falla crítica (0 cerebros, 0
+   fuentes de imágenes, sin voz) el workflow falla a propósito → correo de
+   GitHub. Primera corrida real: 11/12 vivos (Gemini 503 temporal).
+6. **`scripts/verificar_secretos.py`**: al inicio de cada corrida imprime
+   qué llaves llegaron desde GitHub Secrets (sin revelar valores) para
+   detectar nombres mal escritos de inmediato.
+
 ## 🚨 EMERGENCIA REPARADA: video genérico del 19-ago-2026 (auditoría con evidencia)
 Qué pasó (verificado en vivo con la API de YouTube y las APIs de IA):
 - El video del 19-ago ("Cambios Simples Para Tu Salud Natural, Alternativa,")

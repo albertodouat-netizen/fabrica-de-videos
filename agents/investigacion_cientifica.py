@@ -459,6 +459,20 @@ def _filtrar_relevancia_con_gemini(tema: str, estudios: list) -> list:
         except Exception as e:
             log(AGENT, f"Aviso: Groq tampoco pudo refinar la relevancia ({e}).")
 
+    # 3) CASCADA UNIVERSAL de respaldo (19-ago-2026): Mistral/OpenRouter/
+    # NVIDIA entran si Gemini y Groq fallaron a la vez (causa real del
+    # video con referencias sin relación publicado el 19-ago).
+    try:
+        from agents.llm_cascada import llamar_llm
+        resultado = _interpretar_respuesta_relevancia(
+            llamar_llm(prompt, temperatura=0), estudios)
+        if resultado is not None:
+            log(AGENT, f"El revisor IA (cascada) confirmó {len(resultado)} de "
+                        f"{len(estudios)} candidato(s) como directamente relevantes.")
+            return resultado
+    except Exception as e:
+        log(AGENT, f"Aviso: la cascada tampoco pudo refinar la relevancia ({e}).")
+
     log(AGENT, "Sin revisor IA disponible: se usa solo el filtro por palabras clave "
                 "(los estudios igual fueron verificados como reales).")
     return estudios

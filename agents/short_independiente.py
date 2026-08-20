@@ -158,34 +158,15 @@ def _generar_guion_short(tema: str, formato: str, cfg: dict) -> dict:
         fuentes=fuentes or "No hay fuentes disponibles: habla en términos generales, sin cifras ni estudios inventados.",
     )
 
+    # CASCADA UNIVERSAL de 5 proveedores (19-ago-2026): reemplaza los
+    # llamados directos a Groq/Gemini que se quedaron sin opciones el
+    # 19-ago. Temperatura alta = más variación entre Shorts.
     texto_respuesta = None
-    groq_key = cfg["apis"].get("groq_api_key", "")
-    if groq_key and "OBTENER_GRATIS" not in groq_key:
-        try:
-            r = requests.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers={"Authorization": f"Bearer {groq_key}"},
-                json={"model": modelo_groq(groq_key),
-                      "messages": [{"role": "user", "content": prompt}],
-                      "temperature": 0.9},  # temperatura alta = más variación entre Shorts
-                timeout=60)
-            r.raise_for_status()
-            texto_respuesta = r.json()["choices"][0]["message"]["content"]
-        except Exception as e:
-            log(AGENT, f"Aviso: Groq no disponible para el guion del Short ({e}).")
-
-    if texto_respuesta is None:
-        gemini_key = cfg["apis"].get("gemini_api_key", "")
-        if gemini_key and "OBTENER_GRATIS" not in gemini_key:
-            try:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={gemini_key}"
-                r = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=60)
-                r.raise_for_status()
-                from agents.presupuesto_ia import registrar_uso_gemini
-                registrar_uso_gemini(1)
-                texto_respuesta = r.json()["candidates"][0]["content"]["parts"][0]["text"]
-            except Exception as e:
-                log(AGENT, f"Aviso: Gemini tampoco disponible ({e}).")
+    try:
+        from agents.llm_cascada import llamar_llm
+        texto_respuesta = llamar_llm(prompt, temperatura=0.9)
+    except Exception as e:
+        log(AGENT, f"Aviso: ningún proveedor de IA disponible para el Short ({e}).")
 
     beats = []
     if texto_respuesta:

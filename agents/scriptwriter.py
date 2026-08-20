@@ -324,8 +324,19 @@ def _resumen_capitulos_para_extension(guion: dict, max_detallados: int = 6) -> s
 
 
 def _intentar_llamar_llm(prompt: str, cfg: dict, provider_preferido: str):
-    """Igual que la cascada principal, pero reutilizable para la extensión:
-    prueba el proveedor preferido y cae a los demás disponibles."""
+    """Extensión del guion: usa la MISMA cascada universal de 5 proveedores
+    que el guion principal (19-ago-2026). Mantiene compatibilidad con el
+    resto del código devolviendo None si todo falla."""
+    try:
+        from agents.llm_cascada import llamar_llm
+        return llamar_llm(prompt, temperatura=0.8, preferido=provider_preferido)
+    except Exception as e:
+        log(AGENT, f"Aviso: la cascada no pudo extender el guion ({e}).")
+        return None
+
+
+def _intentar_llamar_llm_LEGACY(prompt: str, cfg: dict, provider_preferido: str):
+    """(Versión vieja, conservada solo como referencia histórica.)"""
     orden = [provider_preferido] + [p for p in ("gemini", "groq", "ollama") if p != provider_preferido]
     for provider in orden:
         try:
@@ -663,45 +674,20 @@ def generar_guion(idea: dict) -> dict:
         fuentes_cientificas=fuentes_texto, frases_audiencias=frases_audiencias,
     )
 
-    # Cascada de respaldo: si el proveedor preferido falla (cuota agotada,
-    # sobrecarga temporal, etc.), se intenta automáticamente con el
-    # siguiente proveedor gratuito disponible antes de caer a la plantilla
-    # local. Esto es justamente lo que evita que un límite temporal de un
-    # solo proveedor baje la calidad de todo el video.
-    orden_proveedores = [provider_preferido] + [p for p in ("gemini", "groq", "ollama") if p != provider_preferido]
-
+    # CASCADA UNIVERSAL de 5 proveedores (19-ago-2026): Groq -> Gemini ->
+    # Mistral Large -> OpenRouter -> NVIDIA. Todos verificados en vivo.
+    # Reemplaza a la cascada vieja de 2 proveedores que se quedó sin
+    # opciones el 19-ago (Groq eliminó su modelo + cuota Gemini agotada)
+    # y produjo el video de plantilla que dañó el canal.
     guion = None
-    for provider in orden_proveedores:
-        try:
-            if provider == "gemini":
-                key = cfg["apis"].get("gemini_api_key", "")
-                if not key or "OBTENER_GRATIS" in key:
-                    continue
-                log(AGENT, "Generando guion con Gemini (gratuito), con reglas de retención...")
-                texto = _llamar_gemini(prompt, key)
-                guion = _extraer_json(texto)
-
-            elif provider == "groq":
-                key = cfg["apis"].get("groq_api_key", "")
-                if not key or "OBTENER_GRATIS" in key:
-                    continue
-                log(AGENT, "Generando guion con Groq/Llama 3 (gratuito), con reglas de retención...")
-                texto = _llamar_groq(prompt, key)
-                guion = _extraer_json(texto)
-
-            elif provider == "ollama":
-                modelo = cfg["apis"].get("ollama_model", "llama3.1")
-                log(AGENT, f"Generando guion con Ollama local ({modelo})...")
-                texto = _llamar_ollama(prompt, modelo)
-                guion = _extraer_json(texto)
-
-            if guion is not None:
-                break
-
-        except Exception as e:
-            log(AGENT, f"Aviso: fallo con proveedor '{provider}' ({e}). "
-                        f"Probando el siguiente proveedor gratuito disponible...")
-            continue
+    try:
+        from agents.llm_cascada import llamar_llm
+        log(AGENT, "Generando guion con la cascada de 5 proveedores gratuitos...")
+        texto = llamar_llm(prompt, temperatura=0.8, preferido=provider_preferido)
+        guion = _extraer_json(texto)
+    except Exception as e:
+        log(AGENT, f"Cascada completa falló: {e}")
+        guion = None
 
     if guion is None:
         # CAMBIO CRÍTICO (auditoría 19-ago-2026): la plantilla local publicó

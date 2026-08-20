@@ -31,18 +31,42 @@ def _buscar_pistas_comerciales(client_id: str, tag: str, limite=10):
         "limit": limite,
         "tags": tag,
         "vocalinstrumental": "instrumental",
+        # FILTRO DEL LADO DEL SERVIDOR (corrección 19-ago-2026, probada en
+        # vivo con la llave real): sin 'ccnc=false' Jamendo devuelve las 10
+        # pistas más populares que casi siempre son licencia NC (No
+        # Comercial) y el filtro local las descartaba TODAS -> videos sin
+        # música. Con ccnc=false el servidor solo devuelve pistas aptas
+        # para un canal monetizable (probado: 10/10 usables con
+        # tag=uplifting). ccsa se deja libre: BY y BY-SA sirven ambas
+        # acreditando al artista (los créditos ya van en la descripción).
+        "ccnc": "false",
+        # ccnd=false también (19-ago-2026): las licencias ND (No Derivadas)
+        # prohíben obras derivadas, y sincronizar la pista dentro de un
+        # video puede contar como derivada. Solo CC-BY y CC-BY-SA = 100%
+        # seguras para un canal monetizable (mismo criterio que la intro).
+        "ccnd": "false",
         "order": "popularity_total",
         "include": "musicinfo",
         "audioformat": "mp32",
     }
     r = requests.get(url, params=params, timeout=20)
     r.raise_for_status()
+    # Pistas con temática de temporada/festiva que NO pegan en un video de
+    # salud natural (hallazgo real 19-ago-2026: la primera prueba en vivo
+    # eligió "Happy Holiday Christmas" para un video de bienestar).
+    _PALABRAS_FUERA_DE_CONTEXTO = (
+        "christmas", "navidad", "holiday", "halloween", "xmas", "santa",
+        "jingle", "easter", "valentine", "wedding", "birthday", "party",
+    )
     resultados = []
     for track in r.json().get("results", []):
         licencia = (track.get("license_ccurl") or "").lower()
         if "nc" in licencia:  # excluye explícitamente licencias "No Comercial"
             continue
         if not track.get("audio"):
+            continue
+        nombre_bajo = (track.get("name") or "").lower()
+        if any(p in nombre_bajo for p in _PALABRAS_FUERA_DE_CONTEXTO):
             continue
         resultados.append({
             "nombre": track.get("name", "Untitled"),
@@ -63,10 +87,19 @@ def obtener_musica_fondo(carpeta_salida: str) -> dict:
         return None
 
     try:
-        tag = random.choice(TAGS_INSTRUMENTAL_SUGERIDOS)
-        pistas = _buscar_pistas_comerciales(client_id, tag)
+        # ROTACIÓN DE TAGS (corrección 19-ago-2026): antes se elegía UN tag
+        # al azar y si no tenía pistas comerciales el video quedaba sin
+        # música (probado en vivo: 'corporate' devuelve 0 con ccnc=false).
+        # Ahora se prueban todos los tags en orden aleatorio hasta que uno
+        # tenga pistas.
+        tags_orden = random.sample(TAGS_INSTRUMENTAL_SUGERIDOS, len(TAGS_INSTRUMENTAL_SUGERIDOS))
+        pistas, tag = [], None
+        for tag in tags_orden:
+            pistas = _buscar_pistas_comerciales(client_id, tag)
+            if pistas:
+                break
         if not pistas:
-            log(AGENT, f"No se encontraron pistas comerciales para '{tag}'. Sin música de fondo.")
+            log(AGENT, "Ningún tag tiene pistas comerciales disponibles hoy. Sin música de fondo.")
             return None
 
         pista = random.choice(pistas)

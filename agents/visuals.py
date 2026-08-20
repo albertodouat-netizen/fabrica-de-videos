@@ -217,6 +217,81 @@ def _prompt_tiene_persona(texto: str) -> bool:
     return bool(_PALABRAS_PERSONA.search(texto or ""))
 
 
+def _generar_imagen_cloudflare(prompt: str, destino_jpg: str,
+                               tamano=(1280, 720)) -> bool:
+    """Genera una imagen con Cloudflare Workers AI (10.000 neurons/día
+    gratis, verificado en vivo el 19-ago-2026 con la cuenta del usuario).
+
+    Estrategia de modelos (ambos probados en vivo):
+      - FLUX.1 Schnell: la mejor calidad, pero SOLO genera 1024x1024
+        (la API rechaza width/height). Para 16:9 se recorta el centro.
+      - SDXL: acepta width/height nativos (probado 1024x576), calidad buena.
+    Para paisaje (videos largos) se usa FLUX + recorte (calidad manda);
+    para retrato (Shorts, 720x1280) se usa SDXL nativo (evita recortar
+    demasiado). Devuelve False sin romper nada si no hay llaves o falla."""
+    cfg = load_config()
+    token = cfg["apis"].get("cloudflare_api_token", "") or ""
+    account = cfg["apis"].get("cloudflare_account_id", "") or ""
+    if (not token or "OBTENER_GRATIS" in token or
+            not account or "OBTENER_GRATIS" in account):
+        return False
+
+    es_paisaje = tamano[0] >= tamano[1]
+    try:
+        if es_paisaje:
+            # FLUX 1024x1024 -> recorte central a la proporción pedida
+            r = requests.post(
+                f"https://api.cloudflare.com/client/v4/accounts/{account}"
+                f"/ai/run/@cf/black-forest-labs/flux-1-schnell",
+                headers={"Authorization": f"Bearer {token}"},
+                json={"prompt": prompt[:2000], "steps": 8},
+                timeout=90)
+            r.raise_for_status()
+            img_b64 = r.json().get("result", {}).get("image", "")
+            if not img_b64:
+                return False
+            import base64 as _b64
+            from io import BytesIO
+            img = Image.open(BytesIO(_b64.b64decode(img_b64))).convert("RGB")
+        else:
+            # SDXL con dimensiones nativas (múltiplos de 8)
+            w = (tamano[0] // 8) * 8
+            h = (tamano[1] // 8) * 8
+            r = requests.post(
+                f"https://api.cloudflare.com/client/v4/accounts/{account}"
+                f"/ai/run/@cf/stabilityai/stable-diffusion-xl-base-1.0",
+                headers={"Authorization": f"Bearer {token}"},
+                json={"prompt": prompt[:2000], "width": w, "height": h},
+                timeout=120)
+            r.raise_for_status()
+            if "image" not in (r.headers.get("content-type") or ""):
+                return False
+            from io import BytesIO
+            img = Image.open(BytesIO(r.content)).convert("RGB")
+
+        # Ajuste exacto al tamaño pedido (recorte central + reescalado)
+        ratio_obj = tamano[0] / tamano[1]
+        ratio_img = img.width / img.height
+        if abs(ratio_img - ratio_obj) > 0.01:
+            if ratio_img > ratio_obj:  # muy ancha -> recortar lados
+                nuevo_w = int(img.height * ratio_obj)
+                x0 = (img.width - nuevo_w) // 2
+                img = img.crop((x0, 0, x0 + nuevo_w, img.height))
+            else:  # muy alta -> recortar arriba/abajo
+                nuevo_h = int(img.width / ratio_obj)
+                y0 = (img.height - nuevo_h) // 2
+                img = img.crop((0, y0, img.width, y0 + nuevo_h))
+        img = img.resize(tamano, Image.LANCZOS)
+        img.save(destino_jpg, "JPEG", quality=92)
+        log(AGENT, f"Imagen generada con Cloudflare Workers AI "
+                   f"({'FLUX' if es_paisaje else 'SDXL'}) ✓")
+        return True
+    except Exception as e:
+        log(AGENT, f"Aviso: Cloudflare Workers AI no disponible ({type(e).__name__}); "
+                   f"se usa Pollinations como respaldo.")
+        return False
+
+
 def _generar_imagen_ia(descripcion: str, destino_jpg: str, tamano=(1280, 720),
                         contexto: str = "") -> bool:
     """Genera una imagen FOTORREALISTA a medida con Pollinations.ai (100%
@@ -264,6 +339,28 @@ def _generar_imagen_ia(descripcion: str, destino_jpg: str, tamano=(1280, 720),
         f"sin logotipos, {refuerzo}"
         f"contenido apto para todo público, familiar, profesional"
     )
+
+    # PROVEEDOR PREFERIDO NUEVO (19-ago-2026): Cloudflare Workers AI.
+    # Verificado en vivo con la cuenta del usuario: FLUX.1 Schnell (calidad
+    # claramente superior a Pollinations, ~230 imágenes/día gratis) y SDXL
+    # (acepta 16:9 nativo). Pollinations queda como respaldo: su API de
+    # texto ya empezó a cobrar (402 verificado), señal de que la de
+    # imágenes podría seguir el mismo camino.
+    if _generar_imagen_cloudflare(prompt, destino_jpg, tamano):
+        if not _prompt_tiene_persona(base):
+            return True
+        # Escenas con personas siguen pasando por la verificación Gemini
+        # (fallan cerradas, igual que con Pollinations).
+        try:
+            if _imagen_es_segura_gemini(destino_jpg):
+                return True
+            log(AGENT, "Imagen de Cloudflare rechazada por la verificación de seguridad; "
+                        "se intenta con Pollinations...")
+        except Exception:
+            # Sin cupo de Gemini para verificar: política conservadora,
+            # probar con el siguiente proveedor.
+            pass
+
     prompt_codificado = urllib.parse.quote(prompt)
 
     # Hasta 3 intentos con semillas distintas: cada imagen se verifica de

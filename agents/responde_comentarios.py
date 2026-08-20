@@ -82,39 +82,36 @@ def _generar_respuesta_llm(comentario: str, titulo_video: str, cfg) -> str:
     if _PALABRAS_CASO_MEDICO.search(comentario):
         return RESPUESTA_TEMA_MEDICO
 
-    groq_key = cfg["apis"].get("groq_api_key", "")
-    if groq_key and "OBTENER_GRATIS" not in groq_key:
-        try:
-            prompt = (
-                f"Eres el community manager cálido y humano de un canal de YouTube de "
-                f"salud natural en español llamado Salud Natural Diaria. Un espectador "
-                f"comentó esto en el video \"{titulo_video}\":\n\n\"{comentario[:400]}\"\n\n"
-                f"Escribe UNA respuesta breve (máximo 40 palabras), cálida, específica al "
-                f"comentario, en español neutro. REGLAS: nunca des consejo médico "
-                f"personalizado ni dosis; nunca prometas curas; si pregunta algo del tema "
-                f"general puedes responder en términos generales; termina invitando "
-                f"sutilmente a seguir viendo el canal. Responde SOLO con el texto de la "
-                f"respuesta, sin comillas."
-            )
-            r = requests.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers={"Authorization": f"Bearer {groq_key}"},
-                json={"model": modelo_groq(groq_key),
-                      "messages": [{"role": "user", "content": prompt}],
-                      "temperature": 0.7, "max_tokens": 120},
-                timeout=30)
-            r.raise_for_status()
-            texto = r.json()["choices"][0]["message"]["content"].strip().strip('"')
-            if 5 < len(texto) < 400:
-                # Pasada de seguridad médica también sobre la respuesta
-                try:
-                    from agents.seguridad_medica import _revisar_texto
-                    texto, _ = _revisar_texto(texto)
-                except Exception:
-                    pass
-                return texto
-        except Exception as e:
-            log(AGENT, f"Aviso: LLM no disponible para respuestas ({e}); se usa plantilla.")
+    # CASCADA UNIVERSAL de 5 proveedores (19-ago-2026): antes solo Groq.
+    try:
+        prompt = (
+            f"Eres el community manager cálido y humano de un canal de YouTube de "
+            f"salud natural en español llamado Salud Natural Diaria. Un espectador "
+            f"comentó esto en el video \"{titulo_video}\":\n\n\"{comentario[:400]}\"\n\n"
+            f"Escribe UNA respuesta breve (máximo 40 palabras), cálida, específica al "
+            f"comentario, en español neutro. REGLAS: nunca des consejo médico "
+            f"personalizado ni dosis; nunca prometas curas; si pregunta algo del tema "
+            f"general puedes responder en términos generales; termina invitando "
+            f"sutilmente a seguir viendo el canal. Responde SOLO con el texto de la "
+            f"respuesta, sin comillas."
+        )
+        from agents.llm_cascada import llamar_llm
+        texto = llamar_llm(prompt, temperatura=0.7).strip().strip('"')
+        # Los modelos con razonamiento a veces anteponen su cadena de
+        # pensamiento; quedarse con la última línea no vacía si es muy largo.
+        if len(texto) > 400:
+            lineas = [l.strip() for l in texto.splitlines() if l.strip()]
+            texto = lineas[-1] if lineas else texto[:200]
+        if 5 < len(texto) < 400:
+            # Pasada de seguridad médica también sobre la respuesta
+            try:
+                from agents.seguridad_medica import _revisar_texto
+                texto, _ = _revisar_texto(texto)
+            except Exception:
+                pass
+            return texto
+    except Exception as e:
+        log(AGENT, f"Aviso: LLM no disponible para respuestas ({e}); se usa plantilla.")
     return random.choice(RESPUESTAS_PLANTILLA)
 
 
