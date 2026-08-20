@@ -120,6 +120,12 @@ apis:
   # --- Música de fondo con licencia libre (opcional) ---
   # Jamendo: https://devportal.jamendo.com/ (gratis, registro de 2 min, sin tarjeta)
   # Solo se usan pistas con licencia que permite uso comercial (se filtra automáticamente).
+  cerebras_api_key: "OBTENER_GRATIS_AQUI"   # cloud.cerebras.ai - 1M tokens/dia gratis
+  mistral_api_key: "OBTENER_GRATIS_AQUI"    # console.mistral.ai - 1000M tokens/mes gratis
+  openrouter_api_key: "OBTENER_GRATIS_AQUI" # openrouter.ai - 17 modelos gratis
+  cloudflare_api_token: "OBTENER_GRATIS_AQUI"  # dash.cloudflare.com - 230 imagenes FLUX/dia
+  cloudflare_account_id: "OBTENER_GRATIS_AQUI"
+  nvidia_api_key: "OBTENER_GRATIS_AQUI"     # build.nvidia.com - sin tope diario (opcional)
   jamendo_client_id: "OBTENER_GRATIS_AQUI"
 
   # --- Voz (100% gratis, no requiere key: Microsoft Edge TTS) ---

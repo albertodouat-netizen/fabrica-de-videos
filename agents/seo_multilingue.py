@@ -40,7 +40,7 @@ def _traducir_con_gemini(titulo: str, descripcion: str, idioma_destino: str, gem
         f"Título original: {titulo}\n\n"
         f"Descripción original:\n{descripcion}"
     )
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={gemini_key}"
     body = {"contents": [{"parts": [{"text": prompt}]}]}
     r = requests.post(url, json=body, timeout=45)
     r.raise_for_status()

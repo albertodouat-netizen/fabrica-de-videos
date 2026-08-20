@@ -29,7 +29,7 @@ import time
 
 import requests
 
-from agents.utils import load_config, log, limpiar_texto_para_voz
+from agents.utils import load_config, log, limpiar_texto_para_voz, modelo_groq
 
 AGENT = "InvestigadorCientifico"
 EUROPEPMC_URL = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
@@ -360,7 +360,7 @@ def _interpretar_respuesta_relevancia(texto: str, estudios: list):
 
 
 def _relevancia_con_gemini(prompt: str, gemini_key: str) -> str:
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={gemini_key}"
     r = None
     for espera in (0, 5, 10):
         if espera:
@@ -390,7 +390,7 @@ def _relevancia_con_groq(prompt: str, groq_key: str) -> str:
             "https://api.groq.com/openai/v1/chat/completions",
             headers={"Authorization": f"Bearer {groq_key}"},
             json={
-                "model": "llama-3.3-70b-versatile",
+                "model": modelo_groq(groq_key),
                 "messages": [{"role": "user", "content": prompt}],
                 "temperature": 0,
             },
@@ -505,7 +505,7 @@ def _preguntar_gemini_si_respalda(afirmacion: str, estudios: list, gemini_key: s
         f"Responde ÚNICAMENTE con \"SI:<número de fuente>\" o \"NO\", sin nada "
         f"más. Sé estricto: si tienes cualquier duda, responde NO."
     )
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={gemini_key}"
     body = {"contents": [{"parts": [{"text": prompt}]}]}
     try:
         r = requests.post(url, json=body, timeout=30)
@@ -584,7 +584,7 @@ def _reescribir_sin_cifra(texto: str, gemini_key: str) -> str:
         f"símbolos ni comillas. Responde ÚNICAMENTE con la frase reescrita, nada más.\n\n"
         f"Frase original: \"{texto}\""
     )
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={gemini_key}"
     body = {"contents": [{"parts": [{"text": prompt}]}]}
     try:
         r = requests.post(url, json=body, timeout=30)

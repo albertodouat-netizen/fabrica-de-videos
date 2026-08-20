@@ -66,7 +66,7 @@ def _traducir_guion_completo(texto: str, idioma_destino: str, gemini_key: str) -
         f"Devuelve ÚNICAMENTE el texto traducido, sin comillas ni explicaciones "
         f"adicionales.\n\nGuion original en español:\n{texto}"
     )
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={gemini_key}"
     body = {"contents": [{"parts": [{"text": prompt}]}]}
     r = requests.post(url, json=body, timeout=60)
     r.raise_for_status()

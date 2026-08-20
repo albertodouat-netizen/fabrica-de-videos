@@ -25,7 +25,7 @@ import time
 import random
 import requests
 
-from agents.utils import load_config, log, limpiar_texto_para_voz
+from agents.utils import load_config, log, limpiar_texto_para_voz, modelo_groq
 from agents.viral_strategist import REGLAS_PARA_GUIONISTA, REGLAS_SEO_PARA_GUIONISTA
 
 AGENT = "Guionista"
@@ -144,7 +144,7 @@ Devuélvelo en JSON con esta forma EXACTA (sin texto fuera del JSON; recuerda:
 
 
 def _llamar_gemini(prompt, api_key):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={api_key}"
     body = {"contents": [{"parts": [{"text": prompt}]}]}
     ultimo_error = None
     for intento in range(3):
@@ -179,7 +179,9 @@ def _llamar_groq(prompt, api_key):
         # "llama-3.1-70b-versatile" fue DESCONTINUADO por Groq (confirmado
         # en vivo en la auditoría de agosto 2026: la API devolvía 400
         # "model_decommissioned"). Reemplazado por su sucesor recomendado.
-        "model": "llama-3.3-70b-versatile",
+        # Modelo elegido EN VIVO entre los que existen hoy (ver utils.modelo_groq):
+        # así una descontinuación de Groq nunca vuelve a tumbar el guionista.
+        "model": modelo_groq(api_key),
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.8,
     }
@@ -702,9 +704,19 @@ def generar_guion(idea: dict) -> dict:
             continue
 
     if guion is None:
-
-        log(AGENT, "Usando generador de plantilla local (sin IA externa, 100% gratis).")
-        guion = _plantilla_local(idea, cfg)
+        # CAMBIO CRÍTICO (auditoría 19-ago-2026): la plantilla local publicó
+        # un video genérico de 3 minutos ("Cambios Simples Para Tu Salud
+        # Natural, Alternativa,") cuando Groq descontinuó su modelo y Gemini
+        # agotó cuota. Un video así daña la reputación del canal ante la
+        # audiencia Y ante el algoritmo. Es mejor NO publicar hoy y dejar que
+        # el cron de respaldo (21:45 UTC) o el del día siguiente lo intenten
+        # de nuevo, que publicar contenido sin tema, sin ciencia y sin valor.
+        raise RuntimeError(
+            "Ningún proveedor de IA pudo generar el guion (Gemini y Groq "
+            "fallaron). Se ABORTA la corrida a propósito para no publicar "
+            "un video genérico de plantilla que dañaría el canal. El cron "
+            "de respaldo lo reintentará automáticamente."
+        )
 
     guion = _sanitizar_guion(guion)
 

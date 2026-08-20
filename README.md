@@ -1,5 +1,38 @@
 # 🤖 Fábrica de Videos de YouTube — Equipo de Agentes IA (100% Gratis)
 
+## 🚨 EMERGENCIA REPARADA: video genérico del 19-ago-2026 (auditoría con evidencia)
+Qué pasó (verificado en vivo con la API de YouTube y las APIs de IA):
+- El video del 19-ago ("Cambios Simples Para Tu Salud Natural, Alternativa,")
+  duró **3m07s**, con título cortado, guion 100% de plantilla local, sin tema
+  real, sin intro de marca y con referencias científicas que NO tenían nada
+  que ver (un estudio de derrames cerebrales y otro de tumores cerebrales).
+- Causa raíz #1: **Groq eliminó el modelo `llama-3.3-70b-versatile`**
+  (la API devolvió 404 `model_not_found`, comprobado en vivo). El guionista,
+  el Short independiente, el respondedor de comentarios y el refinador de
+  relevancia científica quedaron rotos al mismo tiempo.
+- Causa raíz #2: la cuota diaria gratuita de **Gemini estaba agotada (429)**
+  a la hora de la corrida, así que el respaldo tampoco funcionó.
+- Resultado: el pipeline cayó a `_plantilla_local()` y PUBLICÓ el video
+  genérico en público.
+
+Reparaciones aplicadas (todas probadas en vivo):
+1. **Selección dinámica de modelo Groq** (`agents/utils.modelo_groq`): antes
+   de cada llamada se consulta qué modelos EXISTEN hoy en la cuenta y se usa
+   el mejor disponible (preferencia actual: `openai/gpt-oss-120b`, verificado
+   funcionando). Si Groq vuelve a eliminar un modelo, el sistema se adapta
+   solo, sin tocar código.
+2. **Gemini actualizado** a `gemini-flash-latest` (alias que Google mantiene
+   siempre apuntando al modelo vigente; `gemini-2.5-flash` seguía vivo pero
+   los alias `-latest` sobreviven a las descontinuaciones).
+3. **La plantilla local ya NO publica**: si Gemini y Groq fallan a la vez,
+   la corrida se aborta a propósito con error claro. Es mejor no publicar un
+   día (el cron de respaldo de las 21:45 UTC y el del día siguiente lo
+   reintentan) que publicar un video genérico que daña la reputación del
+   canal y activa la política de "contenido inauténtico" de YouTube.
+
+⚠️ ACCIÓN MANUAL PENDIENTE DEL USUARIO: borrar los 2 videos del 19-ago
+(`a51jM40d8c0` largo y `Wx9IMctsbB0` Short) — son de plantilla genérica.
+
 ## 🚀 Actualización: publicación pública y tráfico interno entre videos
 Por decisión explícita del dueño del canal:
 - **Los videos se publican SIEMPRE en público** (`publicacion.privacidad_default: "public"`

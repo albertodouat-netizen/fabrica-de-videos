@@ -3,7 +3,7 @@ AGENTE 23: PRESUPUESTO DIARIO DE IA GRATUITA ("PresupuestoIA")
 ----------------------------------------------------------------
 Descubrimiento real de esta auditoría (agosto 2026): el proyecto de Google
 Cloud usado para la llave gratuita de Gemini tiene, en la práctica, una
-cuota de apenas 20 solicitudes/día para el modelo gemini-2.5-flash
+cuota de apenas 20 solicitudes/día para el modelo gemini-flash-latest
 (confirmado con una llamada real que devolvió el error 429
 "RESOURCE_EXHAUSTED... limit: 20"). Antes de este agente, el sistema no se
 enteraba de esto hasta que ya había gastado esa cuota en verificaciones de

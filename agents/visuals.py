@@ -360,7 +360,7 @@ def _imagen_es_segura_gemini(ruta_jpg: str) -> bool:
         "contenido no apto para un canal de salud familiar? Sé estricto: "
         "cualquier duda razonable cuenta como SI."
     )
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={gemini_key}"
     body = {"contents": [{"parts": [{"text": prompt}, {"inline_data": {"mime_type": "image/jpeg", "data": img_b64}}]}]}
     r = requests.post(url, json=body, timeout=30)
     r.raise_for_status()

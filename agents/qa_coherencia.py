@@ -81,7 +81,7 @@ def _preguntar_a_gemini_vision(ruta_jpg: str, keyword: str, texto_beat: str, api
         f"Responde ÚNICAMENTE en este formato EXACTO, sin explicar nada más:\n"
         f"COHERENCIA:<número del 0 al 10>|INAPROPIADA:<SI o NO>"
     )
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={api_key}"
     body = {
         "contents": [{
             "parts": [

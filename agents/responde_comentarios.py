@@ -34,7 +34,7 @@ import re
 import googleapiclient.discovery
 import requests
 
-from agents.utils import load_config, load_state, save_state, log
+from agents.utils import load_config, load_state, save_state, log, modelo_groq
 
 AGENT = "RespondeComentarios"
 
@@ -99,7 +99,7 @@ def _generar_respuesta_llm(comentario: str, titulo_video: str, cfg) -> str:
             r = requests.post(
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers={"Authorization": f"Bearer {groq_key}"},
-                json={"model": "llama-3.3-70b-versatile",
+                json={"model": modelo_groq(groq_key),
                       "messages": [{"role": "user", "content": prompt}],
                       "temperature": 0.7, "max_tokens": 120},
                 timeout=30)

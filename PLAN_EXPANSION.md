@@ -41,3 +41,46 @@ cerrar TODOS los canales vinculados, incluido el que ya funciona).
   Falta confirmar que este último también fue subido a GitHub.
 - Próxima verificación: revisar el video del día siguiente (después de las
   14:30 hora Colombia) fotograma por fotograma y por API.
+
+
+## Inteligencia de los 9 videos analizados el 19-ago-2026
+1. CAMBIO CRITICO YouTube 24-AGO-2026: las vistas se contarán desde el
+   fotograma 1 (incluye repeticiones). Vistas "infladas"; la métrica real
+   pasa a llamarse "visitas interesadas" (Analytics > modo avanzado).
+   NO cambia ingresos ni requisitos de monetización. Fuente: comunicado
+   oficial + video QUIERO SER YOUTUBER (18-ago).
+2. Modelo Esteban Quiroga (38 canales, 1000 videos/mes, faceless):
+   valida nuestro plan de expansión multiplataforma y multicanal. Claves:
+   - Elegir nicho VALIDADO: canales referencia (inglés, grandes) +
+     canales competencia (español, recientes, con vistas) = nicho probado.
+   - "Robar como artista": replicar ideas ya virales, no innovar formatos.
+   - YouTube beneficia canales nuevos (boost inicial) - hay que aprovechar
+     con buen titulo/miniatura/idea.
+   - Noticias virales funcionan hasta 2 semanas tarde.
+   - Especialistas por rol cuando escalas (voz, guiones, edición) + SOPs.
+3. Eloisa Wolf (5 formas de ganar dinero): AdSense es solo la 1ra fuente;
+   el dinero grande esta en: productos propios (canal 1M subs: $59K
+   AdSense vs $1M cursos), acuerdos de marca, shopping, marca personal.
+   - Regla 7-11-4 para high ticket. YouTube convierte mas que otras redes.
+   - DUBBING (doblaje automatico): Diary of a CEO gano 3M subs hispanos
+     en 6 meses solo doblando. Canal de cocina latino disparo ingresos
+     al ser visto por US Hispanics (audiencias mas caras). => OPORTUNIDAD
+     FUTURA: doblar nuestros videos al ingles con IA (mercado 10x RPM).
+   - Nichos con puja alta 2026-2029: IA y apps (CPMs de $70).
+   - Video evergreen dura 5+ años (bienes raices digitales) vs 5h Facebook.
+4. Fusgo (1.6M subs, casos criminales): retencion > todo ("un video 15%
+   mejor no da 15% mas vistas, da 3x, YouTube premia calidad").
+   Contenido evergreen permite vivir de videos viejos. Pocos videos con
+   calidad > muchos con baja calidad (para marca personal; distinto al
+   modelo volumen de Esteban).
+5. Yapping (TUMADREANNA): formato viral 2026 = hablar a camara sin
+   edicion, naturalidad. Instagram lo pide explicitamente. NO aplica a
+   nuestros canales faceless, pero es el formato que Alberto podria usar
+   si algun dia decide poner su voz/cara para un canal personal.
+6. Herramientas IA gratis (3 videos): Meta Vibes ahora 720p + extension
+   Chrome "Vibes Automation" para generar en lote; Google Flow con Nano
+   Banana 2 (imagenes gratis ilimitadas, personajes consistentes);
+   Vheer, Symphony (TikTok), CapCut Agent. Flujos semiautomaticos con
+   ensamble manual. => Nuestra fabrica sigue superior en automatizacion
+   total, pero Vibes/Flow son candidatos si algun dia agregamos animacion
+   a los videos (canal de historias futuro).

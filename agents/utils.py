@@ -89,3 +89,43 @@ def obtener_duracion_video(ruta_video: str):
     except Exception:
         return None
 
+
+# --- Selección de modelo Groq a prueba de descontinuaciones -----------------
+# Hallazgo real (auditoría 19-ago-2026): Groq eliminó "llama-3.3-70b-versatile"
+# sin aviso y el guionista cayó a la plantilla local de emergencia, publicando
+# un video genérico de 3 minutos sin tema, sin intro de marca y con título
+# roto. Para que NUNCA se repita: esta función consulta en vivo qué modelos
+# existen HOY en la cuenta y elige el mejor de una lista de preferencias.
+# El resultado se cachea en memoria durante toda la corrida.
+_GROQ_MODELO_CACHE = {}
+
+_GROQ_PREFERENCIAS = [
+    "openai/gpt-oss-120b",      # el más capaz gratuito en Groq (ago-2026)
+    "qwen/qwen3.6-27b",
+    "openai/gpt-oss-20b",
+    "groq/compound",
+    "groq/compound-mini",
+]
+
+
+def modelo_groq(api_key: str) -> str:
+    """Devuelve un modelo de texto que EXISTE hoy en Groq, según la lista de
+    preferencias. Si la consulta falla, devuelve la primera preferencia."""
+    if api_key in _GROQ_MODELO_CACHE:
+        return _GROQ_MODELO_CACHE[api_key]
+    import requests as _rq
+    elegido = _GROQ_PREFERENCIAS[0]
+    try:
+        r = _rq.get("https://api.groq.com/openai/v1/models",
+                    headers={"Authorization": f"Bearer {api_key}"}, timeout=15)
+        r.raise_for_status()
+        disponibles = {m["id"] for m in r.json().get("data", [])}
+        for pref in _GROQ_PREFERENCIAS:
+            if pref in disponibles:
+                elegido = pref
+                break
+    except Exception:
+        pass  # sin red o error: se usa la primera preferencia igual
+    _GROQ_MODELO_CACHE[api_key] = elegido
+    log("UTILS", f"Modelo Groq activo: {elegido}")
+    return elegido

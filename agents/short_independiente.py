@@ -37,7 +37,7 @@ import re
 
 import requests
 
-from agents.utils import load_config, load_state, save_state, log, limpiar_texto_para_voz
+from agents.utils import load_config, load_state, save_state, log, limpiar_texto_para_voz, modelo_groq
 
 AGENT = "ShortIndependiente"
 
@@ -165,7 +165,7 @@ def _generar_guion_short(tema: str, formato: str, cfg: dict) -> dict:
             r = requests.post(
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers={"Authorization": f"Bearer {groq_key}"},
-                json={"model": "llama-3.3-70b-versatile",
+                json={"model": modelo_groq(groq_key),
                       "messages": [{"role": "user", "content": prompt}],
                       "temperature": 0.9},  # temperatura alta = más variación entre Shorts
                 timeout=60)
@@ -178,7 +178,7 @@ def _generar_guion_short(tema: str, formato: str, cfg: dict) -> dict:
         gemini_key = cfg["apis"].get("gemini_api_key", "")
         if gemini_key and "OBTENER_GRATIS" not in gemini_key:
             try:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={gemini_key}"
                 r = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=60)
                 r.raise_for_status()
                 from agents.presupuesto_ia import registrar_uso_gemini
