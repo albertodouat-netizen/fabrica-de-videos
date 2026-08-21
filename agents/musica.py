@@ -20,7 +20,18 @@ from agents.utils import load_config, log
 
 AGENT = "Musica"
 
-TAGS_INSTRUMENTAL_SUGERIDOS = ["inspiring", "calm", "corporate", "uplifting", "background"]
+# SOLO música RELAJANTE (orden del usuario, 21-ago-2026, tras oír rock con
+# guitarra eléctrica en el video de magnesio: "siempre debe ser musica
+# relajante... no el rock que sonaba"). Tags verificados EN VIVO con la
+# llave real: meditation, piano, soft y calm devuelven pistas CC aptas.
+TAGS_INSTRUMENTAL_SUGERIDOS = ["meditation", "relaxing", "piano", "calm", "soft", "ambient"]
+
+# Géneros/instrumentos PROHIBIDOS aunque el tag principal coincida (el bug
+# real: "Hope" de Jimi Sobara salía con tag inspiring pero sus géneros
+# reales en Jamendo eran corporate+ROCK con guitarra eléctrica).
+_GENEROS_PROHIBIDOS = ("rock", "metal", "punk", "electro", "techno", "dance",
+                        "hiphop", "rap", "dubstep", "hardcore", "industrial")
+_INSTRUMENTOS_PROHIBIDOS = ("electricguitar", "distortion", "drums")
 
 
 def _buscar_pistas_comerciales(client_id: str, tag: str, limite=10):
@@ -67,6 +78,17 @@ def _buscar_pistas_comerciales(client_id: str, tag: str, limite=10):
             continue
         nombre_bajo = (track.get("name") or "").lower()
         if any(p in nombre_bajo for p in _PALABRAS_FUERA_DE_CONTEXTO):
+            continue
+        # Filtro por géneros/instrumentos REALES de la pista (musicinfo):
+        # nada de rock/metal/electrónica ni guitarra eléctrica/batería.
+        mi = (track.get("musicinfo") or {}).get("tags", {})
+        generos = [g.lower() for g in (mi.get("genres") or [])]
+        instrumentos = [i.lower() for i in (mi.get("instruments") or [])]
+        tiene_genero_prohibido = any(
+            gp in g for g in generos for gp in _GENEROS_PROHIBIDOS)
+        tiene_instrumento_prohibido = any(
+            ip in i for i in instrumentos for ip in _INSTRUMENTOS_PROHIBIDOS)
+        if tiene_genero_prohibido or tiene_instrumento_prohibido:
             continue
         resultados.append({
             "nombre": track.get("name", "Untitled"),

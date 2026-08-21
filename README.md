@@ -1,5 +1,45 @@
 # 🤖 Fábrica de Videos de YouTube — Equipo de Agentes IA (100% Gratis)
 
+## 🔧 AUDITORÍA DEL VIDEO "MAGNESIO" + 8 CORRECCIONES (21-ago-2026)
+Primer video con el arsenal completo (-8mFy8Vdqns): funcionaron intro con
+logo, música Jamendo (primera vez), portada real del estudio x3, FLUX,
+referencias correctas y publicación efectiva de largo+Short. Defectos
+reales encontrados (usuario + auditoría con storyboards) y corregidos:
+
+1. **Duración 7:43 (mínimo 15)**: la extensión abortaba con UNA ronda pobre.
+   Ahora rota de cerebro (mistral→gemini→groq→openrouter→nvidia) y solo
+   aborta tras 3 rondas pobres consecutivas; max_intentos 8→12.
+2. **Short SIN imágenes (degradado verde)**: la carpeta de visuales del
+   largo se borraba ANTES de crear el Short. Ahora sobrevive hasta después
+   y crear_short() rescata cualquier beat con "_fallback" usando visuales
+   REALES del largo.
+3. **Mujer con 3 brazos**: la verificación Gemini ahora también rechaza
+   deformidades anatómicas (brazos/manos/dedos de más, caras deformes) y
+   texto inventado en etiquetas.
+4. **Frascos "Citirato de Magnisim"**: prompt de imagen exige ABSOLUTELY NO
+   TEXT / etiquetas en blanco / envases genéricos.
+5. **Imágenes repetidas en distintos minutos**: el reuso de visuales ahora
+   tiene memoria (prefiere no-reusados, máximo 2 reusos por visual).
+6. **Loops**: el boomerang ya no se repite N veces en beats largos: una
+   sola pasada ida+vuelta + fotograma final congelado.
+7. **Música rock ("Hope" de Jimi Sobara, género real rock+guitarra
+   eléctrica)**: tags nuevos SOLO relajantes (meditation/relaxing/piano/
+   calm/soft/ambient) + filtro por géneros reales de musicinfo (prohibidos
+   rock/metal/electro...) e instrumentos (guitarra eléctrica/batería).
+   Verificado en vivo: ahora elige "My Freedom" (filmscore, piano+cuerdas).
+   Volumen de fondo 10%→6% (pedido: "bájale un poco").
+8. **Descripción con párrafo duplicado**: viral_strategist ya no repite el
+   resumen cuando está contenido en el primer bloque.
+9. **Link del Short al largo**: investigado y confirmado que YouTube
+   BLOQUEA por diseño los links tocables en descripciones de Shorts
+   (anti-spam) y que el botón oficial "video relacionado" NO es
+   configurable por API. Solución triple automatizada: (a) URLs completas
+   con https://www. en comentario fijado (ahí SÍ son tocables), (b) el
+   Short entra a la MISMA playlist que el largo (al terminar, YouTube
+   prioriza contenido del canal/playlist en el feed), (c) CTA verbal =
+   "video completo en el primer comentario".
+
+
 ## 🛡️ ARSENAL COMPLETO INTEGRADO (19-ago-2026, noche) — el sistema queda blindado
 El usuario consiguió y verificó (todas probadas EN VIVO) las llaves del arsenal:
 Jamendo, Mistral, OpenRouter, Cloudflare (token + account), Pixabay y NVIDIA.

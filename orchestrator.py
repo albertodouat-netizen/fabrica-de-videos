@@ -411,7 +411,12 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
     else:
         log(AGENT, "8/9 Publicación omitida (--no-publicar). Video listo en disco.")
 
-    shutil.rmtree(carpeta_assets, ignore_errors=True)
+    # CORRECCIÓN (auditoría Short sin imágenes, 21-ago-2026): la carpeta de
+    # visuales del largo se borraba ANTES de crear el Short; si la búsqueda
+    # vertical fallaba (cuota Gemini agotada para verificar personas), el
+    # Short no tenía NADA que reusar y salía con fondo degradado vacío.
+    # Ahora se borra DESPUÉS del Short, y el Short la recibe como fuente de
+    # visuales ya verificados (ver crear_short carpeta_visuales_largo).
     shutil.rmtree("output/video/_musica_tmp", ignore_errors=True)
 
 
@@ -422,9 +427,10 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
         try:
             from agents.shorts_creator import crear_short
             log(AGENT, "9/9 Generando Short para atraer tráfico al video completo (ShortsCreator)...")
-            url_largo = f"https://youtube.com/watch?v={video_id}" if video_id else ""
+            url_largo = f"https://www.youtube.com/watch?v={video_id}" if video_id else ""
             ruta_short, titulo_short, descripcion_short = crear_short(
-                guion, "output/video", nombre_base, url_video_largo=url_largo
+                guion, "output/video", nombre_base, url_video_largo=url_largo,
+                carpeta_visuales_largo=carpeta_assets
             )
             if intentar_publicar:
                 from agents.publisher import publicar_video
@@ -433,6 +439,15 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
                                "disclaimer": guion.get("disclaimer", "")}
                 log(AGENT, "Publicando el Short en YouTube...")
                 short_id = publicar_video(ruta_short, None, guion_short, descripcion_short)
+                # Playlist compartida con el largo (21-ago-2026): al terminar
+                # el Short, YouTube prioriza el siguiente video de la misma
+                # playlist/canal en el feed => más tráfico interno propio.
+                if short_id:
+                    try:
+                        from agents.playlist_manager import agregar_a_playlist
+                        agregar_a_playlist(short_id, cfg["canal"]["nicho"].title())
+                    except Exception as e:
+                        log(AGENT, f"Aviso: no se pudo añadir el Short a la playlist ({e}).")
 
                 # Enlace cruzado por comentarios (100% gratis, sin configuración
                 # nueva): el video largo recibe un comentario con el link al
@@ -444,13 +459,16 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
                                   f"https://youtube.com/shorts/{short_id}"
                     )
                     publicar_comentario_cruzado(
-                        short_id, f"👉 Mira el video COMPLETO aquí: https://youtube.com/watch?v={video_id}"
+                        short_id, f"👉 Mira el video COMPLETO aquí ▶️ https://www.youtube.com/watch?v={video_id}"
                     )
         except Exception as e:
             log(AGENT, f"No se pudo generar/publicar el Short: {e}")
             traceback.print_exc()
     else:
         log(AGENT, "9/9 Generación de Short omitida (--sin-short).")
+
+    # Limpieza de visuales del largo: AHORA sí (el Short ya los aprovechó).
+    shutil.rmtree(carpeta_assets, ignore_errors=True)
 
     estado.setdefault("ideas_usadas", []).append(idea["titulo"])
     estado.setdefault("categorias_usadas", []).append(idea.get("categoria", "general"))

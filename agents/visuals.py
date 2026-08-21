@@ -333,10 +333,17 @@ def _generar_imagen_ia(descripcion: str, destino_jpg: str, tamano=(1280, 720),
         )
     else:
         refuerzo = "escena sin personas, enfoque en el objeto o ambiente descrito, "
+    # ANTI-TEXTO-INVENTADO (auditoría video magnesio, 21-ago-2026): la IA
+    # escribió "Citirato de Magnisim" y "El magnesio paterrese de absorción
+    # antibiotici" en frascos/carteles. Los modelos de imagen NO saben
+    # escribir: se exige explícitamente cero texto, etiquetas en blanco y
+    # envases genéricos.
     prompt = (
         f"{base}, fotografía realista tipo documental, cámara real, luz natural, "
-        f"alta definición, composición cinematográfica, sin texto, sin marca de agua, "
-        f"sin logotipos, {refuerzo}"
+        f"alta definición, composición cinematográfica, "
+        f"ABSOLUTELY NO TEXT anywhere in the image, no words, no letters, "
+        f"no labels with writing, plain unlabeled containers, blank labels, "
+        f"no signs, no captions, no watermark, no logos, {refuerzo}"
         f"contenido apto para todo público, familiar, profesional"
     )
 
@@ -450,12 +457,20 @@ def _imagen_es_segura_gemini(ruta_jpg: str) -> bool:
     from agents.presupuesto_ia import registrar_uso_gemini
     with open(ruta_jpg, "rb") as f:
         img_b64 = base64.b64encode(f.read()).decode("utf-8")
+    # AMPLIADO (auditoría 21-ago-2026, defecto real: mujer con TRES brazos
+    # al inicio del video de magnesio): además de contenido inapropiado,
+    # ahora también se rechazan deformidades anatómicas típicas de IA.
     prompt = (
         "Responde ÚNICAMENTE con SI o NO, sin nada más. "
-        "¿Esta imagen muestra desnudos, semi-desnudos, ropa interior, ropa de "
-        "baño, piel descubierta de forma sexual o sugerente, o cualquier "
-        "contenido no apto para un canal de salud familiar? Sé estricto: "
-        "cualquier duda razonable cuenta como SI."
+        "¿Esta imagen tiene ALGUNO de estos problemas? "
+        "(1) desnudos, semi-desnudos, ropa interior/baño, piel descubierta "
+        "de forma sexual o sugerente, o contenido no apto para un canal de "
+        "salud familiar; "
+        "(2) deformidades anatómicas de IA: más o menos de 2 brazos, más o "
+        "menos de 2 manos, más o menos de 5 dedos por mano, extremidades "
+        "fusionadas o retorcidas, caras deformes, dientes anormales; "
+        "(3) texto ilegible o palabras inventadas/mal escritas en etiquetas "
+        "o carteles. Sé estricto: cualquier duda razonable cuenta como SI."
     )
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={gemini_key}"
     body = {"contents": [{"parts": [{"text": prompt}, {"inline_data": {"mime_type": "image/jpeg", "data": img_b64}}]}]}
@@ -632,12 +647,27 @@ class BuscadorVisualesUnicos:
         try:
             ya_descargados = [f for f in os.listdir(carpeta_salida)
                               if f.lower().endswith((".jpg", ".jpeg", ".png", ".mp4"))
-                              and "_fallback" not in f and "intro_marca" not in f]
-            if ya_descargados:
-                elegido = random.choice(ya_descargados)
+                              and "_fallback" not in f and "intro_marca" not in f
+                              and "estudio" not in f.lower()]
+            # CORRECCIÓN (auditoría 21-ago-2026, reclamo real: "imagenes que
+            # se repiten en diferentes minutos del video"): antes elegía AL
+            # AZAR sin memoria, y el mismo visual podía reusarse 3-4 veces.
+            # Ahora se lleva registro de lo ya reusado y se prefiere lo
+            # nunca-reusado; si TODO ya se reusó una vez, se permite una
+            # segunda vuelta (peor es un fondo vacío), pero nunca la misma
+            # imagen dos veces seguidas.
+            if not hasattr(self, "_reusados"):
+                self._reusados = {}
+            candidatos_frescos = [f for f in ya_descargados if self._reusados.get(f, 0) == 0]
+            pool = candidatos_frescos or [f for f in ya_descargados
+                                           if self._reusados.get(f, 0) < 2]
+            if pool:
+                elegido = random.choice(pool)
+                self._reusados[elegido] = self._reusados.get(elegido, 0) + 1
                 ruta_reuso = os.path.join(carpeta_salida, elegido)
                 log(AGENT, f"'{keyword}': sin stock ni imagen IA disponibles; se REUTILIZA "
-                            f"un visual real de este mismo video ({elegido}) en vez de un fondo vacío.")
+                            f"un visual real de este mismo video ({elegido}, "
+                            f"reuso #{self._reusados[elegido]}) en vez de un fondo vacío.")
                 tipo_reuso = "video" if elegido.lower().endswith(".mp4") else "imagen"
                 return {"tipo": tipo_reuso, "ruta": ruta_reuso, "keyword": keyword}
         except Exception:

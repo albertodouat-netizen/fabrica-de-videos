@@ -171,8 +171,16 @@ def _armar_mini_guion(guion: dict) -> dict:
     }
 
 
-def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_largo: str = "") -> tuple:
-    """Genera el Short completo. Devuelve (ruta_mp4, titulo_short, descripcion_short)."""
+def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_largo: str = "",
+                carpeta_visuales_largo: str = None) -> tuple:
+    """Genera el Short completo. Devuelve (ruta_mp4, titulo_short, descripcion_short).
+
+    carpeta_visuales_largo (nuevo, 21-ago-2026): carpeta con los visuales YA
+    descargados/verificados del video largo. Si la búsqueda vertical de un
+    beat termina en fondo degradado vacío (defecto real del Short de
+    magnesio: pantalla verde sin imágenes), se rescata copiando un visual
+    real del largo en su lugar. Un visual horizontal recortado a 9:16 es
+    infinitamente mejor que un degradado vacío."""
     os.makedirs(carpeta_salida, exist_ok=True)
     mini_guion = _armar_mini_guion(guion)
 
@@ -183,6 +191,28 @@ def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_la
     visuales_info = obtener_visuales_para_guion(
         mini_guion, os.path.join(carpeta_salida, f"assets_{nombre_base}"), orientacion="portrait"
     )
+
+    # RESCATE ANTI-DEGRADADO (21-ago-2026): si algún beat quedó con el fondo
+    # de respaldo (_fallback = degradado vacío), sustituirlo por un visual
+    # REAL del video largo (ya verificado y del mismo tema).
+    if carpeta_visuales_largo and os.path.isdir(carpeta_visuales_largo):
+        import random as _rnd
+        reales_largo = [os.path.join(carpeta_visuales_largo, f)
+                        for f in os.listdir(carpeta_visuales_largo)
+                        if f.lower().endswith((".jpg", ".jpeg", ".png", ".mp4"))
+                        and "_fallback" not in f and "intro_marca" not in f]
+        _ya_usados_rescate = set()
+        for visuales_cap_i in visuales_info["visuales_por_capitulo"]:
+            for k, v in enumerate(visuales_cap_i):
+                ruta_v = (v.get("ruta") or "")
+                if "_fallback" in os.path.basename(ruta_v) and reales_largo:
+                    pool = [r for r in reales_largo if r not in _ya_usados_rescate] or reales_largo
+                    elegido = _rnd.choice(pool)
+                    _ya_usados_rescate.add(elegido)
+                    tipo = "video" if elegido.lower().endswith(".mp4") else "imagen"
+                    log(AGENT, f"Short: beat {k} tenía fondo degradado vacío; rescatado con "
+                                f"visual real del video largo ({os.path.basename(elegido)}).")
+                    visuales_cap_i[k] = {"tipo": tipo, "ruta": elegido, "keyword": v.get("keyword", "")}
 
     beats = mini_guion["capitulos"][0]["beats"]
     audio_cap = audio_info["capitulos"][0]
@@ -279,7 +309,8 @@ def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_la
     descripcion_short = (
         f"{guion.get('gancho', '')}\n\n"
         f"👉 El video COMPLETO está en el PRIMER COMENTARIO (link directo) 📌\n"
-        f"También puedes buscarlo en mi canal: {url_video_largo}\n\n"
+        f"También puedes buscarlo en mi canal: {url_video_largo}\n"
+        f"📲 Suscríbete y YouTube te mostrará el video completo: https://www.youtube.com/@saludnaturaldiaria\n\n"
         f"#Shorts #{mini_guion['titulo'][:20].replace(' ', '')}"
     )
 

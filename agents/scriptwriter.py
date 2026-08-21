@@ -360,7 +360,7 @@ def _intentar_llamar_llm_LEGACY(prompt: str, cfg: dict, provider_preferido: str)
 
 
 def _asegurar_duracion_minima(guion: dict, cfg: dict, idea: dict, fuentes_texto: str,
-                               max_intentos: int = 8) -> dict:
+                               max_intentos: int = 12) -> dict:
     dur_min = cfg["estrategia"]["duracion_minima_min"]
     dur_max = cfg["estrategia"]["duracion_objetivo_min"]
     # +8% de margen sobre el mínimo (auditoría 18-ago-2026): apuntar JUSTO al
@@ -369,6 +369,7 @@ def _asegurar_duracion_minima(guion: dict, cfg: dict, idea: dict, fuentes_texto:
     palabras_min = int(dur_min * PALABRAS_POR_MINUTO_HABLADO * 1.08)
     palabras_max = int(dur_max * PALABRAS_POR_MINUTO_HABLADO)
     provider_preferido = cfg["apis"].get("llm_provider", "gemini")
+    rondas_pobres_consecutivas = 0
 
     for intento in range(max_intentos):
         palabras_antes = _contar_palabras_guion(guion)
@@ -409,14 +410,28 @@ def _asegurar_duracion_minima(guion: dict, cfg: dict, idea: dict, fuentes_texto:
             log(AGENT, f"Aviso: no se pudo extender el guion ({e}); se deja como está (nunca bloquea el video).")
             break
 
-        # Si una ronda casi no agregó nada (el LLM se está quedando corto de
-        # ideas nuevas de verdad), mejor parar aquí que insistir sin sentido
-        # y arriesgar contenido relleno/repetitivo.
+        # CORRECCIÓN (auditoría video magnesio 7m43s, 21-ago-2026): antes,
+        # UNA sola ronda pobre abortaba TODA la extensión y el video salía
+        # a la mitad del mínimo de 15 min. Ahora: una ronda pobre solo
+        # cambia de proveedor (otro cerebro de la cascada suele sí tener
+        # ideas nuevas); únicamente 3 rondas pobres CONSECUTIVAS con
+        # proveedores distintos abortan (ahí sí no hay más contenido real).
         palabras_despues = _contar_palabras_guion(guion)
         if palabras_despues - palabras_antes < 40:
-            log(AGENT, "La última extensión aportó muy poco contenido nuevo; se deja el guion como está "
-                        "(mejor esto que arriesgar relleno repetitivo).")
-            break
+            rondas_pobres_consecutivas += 1
+            if rondas_pobres_consecutivas >= 3:
+                log(AGENT, "3 rondas seguidas sin contenido nuevo real (con proveedores "
+                            "distintos); se deja el guion como está.")
+                break
+            _rotacion = ["mistral", "gemini", "groq", "openrouter", "nvidia"]
+            provider_preferido = _rotacion[rondas_pobres_consecutivas % len(_rotacion)]
+            log(AGENT, f"La ronda aportó poco; se reintenta con otro cerebro "
+                        f"('{provider_preferido}') antes de rendirse "
+                        f"({rondas_pobres_consecutivas}/3 rondas pobres).")
+            time.sleep(3)
+            continue
+        else:
+            rondas_pobres_consecutivas = 0
 
         # Pausa breve entre rondas: Groq limita tokens-por-MINUTO (no solo
         # por día); varias llamadas grandes seguidas sin pausa son la causa

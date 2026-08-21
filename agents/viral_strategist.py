@@ -308,7 +308,12 @@ def construir_descripcion_publicacion(guion: dict, timestamps_capitulos: list, n
     lineas.append(f"🔥 {primer_bloque}")
     lineas.append("")
 
-    if resumen and resumen.strip() != primer_bloque.strip():
+    # CORRECCIÓN (auditoría video magnesio, 21-ago-2026): antes bastaba con
+    # que primer_bloque tuviera la keyword añadida al final para que "no
+    # fuera igual" al resumen y este se pegara COMPLETO otra vez (descripción
+    # con el mismo párrafo duplicado, visto en el video real). Ahora solo se
+    # añade si el resumen NO está ya contenido en el primer bloque.
+    if resumen and resumen.strip() not in primer_bloque:
         lineas.append(resumen)
         lineas.append("")
 

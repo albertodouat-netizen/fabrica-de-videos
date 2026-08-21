@@ -154,11 +154,21 @@ def _clip_desde_visual(visual, duracion, carpeta_tmp, resolucion=RESOLUCION):
                                  .with_duration(duracion - clip.duration)
                     clip = concatenate_videoclips([clip, ultimo], method="chain")
                 else:
+                    # CORRECCIÓN ANTI-LOOP v2 (auditoría 21-ago-2026, reclamo
+                    # real del usuario: "imagenes que quedan en un loop"):
+                    # el boomerang se repetía N veces si el beat era largo
+                    # (clip 3s en beat 15s = 3 boomerangs visibles). Ahora:
+                    # UNA sola pasada ida+vuelta y el resto se sostiene con
+                    # el fotograma final congelado (estable, sin repetición).
                     import moviepy.video.fx as vfx
                     reversa = clip.with_effects([vfx.TimeMirror()])
                     ida_vuelta = concatenate_videoclips([clip, reversa], method="chain")
-                    copias = int(duracion // ida_vuelta.duration) + 1
-                    clip = concatenate_videoclips([ida_vuelta] * copias, method="chain")
+                    if ida_vuelta.duration < duracion:
+                        congelado = ida_vuelta.to_ImageClip(
+                            t=max(0, ida_vuelta.duration - 0.05))                             .with_duration(duracion - ida_vuelta.duration)
+                        clip = concatenate_videoclips([ida_vuelta, congelado], method="chain")
+                    else:
+                        clip = ida_vuelta
                 clip = clip.subclipped(0, duracion)
             clip = clip.without_audio().with_duration(duracion)
             return _cubrir_resolucion(clip, resolucion)
@@ -343,7 +353,7 @@ def _renderizar_capitulo(cap, audio_cap_info, visuales_cap, carpeta_salida, indi
 def construir_video(guion: dict, audio_info: dict, visuales_info: dict,
                      carpeta_salida: str, nombre_base: str,
                      resolucion=RESOLUCION, con_tarjetas_titulo=True,
-                     ruta_musica_fondo: str = None, volumen_musica: float = 0.10):
+                     ruta_musica_fondo: str = None, volumen_musica: float = 0.06):
     os.makedirs(carpeta_salida, exist_ok=True)
     carpeta_tmp = os.path.join(carpeta_salida, f"_tmp_{nombre_base}")
     os.makedirs(carpeta_tmp, exist_ok=True)
