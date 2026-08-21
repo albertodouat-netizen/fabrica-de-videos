@@ -125,6 +125,7 @@ apis:
   openrouter_api_key: "OBTENER_GRATIS_AQUI" # openrouter.ai - 17 modelos gratis
   cloudflare_api_token: "OBTENER_GRATIS_AQUI"  # dash.cloudflare.com - 230 imagenes FLUX/dia
   cloudflare_account_id: "OBTENER_GRATIS_AQUI"
+  deepseek_api_key: "OBTENER_GRATIS_AQUI"  # platform.deepseek.com - 5M tokens gratis 30 dias
   nvidia_api_key: "OBTENER_GRATIS_AQUI"     # build.nvidia.com - sin tope diario (opcional)
   jamendo_client_id: "OBTENER_GRATIS_AQUI"
 

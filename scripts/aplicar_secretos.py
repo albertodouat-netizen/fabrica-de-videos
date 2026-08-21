@@ -33,6 +33,7 @@ def main():
         "cloudflare_api_token": "CLOUDFLARE_API_TOKEN",
         "cloudflare_account_id": "CLOUDFLARE_ACCOUNT_ID",
         "nvidia_api_key": "NVIDIA_API_KEY",
+        "deepseek_api_key": "DEEPSEEK_API_KEY",
     }
 
     for clave_config, nombre_env in mapeo.items():

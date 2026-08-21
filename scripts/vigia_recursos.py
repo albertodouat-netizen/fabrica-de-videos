@@ -127,6 +127,26 @@ def probar_nvidia(cfg):
         return False
 
 
+def probar_deepseek(cfg):
+    key = cfg["apis"].get("deepseek_api_key", "") or ""
+    if not key or "OBTENER_GRATIS" in key:
+        _reg("DeepSeek", False, "sin llave (opcional)")
+        return False
+    try:
+        r = requests.get("https://api.deepseek.com/user/balance",
+                         headers={"Authorization": f"Bearer {key}"}, timeout=30)
+        if r.status_code == 200:
+            info = r.json().get("balance_infos", [{}])
+            saldo = info[0].get("total_balance", "?") if info else "?"
+            _reg("DeepSeek", True, f"saldo: {saldo}")
+            return True
+        _reg("DeepSeek", False, f"HTTP {r.status_code}")
+        return False
+    except Exception as e:
+        _reg("DeepSeek", False, str(e)[:80])
+        return False
+
+
 def probar_pexels(cfg):
     key = cfg["apis"].get("pexels_api_key", "") or ""
     if not key or "OBTENER_GRATIS" in key:
@@ -243,7 +263,8 @@ def main():
 
     # Cerebros (guion)
     cerebros_vivos = sum([probar_groq(cfg), probar_gemini(cfg), probar_mistral(cfg),
-                          probar_openrouter(cfg), probar_nvidia(cfg)])
+                          probar_openrouter(cfg), probar_nvidia(cfg),
+                          probar_deepseek(cfg)])
     # Visuales
     stock_vivo = sum([probar_pexels(cfg), probar_pixabay(cfg)])
     ia_img_viva = sum([probar_cloudflare(cfg), probar_pollinations()])

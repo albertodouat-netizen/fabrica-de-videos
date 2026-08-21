@@ -122,6 +122,25 @@ def _llamar_openrouter_cascada(prompt, key, temperatura=0.8):
     raise ultimo_error or RuntimeError("Ningún modelo :free de OpenRouter respondió")
 
 
+def _llamar_deepseek_cascada(prompt, key, temperatura=0.8):
+    """DeepSeek API (investigado 21-ago-2026 tras el video del usuario):
+    5 MILLONES de tokens gratis al registrarse (sin tarjeta), válidos 30
+    días. API compatible con OpenAI. OJO: NO es ilimitado — lo gratis
+    ilimitado es su chat web (sin API) y su Harness (herramienta de
+    programación, no aplicable aquí). Se usa como cerebro adicional
+    mientras duren los tokens; cuando se agoten, la cascada simplemente
+    lo salta (error → siguiente proveedor)."""
+    r = requests.post(
+        "https://api.deepseek.com/chat/completions",
+        headers={"Authorization": f"Bearer {key}"},
+        json={"model": "deepseek-v4-flash",
+              "messages": [{"role": "user", "content": prompt}],
+              "temperature": temperatura},
+        timeout=120)
+    r.raise_for_status()
+    return r.json()["choices"][0]["message"]["content"]
+
+
 def _llamar_nvidia_cascada(prompt, key, temperatura=0.8):
     ultimo_error = None
     for modelo in _NVIDIA_MODELOS:
@@ -155,6 +174,7 @@ def _llamar_nvidia_cascada(prompt, key, temperatura=0.8):
 _CASCADA = [
     ("groq", "groq_api_key", _llamar_groq_cascada),
     ("gemini", "gemini_api_key", _llamar_gemini_cascada),
+    ("deepseek", "deepseek_api_key", _llamar_deepseek_cascada),
     ("mistral", "mistral_api_key", _llamar_mistral_cascada),
     ("openrouter", "openrouter_api_key", _llamar_openrouter_cascada),
     ("nvidia", "nvidia_api_key", _llamar_nvidia_cascada),
