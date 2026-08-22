@@ -137,6 +137,62 @@ def construir_bloque_mas_videos(videos_relacionados: list) -> str:
     return "\n".join(lineas)
 
 
+import random as _random
+
+# Plantillas de PREGUNTA que invitan a comentar (pedido del usuario,
+# 21-ago-2026: "algo así como ¿qué piensas sobre...?, ¿te ha pasado
+# que...?, ¿crees que esto solucionaría...?, ¿conoces otras
+# alternativas...?"). Los comentarios son señal directa de interacción
+# para el algoritmo; una pregunta concreta multiplica las respuestas.
+_PREGUNTAS_INTERACCION = [
+    "🤔 ¿Qué piensas sobre {tema}? Te leo en los comentarios.",
+    "🙋 ¿Te ha pasado algo relacionado con {tema}? Cuéntame tu experiencia.",
+    "💬 ¿Crees que esto te ayudaría con {tema}? Dime tu opinión.",
+    "🌿 ¿Conoces otras alternativas para {tema}? Compártelas aquí y aprendemos todos.",
+    "👇 ¿Ya habías probado algo de esto para {tema}? ¿Qué tal te fue?",
+    "🗣️ ¿Cuál de estos consejos sobre {tema} vas a probar primero? Cuéntame.",
+    "❓ ¿Qué otro tema sobre {tema} te gustaría que investigue a fondo?",
+]
+
+
+def _tema_corto_de(titulo: str) -> str:
+    """Reduce el título a un tema natural para tejer en la pregunta
+    (ej: '4 Señales Que Nunca Debes Ignorar Antes de Tomar Magnesio (Y...)'
+    -> 'el magnesio'). Usa la parte más significativa del título."""
+    t = (titulo or "").split(":")[0].split("(")[0].strip()
+    palabras = t.split()
+    if len(palabras) > 6:
+        t = " ".join(palabras[-4:])  # el final suele llevar el sustantivo clave
+    t = t.lower().strip(" .,")
+    # Quitar conectores iniciales que dejan la frase coja dentro de la
+    # pregunta (bug visto en la prueba: "¿te ha pasado algo con ANTES DE
+    # TOMAR magnesio?"). Se recortan hasta encontrar un sustantivo.
+    _CONECTORES = ("antes de", "después de", "despues de", "para", "sobre",
+                   "de", "del", "la", "el", "los", "las", "tu", "tus",
+                   "tomar", "usar", "hacer", "y")
+    cambiado = True
+    while cambiado and t:
+        cambiado = False
+        for c in _CONECTORES:
+            if t.startswith(c + " "):
+                t = t[len(c) + 1:]
+                cambiado = True
+    return t.strip(" .,") or "este tema"
+
+
+def comentario_interactivo(titulo_video: str, url_extra: str = "",
+                            etiqueta_url: str = "") -> str:
+    """Construye un comentario que INVITA a interactuar (pregunta concreta
+    sobre el tema) y, opcionalmente, añade un enlace (al Short o al video
+    completo). Un comentario-pregunta genera más respuestas que un enlace
+    seco, y cada respuesta es señal de interacción para el algoritmo."""
+    tema = _tema_corto_de(titulo_video)
+    pregunta = _random.choice(_PREGUNTAS_INTERACCION).format(tema=tema)
+    if url_extra:
+        pregunta += f"\n\n{etiqueta_url} {url_extra}"
+    return pregunta
+
+
 def publicar_comentario_cruzado(video_id: str, texto: str) -> bool:
     """Publica un comentario del propio canal en 'video_id' (funciona tanto
     para el video largo como para el Short). No sustituye a un comentario

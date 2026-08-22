@@ -121,6 +121,39 @@ def _es_spam(texto: str) -> bool:
             "telegram" in t or len(texto.strip()) < 2)
 
 
+def _publicar_comentarios_encolados(youtube, estado) -> int:
+    """Publica los comentarios cruzados que quedaron ENCOLADOS porque su
+    video estaba programado (privado hasta la hora pico). Solo los publica
+    si el video YA es público. Devuelve cuántos publicó."""
+    cola = estado.get("comentarios_cruzados_pendientes", [])
+    if not cola:
+        return 0
+    publicados = 0
+    restantes = []
+    for item in cola:
+        vid = item.get("video_id", "")
+        try:
+            r = youtube.videos().list(part="status", id=vid).execute()
+            items = r.get("items", [])
+            if not items:
+                continue  # video borrado: descartar el comentario
+            if items[0]["status"]["privacyStatus"] != "public":
+                restantes.append(item)  # sigue privado: reintentar mañana
+                continue
+            youtube.commentThreads().insert(
+                part="snippet",
+                body={"snippet": {"videoId": vid,
+                       "topLevelComment": {"snippet": {"textOriginal": item["texto"]}}}},
+            ).execute()
+            publicados += 1
+            log(AGENT, f"Comentario encolado publicado en {vid} (video ya público).")
+        except Exception as e:
+            log(AGENT, f"Aviso: no se pudo publicar comentario encolado en {vid} ({e}).")
+            restantes.append(item)
+    estado["comentarios_cruzados_pendientes"] = restantes
+    return publicados
+
+
 def responder_comentarios_pendientes() -> int:
     """Punto de entrada. Devuelve cuántas respuestas publicó."""
     cfg = load_config()
@@ -132,6 +165,15 @@ def responder_comentarios_pendientes() -> int:
     except Exception as e:
         log(AGENT, f"No se pudo conectar a YouTube ({e}); se omite esta ronda de respuestas.")
         return 0
+
+    # Primero: publicar comentarios cruzados ENCOLADOS de videos que
+    # estaban programados (privados) y ya se hicieron públicos.
+    try:
+        n_encolados = _publicar_comentarios_encolados(yt, estado)
+        if n_encolados:
+            save_state(estado)
+    except Exception as e:
+        log(AGENT, f"Aviso: fallo publicando comentarios encolados ({e}).")
 
     # Los videos a revisar se toman DIRECTO del canal real (no solo de la
     # memoria local, que puede quedar desactualizada si un push de la

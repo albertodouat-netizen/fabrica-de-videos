@@ -1,148 +1,123 @@
-# ============================================================
-# CONFIGURACIÓN CENTRAL DEL EQUIPO DE AGENTES
-# Todo lo que necesitas rellenar está marcado con "OBTENER GRATIS AQUÍ"
-# ============================================================
-
 canal:
-  nombre: "Salud Natural Diaria"   # <- cámbialo por el nombre real que le pongas a tu canal
-  url: "https://www.youtube.com/channel/UCp96gCIthtbOAnhFpezcAHg"
-  channel_id: "UCp96gCIthtbOAnhFpezcAHg"  # usado por el respondedor de comentarios para reconocer los comentarios propios  # enlace directo a tu canal (para el CTA de suscripción en la descripción)
-  idioma_destino: "es"          # idioma en el que se publica
-  idioma_investigacion: "en"    # idioma donde se buscan ideas ganadoras (mercado más grande = más datos)
-  # SEO multilingüe (gratis, recomendado por el experto de YouTube analizado):
-  # agrega título+descripción TRADUCIDOS al mismo video (sin subir nada nuevo)
-  # para que también aparezca en búsquedas en otros idiomas. Déjalo vacío []
-  # para desactivarlo. Ejemplo: ["en", "de"] (inglés, alemán).
+  nombre: Salud Natural Diaria
+  url: https://www.youtube.com/channel/UCp96gCIthtbOAnhFpezcAHg
+  channel_id: UCp96gCIthtbOAnhFpezcAHg
+  idioma_destino: es
+  idioma_investigacion: en
   idiomas_seo_adicionales: []
-  # Doblaje de audio (gratis): prepara un archivo de audio narrado en otro
-  # idioma, listo para subir a mano en YouTube Studio > Idiomas (la API de
-  # YouTube no permite subir esa pista de audio automáticamente todavía).
-  # Déjalo como "" para desactivarlo. Ejemplo: "en" (inglés).
-  idioma_doblaje: ""
-  # NOTA (auditoría agosto 2026): este canal tuvo, por un tiempo breve, una
-  # presentadora fija generada con IA para los llamados a suscripción. Se
-  # QUITÓ por decisión del dueño del canal, para evitar cualquier riesgo con
-  # la política de YouTube (16-jul-2026) sobre "personas de IA" en temas
-  # sensibles como salud. El canal ahora es 100% sin rostro (voz + imágenes
-  # reales/generadas de contexto, nunca un personaje fijo).
-
-  nicho: "salud natural, alternativa, tradicional y complementaria (con respaldo científico)"
-  # EJES TEMÁTICOS: reemplaza a la lista plana de palabras clave. Cada eje es
-  # una categoría de salud distinta; el sistema ROTA entre ellas para que el
-  # canal nunca se sienta repetitivo (YouTube penaliza el contenido siempre
-  # igual) y además exige que cada idea tenga estudios científicos reales
-  # disponibles antes de producirla (ver agents/investigacion_cientifica.py).
-  # Alcance: remedios/terapias naturales, alternativas, tradicionales o
-  # complementarias, Y recomendaciones que COMPLEMENTAN tratamientos médicos
-  # científicos (nunca que los reemplacen) — siempre con evidencia real.
+  idioma_doblaje: ''
+  nicho: salud natural, alternativa, tradicional y complementaria (con respaldo científico)
   ejes_tematicos:
-    - categoria: "sueño y descanso"
-      palabras_clave: ["natural sleep remedies", "how to sleep better naturally", "insomnia natural treatment"]
-    - categoria: "salud digestiva e intestinal"
-      palabras_clave: ["gut health tips", "natural remedies bloating", "improve digestion naturally"]
-    - categoria: "inflamación y dolor articular"
-      palabras_clave: ["how to reduce inflammation", "natural joint pain relief", "anti inflammatory habits"]
-    - categoria: "sistema inmunológico"
-      palabras_clave: ["boost immune system naturally", "natural immunity tips", "foods that boost immunity"]
-    - categoria: "estrés y ansiedad"
-      palabras_clave: ["natural stress relief", "reduce anxiety naturally", "adaptogens for stress"]
-    - categoria: "salud cardiovascular"
-      palabras_clave: ["natural ways lower blood pressure", "heart health natural remedies", "lower cholesterol naturally"]
-    - categoria: "salud metabólica y glucosa"
-      palabras_clave: ["natural ways lower blood sugar", "insulin resistance natural remedies", "metabolic health tips"]
-    - categoria: "salud de la piel"
-      palabras_clave: ["natural skin remedies", "skin inflammation natural treatment", "natural acne remedies"]
-    - categoria: "terapias complementarias con evidencia"
-      palabras_clave: ["yoga therapy benefits research", "meditation clinical benefits", "acupuncture evidence based"]
-    - categoria: "remedios tradicionales estudiados científicamente"
-      palabras_clave: ["turmeric curcumin research", "ginger health benefits research", "traditional herbal medicine evidence"]
-    - categoria: "salud en adultos mayores"
-      palabras_clave: ["senior health natural remedies", "memory support natural remedies", "healthy aging tips"]
-    - categoria: "salud sexual y hormonal"
-      # Enfoque siempre clínico/educativo (nunca explícito), igual que el resto
-      # del canal: factores de estilo de vida, alimentación y hormonas, nunca
-      # contenido sexual explícito (eso sí violaría las políticas de YouTube).
-      palabras_clave: ["natural remedies low libido", "boost testosterone naturally", "erectile dysfunction natural remedies"]
-    - categoria: "enfermedades crónicas"
-      palabras_clave: ["chronic disease natural management", "thyroid health natural remedies", "autoimmune diet natural remedies"]
-    - categoria: "salud bucal, capilar y ocular"
-      palabras_clave: ["natural remedies hair loss", "eye health natural foods", "oral health natural remedies"]
-    - categoria: "alergias y salud respiratoria"
-      palabras_clave: ["natural remedies allergies", "asthma natural remedies", "seasonal allergy natural relief"]
-
+  - categoria: sueño y descanso
+    palabras_clave:
+    - natural sleep remedies
+    - how to sleep better naturally
+    - insomnia natural treatment
+  - categoria: salud digestiva e intestinal
+    palabras_clave:
+    - gut health tips
+    - natural remedies bloating
+    - improve digestion naturally
+  - categoria: inflamación y dolor articular
+    palabras_clave:
+    - how to reduce inflammation
+    - natural joint pain relief
+    - anti inflammatory habits
+  - categoria: sistema inmunológico
+    palabras_clave:
+    - boost immune system naturally
+    - natural immunity tips
+    - foods that boost immunity
+  - categoria: estrés y ansiedad
+    palabras_clave:
+    - natural stress relief
+    - reduce anxiety naturally
+    - adaptogens for stress
+  - categoria: salud cardiovascular
+    palabras_clave:
+    - natural ways lower blood pressure
+    - heart health natural remedies
+    - lower cholesterol naturally
+  - categoria: salud metabólica y glucosa
+    palabras_clave:
+    - natural ways lower blood sugar
+    - insulin resistance natural remedies
+    - metabolic health tips
+  - categoria: salud de la piel
+    palabras_clave:
+    - natural skin remedies
+    - skin inflammation natural treatment
+    - natural acne remedies
+  - categoria: terapias complementarias con evidencia
+    palabras_clave:
+    - yoga therapy benefits research
+    - meditation clinical benefits
+    - acupuncture evidence based
+  - categoria: remedios tradicionales estudiados científicamente
+    palabras_clave:
+    - turmeric curcumin research
+    - ginger health benefits research
+    - traditional herbal medicine evidence
+  - categoria: salud en adultos mayores
+    palabras_clave:
+    - senior health natural remedies
+    - memory support natural remedies
+    - healthy aging tips
+  - categoria: salud sexual y hormonal
+    palabras_clave:
+    - natural remedies low libido
+    - boost testosterone naturally
+    - erectile dysfunction natural remedies
+  - categoria: enfermedades crónicas
+    palabras_clave:
+    - chronic disease natural management
+    - thyroid health natural remedies
+    - autoimmune diet natural remedies
+  - categoria: salud bucal, capilar y ocular
+    palabras_clave:
+    - natural remedies hair loss
+    - eye health natural foods
+    - oral health natural remedies
+  - categoria: alergias y salud respiratoria
+    palabras_clave:
+    - natural remedies allergies
+    - asthma natural remedies
+    - seasonal allergy natural relief
 estrategia:
-  # NOTA: este número es solo informativo, NO controla la frecuencia real
-  # (eso lo hace el "cron" en .github/workflows/fabrica_videos.yml). Se deja
-  # en 3-4 para que coincida con la realidad (decisión del usuario,
-  # 16-ago-2026): 1 video largo + 1 Short CADA 2 DÍAS, para alejarse del
-  # perfil de "producción en masa" de la política de contenido inauténtico
-  # de YouTube. La frecuencia real la controla el candado
-  # scripts/verificar_si_ya_publico_hoy.py (DIAS_ENTRE_VIDEOS = 2).
   videos_por_semana: 4
-  duracion_minima_min: 15       # minutos mínimos por video (RPM más alto: habilita 2-3 anuncios intermedios)
+  duracion_minima_min: 15
   duracion_objetivo_min: 20
-  max_suscriptores_referencia: 250000   # canales de referencia con <250k subs = nicho "joven"/viral
-  dias_publicado_max: 365               # solo mirar contenido de los últimos 12 meses
-  ratio_minimo_vistas_subs: 3           # vistas >= 3x suscriptores => señal de nicho potente
-
+  max_suscriptores_referencia: 250000
+  dias_publicado_max: 365
+  ratio_minimo_vistas_subs: 3
 apis:
-  # --- YouTube Data API (GRATIS, cuota diaria gratuita generosa) ---
-  # Obtener en: https://console.cloud.google.com/apis/library/youtube.googleapis.com
-  youtube_api_key: "OBTENER_GRATIS_AQUI"
-  # OAuth client (para poder SUBIR videos a TU canal) -> mismo Google Cloud Console
-  # APIs & Services > Credentials > Create OAuth client ID > Desktop App
-  # Descargar el JSON y ponerlo en config/client_secret.json
-  oauth_client_secret_path: "config/client_secret.json"
-  oauth_token_path: "config/token.json"
-
-  # --- LLM gratuito para redactar guiones (elige UNO) ---
-  # Opción recomendada: Google Gemini (capa gratuita generosa)
-  #   Obtener en: https://aistudio.google.com/app/apikey
-  # Auditoría agosto 2026: Gemini tiene solo 20 llamadas/día gratis en este
-  # proyecto (verificado en vivo); Groq da mucho más margen para escribir
-  # guiones. Por eso Groq va primero; Gemini queda como respaldo Y sigue
-  # siendo el único que puede hacer verificación visual (QA-Coherencia) y
-  # verificación científica de cifras, así que NO desactives su llave.
-  llm_provider: "groq"   # gemini | groq | ollama | none (usa plantilla local sin IA)
-  gemini_api_key: "OBTENER_GRATIS_AQUI"
-  # Alternativa gratuita: Groq (Llama 3 gratis, muy rápido)
-  #   Obtener en: https://console.groq.com/keys
-  groq_api_key: "OBTENER_GRATIS_AQUI"
-  # Alternativa 100% local y gratuita, sin internet: Ollama (https://ollama.com)
-  ollama_model: "llama3.1"
-
-  # --- Banco de video/imágenes gratuito libre de derechos ---
-  # Pexels: https://www.pexels.com/api/  (gratis, sin límite práctico)
-  pexels_api_key: "OBTENER_GRATIS_AQUI"
-  # Pixabay: https://pixabay.com/api/docs/ (gratis, backup si Pexels no tiene resultados)
-  pixabay_api_key: "OBTENER_GRATIS_AQUI"
-
-  # --- Música de fondo con licencia libre (opcional) ---
-  # Jamendo: https://devportal.jamendo.com/ (gratis, registro de 2 min, sin tarjeta)
-  # Solo se usan pistas con licencia que permite uso comercial (se filtra automáticamente).
-  cerebras_api_key: "OBTENER_GRATIS_AQUI"   # cloud.cerebras.ai - 1M tokens/dia gratis
-  mistral_api_key: "OBTENER_GRATIS_AQUI"    # console.mistral.ai - 1000M tokens/mes gratis
-  openrouter_api_key: "OBTENER_GRATIS_AQUI" # openrouter.ai - 17 modelos gratis
-  cloudflare_api_token: "OBTENER_GRATIS_AQUI"  # dash.cloudflare.com - 230 imagenes FLUX/dia
-  cloudflare_account_id: "OBTENER_GRATIS_AQUI"
-  deepseek_api_key: "OBTENER_GRATIS_AQUI"  # platform.deepseek.com - 5M tokens gratis 30 dias
-  nvidia_api_key: "OBTENER_GRATIS_AQUI"     # build.nvidia.com - sin tope diario (opcional)
-  jamendo_client_id: "OBTENER_GRATIS_AQUI"
-
-  # --- Voz (100% gratis, no requiere key: Microsoft Edge TTS) ---
-  # Se elige AL AZAR una de estas 4 voces para cada video nuevo (variedad).
+  youtube_api_key: OBTENER_GRATIS_AQUI
+  oauth_client_secret_path: config/client_secret.json
+  oauth_token_path: config/token.json
+  llm_provider: groq
+  gemini_api_key: OBTENER_GRATIS_AQUI
+  groq_api_key: OBTENER_GRATIS_AQUI
+  ollama_model: llama3.1
+  pexels_api_key: OBTENER_GRATIS_AQUI
+  pixabay_api_key: OBTENER_GRATIS_AQUI
+  cerebras_api_key: OBTENER_GRATIS_AQUI
+  mistral_api_key: OBTENER_GRATIS_AQUI
+  openrouter_api_key: OBTENER_GRATIS_AQUI
+  cloudflare_api_token: OBTENER_GRATIS_AQUI
+  cloudflare_account_id: OBTENER_GRATIS_AQUI
+  deepseek_api_key: OBTENER_GRATIS_AQUI
+  nvidia_api_key: OBTENER_GRATIS_AQUI
+  jamendo_client_id: OBTENER_GRATIS_AQUI
   voz_narrador_pool:
-    - "es-CO-GonzaloNeural"    # Colombia, masculina
-    - "es-MX-JorgeNeural"      # México, masculina
-    - "es-US-AlonsoNeural"     # neutra (todo Latinoamérica), masculina
-    - "es-MX-DaliaNeural"      # México, femenina
-  # Si el guion se marca como "audiencia_exclusiva: mujeres" (temas como
-  # menstruación, menopausia, embarazo), se usa SIEMPRE esta voz, sin azar:
-  voz_narrador_exclusiva_mujeres: "es-MX-DaliaNeural"
-  voz_narrador_rate: "-8%"    # ritmo (negativo = más lento/pausado = suena más natural y cálido)
-  voz_narrador_pitch: "+0Hz"  # tono; no suele hacer falta tocarlo
-
+  - es-CO-GonzaloNeural
+  - es-MX-JorgeNeural
+  - es-US-AlonsoNeural
+  - es-MX-DaliaNeural
+  voz_narrador_exclusiva_mujeres: es-MX-DaliaNeural
+  voz_narrador_rate: -8%
+  voz_narrador_pitch: +0Hz
 publicacion:
-  privacidad_default: "public"    # publicación 100% autónoma y pública desde el primer segundo (decisión confirmada por el usuario)
-  categoria_youtube: "22"         # People & Blogs (ver docs para otros IDs)
-  programar_hora_utc: "19:30"     # 14:30 Bogotá/Lima, 13:30 CDMX: ventana de mayor tráfico hispano (ver .github/workflows/fabrica_videos.yml)
+  privacidad_default: public
+  categoria_youtube: '22'
+  programar_hora_utc: '19:30'
+  programar_para_hora_pico: true

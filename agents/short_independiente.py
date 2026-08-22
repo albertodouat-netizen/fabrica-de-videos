@@ -45,11 +45,16 @@ AGENT = "ShortIndependiente"
 FORMATOS = ["dato_sorprendente", "mito_vs_verdad", "top_3", "consejo_practico"]
 
 # Cierres variados: NO todos llaman a lo mismo (anti-plantilla).
+# CIERRES v2 (21-ago-2026): los espectadores de Shorts NO leen
+# descripciones; hay que decirles con la VOZ cómo llegar al video largo
+# ("toca mi perfil"). Se mantienen cierres variados (anti-plantilla) pero
+# los que apuntan al largo ahora dan la instrucción concreta.
 CIERRES = [
-    ("largo", "Si quieres la guía completa, está en el video largo de mi canal. Te dejo el link en el primer comentario."),
+    ("largo", "Si quieres la guía completa, está en el video largo de mi canal: toca mi foto de perfil y búscalo. También te dejé el link en el primer comentario."),
+    ("largo2", "Esto es solo una parte. El video completo está en mi canal: tócame el perfil y míralo, te va a servir."),
     ("suscribir", "Si te sirvió este dato, suscríbete. Publico contenido con respaldo científico real."),
-    ("curiosidad", "Y esto es solo una parte. El tema completo es aún más interesante."),
-    ("interaccion", "¿Ya lo sabías? Cuéntame en los comentarios."),
+    ("curiosidad", "Y esto es solo una parte. El tema completo es aún más interesante: está en mi canal."),
+    ("interaccion", "¿Ya lo sabías? Cuéntame en los comentarios, te leo."),
 ]
 
 PROMPT_SHORT = """Eres guionista de YouTube Shorts en español para un canal de salud natural \

@@ -156,8 +156,22 @@ def _armar_mini_guion(guion: dict) -> dict:
             "visual": beats_originales[0]["visual"] if beats_originales else "surprised person looking at camera bright room",
         })
     beats_short.extend(beats_originales)
+    # CIERRE CON CLIFFHANGER ESPECÍFICO (21-ago-2026, pedido del usuario:
+    # "los shorts no están llevando a los suscriptores a los videos
+    # largos"). Un cierre genérico no da razón para saltar; ahora el
+    # cierre PROMETE algo concreto que quedó pendiente y dice CÓMO llegar
+    # (los espectadores de Shorts no ven descripciones: hay que decírselo
+    # con la voz).
+    import random as _rnd
+    tema_cierre = (guion.get("keyword_principal") or guion.get("titulo", "este tema")).split("(")[0].strip()
+    cierres_puente = [
+        f"Y eso no es todo: lo más importante de {tema_cierre} te lo cuento en el video completo. Tócame el perfil y búscalo, es el más reciente.",
+        f"Esto es solo el comienzo. El paso a paso completo de {tema_cierre} está en el video largo de mi canal: toca mi foto de perfil.",
+        f"¿Quieres saber el resto? El video completo sobre {tema_cierre} ya está en mi canal. Entra desde mi perfil, te espero.",
+        f"Te acabo de dar una pista. Las demás señales de {tema_cierre} están en el video completo: tócame el perfil y míralo ahora.",
+    ]
     beats_short.append({
-        "texto": "Te cuento todos los detalles en el video completo de mi canal.",
+        "texto": limpiar_texto_para_voz(_rnd.choice(cierres_puente)),
         # En inglés SIEMPRE (auditoría con Short real, 14-ago-2026: esta
         # keyword estaba en español, los bancos de stock no devolvían nada
         # y el Short terminaba con un fondo genérico que mostraba el texto

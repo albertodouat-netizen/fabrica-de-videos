@@ -84,3 +84,48 @@ cerrar TODOS los canales vinculados, incluido el que ya funciona).
    ensamble manual. => Nuestra fabrica sigue superior en automatizacion
    total, pero Vibes/Flow son candidatos si algun dia agregamos animacion
    a los videos (canal de historias futuro).
+
+## CANAL #2 DECIDIDO: "Reconecta Tu Amor" (21-ago-2026, nombre final)
+- Nombre: **Reconecta Tu Amor** | Handle verificado LIBRE: **@reconectatuamor**
+- Verificado en vivo: CERO canales con ese nombre exacto en YouTube
+  (con "Reconecta" a secas había 10 homónimos, uno de 153K subs).
+- El autocompletado real de YouTube confirma el lenguaje de búsqueda:
+  "reconectar con tu pareja", "recuperando tu amor", "como conectar
+  emocionalmente con tu pareja" — el nombre vive dentro de esas búsquedas.
+- Nicho: relaciones de pareja con respaldo científico (resolver conflictos,
+  comunicación, relaciones duraderas, seguridad emocional para los hijos).
+  Absorbe a futuro el nicho "padres/madres solteros" como sección.
+- Elegido sobre Tecnología (noticias caducan, no encaja con ciclo evergreen),
+  Misterio (mal ajuste con ADN científico) y Padres solteros (queda incluido).
+- RPM esperado nicho psicología/comportamiento: $6-11 (fuentes 2026).
+- Verificado en vivo: ningún canal "Reconecta" domina el nicho de parejas
+  (el mayor, 153K, es de espiritualidad; resto <1K subs).
+- Diferenciación anti-red-spam: voz, estética, horario y música DISTINTOS.
+- CONDICIÓN previa (sin cambios): luz verde solo tras 2 videos largos
+  consecutivos de Salud Natural Diaria sin defectos (≥15 min, Short OK).
+- Decisión del usuario sobre identidad: cuentas de MARCA del mismo Gmail
+  (nada de números/correos comprados — ver conversación 21-ago: ocultarse
+  activa patrón de evasión; canales múltiples abiertos es legal y seguro).
+
+
+## CANAL #3 CANDIDATO: "Novelas/Dramas ilustrados con IA" (21-ago-2026)
+- Origen: video "Renací: Dejé al patán por su frío hermano" del canal
+  Dramas Secretos (analizado por API: canal creado 7-jul-2026, 34 videos
+  de 40-90 min, ~2/día, 935K vistas totales, mejor video 174K).
+- DIAGNÓSTICO del modelo ajeno: contenido vertical 9:16 incrustado en
+  horizontal + títulos de tropos de novela china (renacer, Rey Dragón,
+  Alpha/Omega) => casi seguro micro-dramas chinos re-doblados con IA.
+  NO REPLICAR ESE MODELO: riesgo de copyright tipo Chris Koerner.
+- NUESTRO MODELO (legal, 100% original y gratis): "audio-novela ilustrada"
+  - Historia original por capítulos (cascada LLM, ganchos por capítulo)
+  - Narrador + voces de personajes (edge-tts multi-voz)
+  - Personajes CONSISTENTES: biblia de personajes + Pollinations seed
+    fijo (técnica ya verificada) y/o FLUX de Cloudflare
+  - Género: DRAMAS DE PAREJA (traición, reconciliación, segundas
+    oportunidades) => sinergia total con Reconecta Tu Amor (canal #2):
+    un canal da la ciencia, el otro la emoción; promoción cruzada.
+- RPM referencia historias narradas: $3-8 (ES), retención narrativa 68-78%.
+- El usuario declara (21-ago): estos canales son su plan de sustento de
+  vida => prioridad alta a estabilidad y crecimiento sano, no atajos.
+- Orden vigente: #1 Salud (estabilizar) -> #2 Reconecta Tu Amor -> #3
+  Novelas ilustradas -> re-evaluar (Tecnología, Padres solteros...).

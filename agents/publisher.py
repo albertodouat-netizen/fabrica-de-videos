@@ -59,6 +59,27 @@ def _obtener_credenciales(cfg):
     return creds
 
 
+def _publish_at_hora_pico(cfg) -> str:
+    """Devuelve el timestamp ISO-8601 UTC para programar la publicación en
+    la hora pico del día, o None si no aplica (función apagada, o la hora
+    pico ya pasó => publicar de inmediato)."""
+    import datetime as _dt
+    pub = cfg.get("publicacion", {})
+    if not pub.get("programar_para_hora_pico", False):
+        return None
+    hora_txt = str(pub.get("programar_hora_utc", "19:30")).strip()
+    try:
+        hh, mm = (int(x) for x in hora_txt.split(":"))
+    except Exception:
+        return None
+    ahora = _dt.datetime.now(_dt.timezone.utc)
+    objetivo = ahora.replace(hour=hh, minute=mm, second=0, microsecond=0)
+    # margen de 10 min: si falta menos de eso (o ya pasó), publicar ya
+    if objetivo <= ahora + _dt.timedelta(minutes=10):
+        return None
+    return objetivo.strftime("%Y-%m-%dT%H:%M:%S.0Z")
+
+
 def publicar_video(ruta_video: str, ruta_miniatura: str, guion: dict, descripcion_final: str = None) -> str:
     cfg = load_config()
     creds = _obtener_credenciales(cfg)
@@ -79,6 +100,13 @@ def publicar_video(ruta_video: str, ruta_miniatura: str, guion: dict, descripcio
         "status": {
             "privacyStatus": cfg["publicacion"].get("privacidad_default", "private"),
             "selfDeclaredMadeForKids": False,
+            # PUBLICACIÓN PROGRAMADA (idea del usuario, 21-ago-2026):
+            # generar temprano y publicar a la hora pico. Si
+            # publicacion.programar_para_hora_pico es true y la hora actual
+            # es ANTERIOR a la hora pico del día, el video se sube PRIVADO
+            # con publishAt => YouTube lo vuelve público exactamente a esa
+            # hora (función nativa). Si ya pasó la hora pico, se publica
+            # de inmediato como siempre. Ver _publish_at_hora_pico().
             # Declaración honesta de contenido sintético/alterado (soportado
             # por la API desde oct-2024). Nuestro video usa voz IA, guion IA
             # y (a veces) imágenes generadas por IA, así que lo correcto y lo
@@ -88,6 +116,18 @@ def publicar_video(ruta_video: str, ruta_miniatura: str, guion: dict, descripcio
         },
     }
 
+
+    # Aplicar programación si corresponde (nunca rompe: si algo falla,
+    # se publica de inmediato como siempre)
+    try:
+        publish_at = _publish_at_hora_pico(cfg)
+        if publish_at:
+            body["status"]["privacyStatus"] = "private"
+            body["status"]["publishAt"] = publish_at
+            log(AGENT, f"Video PROGRAMADO: se sube privado y YouTube lo hará "
+                       f"público automáticamente a las {publish_at} (hora pico).")
+    except Exception as e:
+        log(AGENT, f"Aviso: no se pudo programar la publicación ({e}); se publica ya.")
 
     media = googleapiclient.http.MediaFileUpload(ruta_video, chunksize=-1, resumable=True)
     log(AGENT, f"Subiendo video a YouTube: {guion['titulo']}")
@@ -101,6 +141,17 @@ def publicar_video(ruta_video: str, ruta_miniatura: str, guion: dict, descripcio
 
     video_id = response["id"]
     log(AGENT, f"Video subido: https://youtube.com/watch?v={video_id}")
+
+    # Registrar si quedó PROGRAMADO (privado hasta la hora pico): otros
+    # agentes lo consultan para no comentar un video aún privado.
+    if body["status"].get("publishAt"):
+        try:
+            from agents.utils import load_state, save_state
+            estado = load_state()
+            estado.setdefault("videos_programados", {})[video_id] = body["status"]["publishAt"]
+            save_state(estado)
+        except Exception:
+            pass
 
     if ruta_miniatura and os.path.exists(ruta_miniatura):
         try:

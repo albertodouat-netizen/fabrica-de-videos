@@ -1,5 +1,31 @@
 # 🤖 Fábrica de Videos de YouTube — Equipo de Agentes IA (100% Gratis)
 
+## 🚀 3 MEJORAS DE CRECIMIENTO (pedidas por el usuario, 21-ago-2026)
+1. **Comentarios interactivos**: los comentarios cruzados ya no son solo un
+   link. Ahora abren conversación con preguntas concretas sobre el tema
+   ("¿Te ha pasado que...?", "¿Conoces otras alternativas para...?",
+   "¿Cuál consejo vas a probar primero?"). 7 plantillas rotativas +
+   extractor de tema del título (limpia conectores). Cada respuesta de un
+   espectador = señal de interacción (y el Agente 30 responde).
+2. **Publicación programada en hora pico** (idea del usuario: "crear el
+   video temprano y publicarlo a la hora indicada"): implementado con la
+   función NATIVA de YouTube (status.publishAt): el video se sube PRIVADO
+   y YouTube lo hace público exacto a las 19:30 UTC. Activable con
+   publicacion.programar_para_hora_pico (ya en true). Los comentarios
+   cruzados de videos programados se ENCOLAN (YouTube no acepta
+   comentarios en privados) y el paso diario los publica cuando el video
+   ya es público. Probado: calcula bien el publishAt y respeta apagado.
+3. **Puente Short→largo reforzado** (dato real: Shorts con 27-710 vistas
+   vs largos con 3-8): el cierre hablado del Short ahora es un
+   CLIFFHANGER específico del tema + instrucción concreta de navegación
+   ("toca mi foto de perfil, es el video más reciente") — los
+   espectadores de Shorts no leen descripciones, hay que decírselo con la
+   voz. Aplica al Short derivado y al independiente. Se suma a lo ya
+   hecho: playlist compartida + link en primer comentario.
+   ⚠️ TAREA MANUAL OPCIONAL (30 seg/video, la API no lo permite): en la
+   app de YouTube → tu Short → editar → "Vídeo relacionado" → elegir el
+   video largo. Es el botón nativo que SÍ es tocable dentro del Short.
+
 ## 🔧 AUDITORÍA DEL VIDEO "MAGNESIO" + 8 CORRECCIONES (21-ago-2026)
 Primer video con el arsenal completo (-8mFy8Vdqns): funcionaron intro con
 logo, música Jamendo (primera vez), portada real del estudio x3, FLUX,

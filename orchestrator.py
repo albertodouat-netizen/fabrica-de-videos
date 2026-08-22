@@ -453,14 +453,42 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
                 # nueva): el video largo recibe un comentario con el link al
                 # Short, y el Short recibe uno con el link al video completo.
                 if video_id and short_id:
-                    from agents.promocion_cruzada import publicar_comentario_cruzado
-                    publicar_comentario_cruzado(
-                        video_id, f"🎬 ¿Prefieres el resumen rápido? Mira el Short de este video: "
-                                  f"https://youtube.com/shorts/{short_id}"
-                    )
-                    publicar_comentario_cruzado(
-                        short_id, f"👉 Mira el video COMPLETO aquí ▶️ https://www.youtube.com/watch?v={video_id}"
-                    )
+                    from agents.promocion_cruzada import (publicar_comentario_cruzado,
+                                                           comentario_interactivo)
+                    # Si los videos quedaron PROGRAMADOS (privados hasta la
+                    # hora pico), los comentarios se ENCOLAN y el paso diario
+                    # de comentarios los publica cuando ya sean públicos
+                    # (YouTube no acepta comentarios en videos privados).
+                    _programados = load_state().get("videos_programados", {})
+                    _encolar = video_id in _programados or short_id in _programados
+                    if _encolar:
+                        _est = load_state()
+                        cola = _est.setdefault("comentarios_cruzados_pendientes", [])
+                        cola.append({"video_id": video_id, "texto": comentario_interactivo(
+                            guion.get("titulo", ""),
+                            url_extra=f"https://youtube.com/shorts/{short_id}",
+                            etiqueta_url="🎬 ¿Prefieres el resumen rápido? Mira el Short:")})
+                        cola.append({"video_id": short_id, "texto": comentario_interactivo(
+                            guion.get("titulo", ""),
+                            url_extra=f"https://www.youtube.com/watch?v={video_id}",
+                            etiqueta_url="👉 Mira el video COMPLETO aquí ▶️")})
+                        save_state(_est)
+                        log(AGENT, "Videos programados: comentarios cruzados ENCOLADOS "
+                                   "(se publicarán automáticamente cuando el video sea público).")
+                    # MEJORA 21-ago-2026 (pedido del usuario): el comentario
+                    # del video largo ahora ABRE CONVERSACIÓN (pregunta
+                    # concreta sobre el tema) además de enlazar el Short.
+                    if not _encolar:
+                        publicar_comentario_cruzado(
+                            video_id, comentario_interactivo(
+                                guion.get("titulo", ""),
+                                url_extra=f"https://youtube.com/shorts/{short_id}",
+                                etiqueta_url="🎬 ¿Prefieres el resumen rápido? Mira el Short:"))
+                        publicar_comentario_cruzado(
+                            short_id, comentario_interactivo(
+                                guion.get("titulo", ""),
+                                url_extra=f"https://www.youtube.com/watch?v={video_id}",
+                                etiqueta_url="👉 Mira el video COMPLETO aquí ▶️"))
         except Exception as e:
             log(AGENT, f"No se pudo generar/publicar el Short: {e}")
             traceback.print_exc()
