@@ -260,7 +260,19 @@ def elegir_idea_no_usada(ideas, estado):
     # inventar cifras, solo hablará en términos generales).
     log(AGENT, "Ningún candidato nuevo tiene estudios científicos disponibles; "
                 "se usa el mejor disponible de todos modos (sin cifras específicas).")
-    return ideas[0] if ideas else None
+    # CORRECCIÓN (27-ago-2026, fallo real): este atajo devolvía ideas[0]
+    # SIN pasar el veto de cuarentena ni el anti-repetidos, y así se
+    # publicó "Esta Música Reduce el Estrés" (23-ago) con la cuarentena de
+    # música ACTIVA. Ahora el respaldo también respeta ambos filtros.
+    for idea in ideas:
+        if _tema_esta_vetado(idea["titulo"]):
+            continue
+        if _tema_parece_repetido(idea["titulo"], titulos_canal):
+            continue
+        return idea
+    log(AGENT, "Todos los candidatos están vetados o repetidos. Se aborta (mejor "
+                "ningún video que otro video de música en cuarentena).")
+    return None
 
 
 def _categorias_recientes(estado):
