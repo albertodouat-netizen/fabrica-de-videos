@@ -129,3 +129,26 @@ cerrar TODOS los canales vinculados, incluido el que ya funciona).
   vida => prioridad alta a estabilidad y crecimiento sano, no atajos.
 - Orden vigente: #1 Salud (estabilizar) -> #2 Reconecta Tu Amor -> #3
   Novelas ilustradas -> re-evaluar (Tecnología, Padres solteros...).
+
+
+## MULTIPLATAFORMA v2 (27-ago-2026, pregunta del usuario sobre Bilibili)
+Investigado en vivo (fuentes ago-2026 + APIs verificadas):
+- BILIBILI: relanzamiento internacional 2026 (quitó requisito de pasaporte
+  chino; ~$0.70/1000 vistas; umbral 1.000 seguidores o 100K vistas;
+  verificación de identidad real obligatoria). SIN API pública de subida
+  para creadores internacionales => solo subida MANUAL hoy. Aún no hay
+  programa confirmado para LatAm (fuente TikTok/MX). Decisión: VIGILAR,
+  entrar manual-experimental más adelante si abren API o programa LatAm.
+- DAILYMOTION: LA ÚNICA AUTOMATIZABLE HOY. API REST oficial con OAuth y
+  subida de video documentada (verificada en vivo: api.dailymotion.com
+  responde). Monetización auto al llegar a 1.000 vistas totales, pagos
+  desde $100 (PayPal/Payoneer). OJO: fuentes contradictorias sobre el
+  revenue share del partner estándar (5-10% vs 70/30) => verificar en la
+  práctica; aún con share bajo, es ingreso extra por contenido YA hecho.
+- RUMBLE: sin API pública de subida => manual. Audiencia LatAm pequeña.
+- FACEBOOK (fase 1 ya planeada, Agente 34): sigue siendo el mejor 2º
+  escaparate (in-stream $1-5/1000, Graph API oficial).
+Orden acordado: Facebook (Agente 34) -> Dailymotion (Agente 36,
+misma corrida: subir el mismo video largo) -> Bilibili manual/vigilar.
+Regla: SIEMPRE contenido propio (re-publicar lo nuestro es legal y
+permitido por todas estas plataformas).

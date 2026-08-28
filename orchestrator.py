@@ -101,7 +101,15 @@ def _titulos_ya_publicados_en_canal(cfg) -> set:
 _CONCEPTOS_BILINGUES = [
     {"music", "musica", "música", "song", "songs", "sound", "sounds",
      "sonido", "sonidos", "mantra", "mantras", "frequency", "frequencies",
-     "frecuencia", "frecuencias", "asmr", "binaural", "hz"},
+     "frecuencia", "frecuencias", "asmr",
+     # AMPLIADO 28-ago-2026 (fallo real: se generó "Dormir con Lluvia de
+     # Tres Minutos" — contenido de SONIDOS de lluvia, primo directo del
+     # tema música/sonidos borrado 2 veces; el filtro no lo cazaba porque
+     # faltaban estos términos de "audio ambiental"):
+     "rain", "lluvia", "white noise", "ruido blanco", "binaural",
+     "binaurales", "hz", "hertz", "ambient sounds", "nature sounds",
+     "sonidos de la naturaleza", "thunder", "truenos", "ocean waves",
+     "olas del mar", "binaural", "hz"},
     {"relaxing", "relajante", "relajación", "relajacion", "calm", "calma",
      "calming", "meditation", "meditación", "meditacion", "zen"},
     {"stress", "estrés", "estres", "anxiety", "ansiedad"},
@@ -124,13 +132,23 @@ _CONCEPTOS_BILINGUES = [
 
 
 def _conceptos_de(texto: str) -> set:
-    """Conjunto de índices de conceptos bilingües presentes en un texto."""
+    """Conjunto de índices de conceptos bilingües presentes en un texto.
+    CORRECCIÓN 28-ago-2026: los términos de VARIAS palabras ("white noise",
+    "ruido blanco") no se detectaban comparando palabra por palabra; ahora
+    también se buscan como frase dentro del texto completo."""
+    texto_bajo = " " + texto.lower() + " "
     palabras = set(texto.lower().split())
     palabras |= {p.strip("¿?¡!.,:;()") for p in palabras}
     encontrados = set()
     for i, grupo in enumerate(_CONCEPTOS_BILINGUES):
-        if palabras & grupo:
-            encontrados.add(i)
+        for termino in grupo:
+            if " " in termino:
+                if termino in texto_bajo:
+                    encontrados.add(i)
+                    break
+            elif termino in palabras:
+                encontrados.add(i)
+                break
     return encontrados
 
 

@@ -1,5 +1,34 @@
 # 🤖 Fábrica de Videos de YouTube — Equipo de Agentes IA (100% Gratis)
 
+## 🔧 AUDITORÍA CORRIDA 27-ago (4h46m, "falló") + 3 CORRECCIONES (28-ago-2026)
+LO PRIMERO: el video SÍ se generó y SÍ se subió. La corrida de anoche
+publicó "Dormir con Lluvia de Tres Minutos" (largo 19:21 + Short) como
+PRIVADOS PROGRAMADOS para hoy 19:30 UTC (la función de hora pico
+funcionando a la perfección). La ✗ roja fue solo del paso de guardar
+respaldo. Hallazgos y correcciones:
+1. **Error real: "Artifact storage quota has been hit"** — guardábamos el
+   VIDEO COMPLETO (200-500 MB) de cada corrida por 14 días y los 500 MB
+   gratis de GitHub se agotaron. Ahora solo se respaldan memoria +
+   miniatura + logs (KBs), 5 días. (El video vive en YouTube; no hace
+   falta duplicarlo en GitHub.)
+2. **4h46m de corrida**: causa principal = DOBLE codificación (cada
+   capítulo se renderizaba a .mp4 y luego el video entero se
+   RE-codificaba al unirlo). Ahora la unión es ffmpeg concat con copia de
+   streams (segundos) y la música se mezcla re-codificando SOLO el audio.
+   Probado en vivo con mini-render: duración y mezcla correctas.
+   Estimación nueva de corrida completa: ~1h-1h30 (antes 4h46m).
+3. **El tema violó el espíritu de la cuarentena**: "lluvia para dormir"
+   es contenido de SONIDOS (primo de música/sonidos, borrado 2 veces).
+   El filtro no lo cazaba: faltaban términos (rain, lluvia, white noise,
+   ruido blanco, binaural, olas...) y los términos de 2 palabras no se
+   detectaban (comparaba palabra a palabra). Ambos corregidos y probados:
+   "lluvia/ruido blanco/white noise" ahora vetados; "remedios para dormir"
+   y "magnesio" siguen libres.
+   ⚠️ DECISIÓN DEL USUARIO: los 2 videos programados de hoy son de
+   sonidos de lluvia. Opciones: (a) borrarlos antes de las 19:30 UTC
+   para que nunca se publiquen, o (b) dejarlos salir y evaluar.
+
+
 ## 🚀 3 MEJORAS DE CRECIMIENTO (pedidas por el usuario, 21-ago-2026)
 1. **Comentarios interactivos**: los comentarios cruzados ya no son solo un
    link. Ahora abren conversación con preguntas concretas sobre el tema

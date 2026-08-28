@@ -374,41 +374,39 @@ def construir_video(guion: dict, audio_info: dict, visuales_info: dict,
         log(AGENT, f"Capítulo {i+1}/{total_caps} listo con {len(visuales_cap)} cortes visuales "
                     f"({dur:.1f}s)")
 
-    log(AGENT, "Uniendo todos los capítulos en el video final...")
-    clips_finales = [VideoFileClip(p) for p in rutas_capitulos]
-    video_final = concatenate_videoclips(clips_finales, method="chain")
+    # UNIÓN SIN RE-CODIFICAR (corrección 28-ago-2026, corrida real de
+    # 4h45m): antes los capítulos ya renderizados se volvían a codificar
+    # COMPLETOS al unirlos (doble codificación de un video de 19 min).
+    # Ahora: ffmpeg concat con copia de streams (tarda segundos) y, si hay
+    # música, se mezcla re-codificando SOLO el audio (video copiado).
+    import subprocess
+    log(AGENT, "Uniendo capítulos con ffmpeg (sin re-codificar el video)...")
+    lista_txt = os.path.join(carpeta_tmp, "capitulos.txt")
+    with open(lista_txt, "w", encoding="utf-8") as fh:
+        for p in rutas_capitulos:
+            fh.write(f"file '{os.path.abspath(p)}'\n")
+    salida = os.path.join(carpeta_salida, f"{nombre_base}.mp4")
+    unido = os.path.join(carpeta_tmp, "_unido.mp4")
+    subprocess.run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", lista_txt,
+                    "-c", "copy", unido], check=True, capture_output=True)
 
-    audio_musica = None
     if ruta_musica_fondo and os.path.exists(ruta_musica_fondo):
         try:
-            import moviepy.audio.fx as afx
-            from moviepy import CompositeAudioClip
-            log(AGENT, "Mezclando música de fondo con la narración...")
-            audio_musica = (AudioFileClip(ruta_musica_fondo)
-                             .with_effects([afx.AudioLoop(duration=video_final.duration),
-                                            afx.MultiplyVolume(volumen_musica)]))
-            audio_mezclado = CompositeAudioClip([video_final.audio, audio_musica])
-            video_final = video_final.with_audio(audio_mezclado)
+            log(AGENT, "Mezclando música de fondo (solo audio, video copiado)...")
+            subprocess.run([
+                "ffmpeg", "-y", "-i", unido,
+                "-stream_loop", "-1", "-i", ruta_musica_fondo,
+                "-filter_complex",
+                f"[1:a]volume={volumen_musica}[m];[0:a][m]amix=inputs=2:duration=first:dropout_transition=3[aout]",
+                "-map", "0:v", "-map", "[aout]",
+                "-c:v", "copy", "-c:a", "aac", "-b:a", "160k",
+                "-shortest", salida], check=True, capture_output=True)
+            os.remove(unido)
         except Exception as e:
-            log(AGENT, f"No se pudo mezclar la música de fondo ({e}). Se continúa solo con la narración.")
-
-    salida = os.path.join(carpeta_salida, f"{nombre_base}.mp4")
-    video_final.write_videofile(
-        salida, fps=24, codec="libx264", audio_codec="aac",
-        threads=4, preset="superfast", logger=None,
-    )
-
-    for c in clips_finales:
-        try:
-            c.close()
-        except Exception:
-            pass
-    if audio_musica:
-        try:
-            audio_musica.close()
-        except Exception:
-            pass
-    video_final.close()
+            log(AGENT, f"No se pudo mezclar la música ({e}). Video sin música de fondo.")
+            os.replace(unido, salida)
+    else:
+        os.replace(unido, salida)
 
     import shutil
     shutil.rmtree(carpeta_tmp, ignore_errors=True)
