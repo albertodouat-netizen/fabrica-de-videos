@@ -252,7 +252,7 @@ def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_la
 
         ruta_beat_mp4 = os.path.join(carpeta_tmp, f"_beat{idx}.mp4")
         clip_compuesto.write_videofile(ruta_beat_mp4, fps=30, codec="libx264", audio_codec="aac",
-                                        threads=2, preset="veryfast", logger=None)
+                                        threads=4, preset="superfast", logger=None)
         rutas_beats_mp4.append(ruta_beat_mp4)
 
         try:
@@ -295,7 +295,7 @@ def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_la
     log(AGENT, f"Renderizando Short -> {salida} ...")
     video_final.write_videofile(
         salida, fps=30, codec="libx264", audio_codec="aac",
-        threads=2, preset="veryfast", logger=None,
+        threads=4, preset="superfast", logger=None,
     )
 
     for c in clips_video_beats:

@@ -329,7 +329,7 @@ def _renderizar_capitulo(cap, audio_cap_info, visuales_cap, carpeta_salida, indi
     ruta_salida = os.path.join(carpeta_salida, f"_tmp_cap{indice}.mp4")
     capitulo_completo.write_videofile(
         ruta_salida, fps=24, codec="libx264", audio_codec="aac",
-        threads=2, preset="veryfast", logger=None,
+        threads=4, preset="superfast", logger=None,
     )
 
     for c in sub_clips:
@@ -395,7 +395,7 @@ def construir_video(guion: dict, audio_info: dict, visuales_info: dict,
     salida = os.path.join(carpeta_salida, f"{nombre_base}.mp4")
     video_final.write_videofile(
         salida, fps=24, codec="libx264", audio_codec="aac",
-        threads=2, preset="veryfast", logger=None,
+        threads=4, preset="superfast", logger=None,
     )
 
     for c in clips_finales:
