@@ -1,6 +1,7 @@
 name: Vigilante de publicaciones (te avisa si el robot no publico)
 
-# Corre una vez al día a las 13:00 UTC (8:00 am en Colombia), una hora
+# Corre una vez al día a las 21:00 UTC (4:00 pm Colombia): 1.5h después
+# de la hora de publicación (19:30 UTC), para revisar el día ya completo. Una hora
 # MUY distinta de las corridas de publicación (19:30 y 21:45 UTC), para
 # que un salto de cron de GitHub no afecte a ambos a la vez.
 #
@@ -17,7 +18,7 @@ name: Vigilante de publicaciones (te avisa si el robot no publico)
 
 on:
   schedule:
-    - cron: "0 13 * * *"
+    - cron: "0 21 * * *"
   workflow_dispatch: {}
 
 permissions:

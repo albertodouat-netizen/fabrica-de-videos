@@ -26,18 +26,23 @@ on:
     # espectadores están en YouTube" tiene la última palabra).
     # FRECUENCIA: 1 video CADA 2 DÍAS (decisión del usuario, 16-ago-2026,
     # para alejarse del perfil de "contenido producido en masa" de la
+    # REPROGRAMADO 27-ago-2026 (pedido del usuario): la GENERACIÓN arranca
+    # a las 15:00 UTC (10:00 am Colombia) para tener horas de margen si se
+    # demora; la PUBLICACIÓN la hace YouTube solo, EXACTA a las 19:30 UTC
+    # (2:30 pm Colombia), porque el video se sube PRIVADO con publishAt
+    # (ver agents/publisher.py y publicacion.programar_para_hora_pico).
     # política de contenido inauténtico de YouTube). El cron corre todos
     # los días, pero el candado (scripts/verificar_si_ya_publico_hoy.py)
     # solo deja publicar si han pasado al menos 2 días desde el último
     # video. Así el día exacto no depende de si GitHub saltó un cron.
-    - cron: "30 19 * * *"
+    - cron: "0 15 * * *"
     # Horario de RESPALDO (añadido 15-ago-2026): los cron de GitHub Actions
     # NO están garantizados -- en horas de alta carga se retrasan o se
     # SALTAN por completo (limitación documentada de GitHub; pasó de verdad
     # el 15-ago-2026: no hubo ninguna corrida a las 19:30). Si el primer
     # horario corrió bien, este segundo se da cuenta (candado de abajo,
     # paso "Evitar doble publicación") y termina sin publicar nada.
-    - cron: "45 21 * * *"
+    - cron: "15 17 * * *"
   workflow_dispatch: {}   # también puedes lanzarlo manualmente desde la pestaña "Actions"
 
 permissions:
