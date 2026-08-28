@@ -1,5 +1,26 @@
 # 🤖 Fábrica de Videos de YouTube — Equipo de Agentes IA (100% Gratis)
 
+## 🔬 ESTUDIO MASIVO DE 1.630 VIDEOS REALES + 3 MEJORAS (28-ago-2026, noche)
+Muestreo por API oficial: 1.630 videos de los últimos 15 días, 771 canales,
+filtro <5.000 subs con 1.000+ vistas => 151 ganadores (79 de canales
+creados en 2026). Hallazgos clave (ver ESTUDIO_1630_videos_canales_pequenos.md):
+- 3 CANALES GEMELOS (salud faceless IA) explotando AHORA: Vital Health HQ
+  (creado 31-jul: 248K vistas en un video), Vida Centenaria (ES, creado
+  6-ago: formato "Tengo 107 años..." con 152K en video de 80 min) y la
+  lección inversa Health sauld (5-6 clones diarios = 629 subs, anti-modelo).
+- Patrones de título con ventaja medida: PREGUNTA x2.6, STOP/NUNCA x1.85,
+  "Esto pasa si..." x1.8, hashtags en título x1.8; los listicles con
+  número RINDEN PEOR que pregunta/historia en esta muestra.
+- La conversión a subs viene del LARGO; tracción típica tras 30-50 videos
+  (vamos ~18: mitad del túnel); 12+ subidas/mes = +66% subs (cumplimos).
+CAMBIOS APLICADOS:
+1. Patrones validados añadidos al prompt del guionista (pregunta/contrarian/
+   ritual + hablar directo al público 50-60+).
+2. Hashtags de nicho en títulos de Shorts (x1.8 medido).
+3. "Explotación de éxito": si un video del canal supera 10x la mediana,
+   su tema queda EXENTO del anti-repetidos para iterar variantes (el
+   patrón de Vital Health HQ), manteniendo el anti-slop para el resto.
+
 ## 🧠 ANATOMÍA DEL ALGORITMO 2026 APLICADA (investigación élite, 28-ago-2026)
 Investigación exhaustiva multi-fuente (confirmaciones oficiales de YouTube
 + 15 análisis independientes 2026) contrastada con nuestros datos. Claves:

@@ -47,6 +47,14 @@ y guionismo de YouTube; síguelas de forma estricta):
    - Patrones ganadores: "El Error Que [empeora X] (Y Lo Que Sí Funciona)",
      "Nadie Te Dijo Esto Sobre [keyword]", "[keyword]: El Mito Que Te Está
      [costando Y]", "Por Qué [síntoma común] No Mejora (Y Cómo Cambiarlo)".
+   - PATRONES VALIDADOS 28-AGO-2026 con estudio de 1.630 videos reales de
+     canales pequeños (prom. de vistas 1.8-2.6x superior):
+     * PREGUNTA: "¿Qué Pasa Si [acción cotidiana] Todos los Días?" (x2.6)
+     * CONTRARIAN: "STOP: Nunca Tomes [X] Sin Saber Esto (ESTO Funciona
+       Mejor)" — siempre con respaldo del estudio citado, jamás alarmismo
+     * RITUAL: "Esto Pasa Si Tomas [X] TODOS los Días" (x1.8)
+     * La audiencia núcleo del nicho es 50+/60+: cuando el tema lo permita,
+       nómbrala ("...Después de los 60") — habla DIRECTO a esa persona.
    - PROHIBIDO el título puramente descriptivo tipo "Beneficios de X: Guía".
    - Los PRIMEROS 30 SEGUNDOS son señal de ranking DIRECTA en 2026: el
      gancho debe abrir con cifra + síntoma en segunda persona ("¿Sabías

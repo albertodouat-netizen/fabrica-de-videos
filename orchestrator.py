@@ -152,6 +152,46 @@ def _conceptos_de(texto: str) -> set:
     return encontrados
 
 
+# EXPLOTACION_DE_EXITO (estudio 28-ago-2026): los canales gemelos que
+# explotan (Vital Health HQ: 0->248K vistas en 4 semanas) ITERAN el tema
+# de su video ganador con ángulos nuevos de inmediato, en vez de esperar.
+# Regla: si un video del canal supera 10x la mediana de vistas de los
+# largos, su tema queda EXENTO del anti-repetidos (se permite una variante
+# con ángulo distinto). El anti-repetidos normal sigue para todo lo demás.
+UMBRAL_EXITO_OUTLIER = 10.0
+
+
+def _temas_de_exitos_del_canal(cfg) -> set:
+    """Títulos de videos propios cuyo rendimiento es outlier (>10x la
+    mediana del canal): sus temas pueden revisitarse sin esperar los 90
+    días. Nunca lanza excepción."""
+    try:
+        import statistics
+        import googleapiclient.discovery
+        from agents.publisher import _obtener_credenciales
+        creds = _obtener_credenciales(cfg)
+        yt = googleapiclient.discovery.build("youtube", "v3", credentials=creds)
+        canal_id = cfg["canal"].get("channel_id", "")
+        pl = "UU" + canal_id[2:]
+        r = yt.playlistItems().list(part="snippet", playlistId=pl, maxResults=30).execute()
+        ids = [i["snippet"]["resourceId"]["videoId"] for i in r.get("items", [])]
+        r2 = yt.videos().list(part="statistics,snippet,contentDetails", id=",".join(ids)).execute()
+        import isodate
+        vistas_largos, titulos_vistas = [], []
+        for v in r2.get("items", []):
+            dur = isodate.parse_duration(v["contentDetails"]["duration"]).total_seconds()
+            vistas = int(v["statistics"].get("viewCount", 0))
+            titulos_vistas.append((v["snippet"]["title"], vistas))
+            if dur > 65:
+                vistas_largos.append(vistas)
+        if not vistas_largos:
+            return set()
+        mediana = max(1, statistics.median(vistas_largos))
+        return {t for t, vis in titulos_vistas if vis >= UMBRAL_EXITO_OUTLIER * mediana}
+    except Exception:
+        return set()
+
+
 def _tema_parece_repetido(titulo_idea: str, titulos_canal: set) -> bool:
     """Compara idea vs títulos ya publicados, CON VENTANA DE TIEMPO
     (decisión del usuario 19-ago-2026: variedad en caliente, reciclaje
@@ -249,6 +289,17 @@ def elegir_idea_no_usada(ideas, estado):
     from agents.investigacion_cientifica import buscar_estudios
     cfg = load_config()
     titulos_canal = _titulos_ya_publicados_en_canal(cfg)
+    # Exención por éxito (28-ago-2026): los temas de videos-outlier del
+    # propio canal (>10x la mediana) pueden revisitarse con ángulo nuevo.
+    exentos_por_exito = _temas_de_exitos_del_canal(cfg)
+    if exentos_por_exito:
+        conceptos_exentos = set()
+        for t in exentos_por_exito:
+            conceptos_exentos |= _conceptos_de(t)
+        titulos_canal = {(t, d) for (t, d) in titulos_canal
+                          if not (_conceptos_de(t) and _conceptos_de(t) <= conceptos_exentos)}
+        log(AGENT, f"Explotación de éxito: {len(exentos_por_exito)} tema(s) outlier "
+                    f"exento(s) del anti-repetidos (iterar lo que funciona).")
 
     for idea in ideas:
         if idea["titulo"] in usadas:
