@@ -265,7 +265,11 @@ def crear_short_independiente() -> dict:
 
     from agents.shorts_creator import crear_short
     nombre_base = "short_indep_" + dt.datetime.now().strftime("%Y%m%d_%H%M")
-    url_largo = f"https://youtube.com/watch?v={elegido['video_id']}"
+    try:
+        from agents.promocion_cruzada import url_con_playlist
+        url_largo = url_con_playlist(elegido["video_id"])
+    except Exception:
+        url_largo = f"https://youtube.com/watch?v={elegido['video_id']}"
     ruta, titulo_auto, _desc = crear_short(guion, "output/video", nombre_base,
                                             url_video_largo=url_largo)
 

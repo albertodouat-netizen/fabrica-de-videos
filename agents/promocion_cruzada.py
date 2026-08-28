@@ -132,7 +132,7 @@ def construir_bloque_mas_videos(videos_relacionados: list) -> str:
         return ""
     lineas = ["🔎 TAMBIÉN TE PUEDE INTERESAR:"]
     for v in videos_relacionados:
-        lineas.append(f"• {v['titulo']}: https://youtube.com/watch?v={v['video_id']}")
+        lineas.append(f"• {v['titulo']}: {url_con_playlist(v['video_id'])}")
     lineas.append("")
     return "\n".join(lineas)
 
@@ -153,6 +153,39 @@ _PREGUNTAS_INTERACCION = [
     "🗣️ ¿Cuál de estos consejos sobre {tema} vas a probar primero? Cuéntame.",
     "❓ ¿Qué otro tema sobre {tema} te gustaría que investigue a fondo?",
 ]
+
+
+def url_con_playlist(video_id: str, cfg=None, es_short: bool = False) -> str:
+    """Construye el link de un video ANCLADO a la playlist del canal
+    (idea del usuario, 27-ago-2026: 'que continúe otro video de mi canal
+    hasta pasar por todos'). Con &list=, al terminar el video YouTube
+    reproduce el SIGUIENTE de la playlist automáticamente: el espectador
+    recorre el canal en cadena en vez de saltar a videos ajenos.
+    El ID de la playlist se busca una vez y se guarda en estado.json."""
+    try:
+        if cfg is None:
+            cfg = load_config()
+        from agents.utils import load_state, save_state
+        est = load_state()
+        plid = est.get("playlist_canal_id", "")
+        if not plid:
+            creds = _obtener_credenciales(cfg)
+            youtube = googleapiclient.discovery.build("youtube", "v3", credentials=creds)
+            r = youtube.playlists().list(part="snippet", mine=True, maxResults=25).execute()
+            objetivo = cfg["canal"]["nicho"].title().lower()
+            for p in r.get("items", []):
+                if p["snippet"]["title"].lower() == objetivo:
+                    plid = p["id"]
+                    break
+            if not plid and r.get("items"):
+                plid = r["items"][0]["id"]
+            if plid:
+                est["playlist_canal_id"] = plid
+                save_state(est)
+        base = f"https://www.youtube.com/watch?v={video_id}"
+        return f"{base}&list={plid}" if plid else base
+    except Exception:
+        return f"https://www.youtube.com/watch?v={video_id}"
 
 
 def _tema_corto_de(titulo: str) -> str:

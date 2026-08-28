@@ -470,7 +470,8 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
         try:
             from agents.shorts_creator import crear_short
             log(AGENT, "9/9 Generando Short para atraer tráfico al video completo (ShortsCreator)...")
-            url_largo = f"https://www.youtube.com/watch?v={video_id}" if video_id else ""
+            from agents.promocion_cruzada import url_con_playlist
+            url_largo = url_con_playlist(video_id, cfg) if video_id else ""
             ruta_short, titulo_short, descripcion_short = crear_short(
                 guion, "output/video", nombre_base, url_video_largo=url_largo,
                 carpeta_visuales_largo=carpeta_assets
@@ -515,7 +516,7 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
                             etiqueta_url="🎬 ¿Prefieres el resumen rápido? Mira el Short:")})
                         cola.append({"video_id": short_id, "texto": comentario_interactivo(
                             guion.get("titulo", ""),
-                            url_extra=f"https://www.youtube.com/watch?v={video_id}",
+                            url_extra=url_con_playlist(video_id, cfg),
                             etiqueta_url="👉 Mira el video COMPLETO aquí ▶️")})
                         save_state(_est)
                         log(AGENT, "Videos programados: comentarios cruzados ENCOLADOS "
@@ -532,7 +533,7 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
                         publicar_comentario_cruzado(
                             short_id, comentario_interactivo(
                                 guion.get("titulo", ""),
-                                url_extra=f"https://www.youtube.com/watch?v={video_id}",
+                                url_extra=url_con_playlist(video_id, cfg),
                                 etiqueta_url="👉 Mira el video COMPLETO aquí ▶️"))
         except Exception as e:
             log(AGENT, f"No se pudo generar/publicar el Short: {e}")
@@ -577,6 +578,7 @@ def publicar_short_independiente():
         return
 
     from agents.publisher import publicar_video
+    from agents.promocion_cruzada import url_con_playlist
     guion_short = {"titulo": resultado["titulo"],
                    "tags": ["Salud Natural Diaria", "salud natural", "Shorts"],
                    "disclaimer": "Este contenido es informativo y no sustituye una consulta médica."}
@@ -586,7 +588,7 @@ def publicar_short_independiente():
         from agents.promocion_cruzada import publicar_comentario_cruzado
         publicar_comentario_cruzado(
             short_id, f"👉 Mira el video COMPLETO del tema aquí: "
-                      f"https://www.youtube.com/watch?v={resultado['video_largo_id']}"
+                      f"{url_con_playlist(resultado['video_largo_id'])}"
         )
         log(AGENT, f"🔗 Short independiente publicado: https://youtube.com/shorts/{short_id}")
         # Tarea a-un-clic para el botón "Vídeo relacionado" (no automatizable
