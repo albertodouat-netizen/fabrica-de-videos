@@ -495,6 +495,185 @@ def _generar_fondo_local(texto, destino_png, tamano=(1280, 720)):
         img.save(destino_png)
         return destino_png
 
+class BuscadorVisualesUnicos:
+    """Envuelve la búsqueda para garantizar que NINGÚN recurso se repita
+    dentro del mismo video, que siempre se priorice metraje/foto real antes
+    que el fondo generado localmente, y que el resultado elegido sea el que
+    MEJOR coincide semánticamente con la palabra clave pedida (no el primero
+    que aparezca)."""
+
+    def __init__(self, cfg, orientacion="landscape"):
+        self.pexels_key = cfg["apis"].get("pexels_api_key", "")
+        self.pixabay_key = cfg["apis"].get("pixabay_api_key", "")
+        self.usar_pexels = bool(self.pexels_key) and "OBTENER_GRATIS" not in self.pexels_key
+        self.usar_pixabay = bool(self.pixabay_key) and "OBTENER_GRATIS" not in self.pixabay_key
+        self.urls_usadas = set()
+        self.orientacion = orientacion  # "landscape" (16:9) o "portrait" (9:16, para Shorts)
+
+    def _candidatos_ordenados_seguros(self, candidatos, keyword, umbral_minimo=0.0):
+        """Como _mejor_no_usado, pero devuelve TODOS los candidatos válidos
+        ordenados por relevancia (no solo el mejor), y descarta de entrada
+        cualquiera cuyo texto descriptivo/tags contenga una palabra de la
+        lista negra de seguridad (ver agents/moderacion_visual.py). Así, si
+        el mejor candidato resulta riesgoso al revisar los píxeles después
+        de descargarlo, hay más opciones para probar en su lugar."""
+        from agents.moderacion_visual import es_texto_inseguro
+        disponibles = [(u, t) for u, t in candidatos
+                       if u not in self.urls_usadas and not es_texto_inseguro(t)]
+        if not disponibles:
+            return []
+        disponibles.sort(key=lambda ut: _puntaje_relevancia(keyword, ut[1]), reverse=True)
+        if umbral_minimo > 0:
+            disponibles = [(u, t) for u, t in disponibles
+                           if _puntaje_relevancia(keyword, t) >= umbral_minimo]
+        return [u for u, t in disponibles]
+
+    def _mejor_no_usado(self, candidatos, keyword, umbral_minimo=0.0):
+        """candidatos: lista de (url, texto_meta). Devuelve el de mejor
+        puntaje de relevancia que no se haya usado ya en este video, SIEMPRE
+        que supere 'umbral_minimo' (si no, es preferible generar una imagen
+        IA a medida en vez de aceptar algo que casi no tiene relación)."""
+        ordenados = self._candidatos_ordenados_seguros(candidatos, keyword, umbral_minimo)
+        return ordenados[0] if ordenados else None
+
+    def obtener(self, keyword: str, carpeta_salida: str, tag: str, contexto: str = "") -> dict:
+        orient_pexels = self.orientacion
+        intentos = []
+        # Video REAL (no generado) siempre tiene prioridad sobre imagen fija:
+        # se ve más dinámico y "realista" de verdad. Si la keyword completa no
+        # trae resultados de video, probamos una versión más simple (2-3
+        # palabras clave del núcleo) antes de rendirnos e ir a foto/imagen IA:
+        # a veces "manos cortando ajo fresco en tabla de madera" no da nada,
+        # pero "cortando ajo" sí tiene metraje real disponible.
+        variante_amplia = _version_amplia_busqueda(keyword)
+
+        def _video_con_variante(buscar_fn):
+            resultados = []
+            try:
+                resultados = buscar_fn(keyword)
+            except Exception:
+                resultados = []
+            if not resultados and variante_amplia != keyword:
+                try:
+                    resultados = buscar_fn(variante_amplia)
+                except Exception:
+                    resultados = []
+            return resultados
+
+        if self.usar_pexels:
+            intentos.append(("video", lambda: _video_con_variante(
+                lambda q: _buscar_pexels_video(q, self.pexels_key, por_pagina=10, orientacion=orient_pexels))))
+        if self.usar_pixabay:
+            intentos.append(("video", lambda: _video_con_variante(
+                lambda q: _buscar_pixabay_video(q, self.pixabay_key, por_pagina=10))))
+        if self.usar_pexels:
+            intentos.append(("foto", lambda: _buscar_pexels_foto(keyword, self.pexels_key, orientacion=orient_pexels)))
+        if self.usar_pixabay:
+            intentos.append(("foto", lambda: _buscar_pixabay_foto(keyword, self.pixabay_key)))
+
+        for tipo, buscar in intentos:
+            try:
+                candidatos = buscar()
+            except Exception as e:
+                log(AGENT, f"Aviso buscando '{keyword}': {e}")
+                continue
+            # Exigimos un mínimo de coincidencia real: preferimos generar una
+            # imagen IA a medida (ver más abajo) antes que aceptar un
+            # video/foto de stock que no tiene casi relación con la palabra
+            # clave; esa era la causa principal de la incoherencia reportada.
+            urls_candidatas = self._candidatos_ordenados_seguros(candidatos, keyword,
+                                                                  umbral_minimo=UMBRAL_RELEVANCIA_MINIMA_STOCK)
+            for url in urls_candidatas[:3]:  # hasta 3 intentos por proveedor antes de rendirse
+                ext = ".mp4" if tipo == "video" else ".jpg"
+                destino = os.path.join(carpeta_salida, f"{tag}_{slugify(keyword)}{ext}")
+                try:
+                    _descargar(url, destino)
+                except Exception as e:
+                    log(AGENT, f"No se pudo descargar '{keyword}': {e}")
+                    self.urls_usadas.add(url)  # no reintentar la misma URL rota
+                    continue
+
+                self.urls_usadas.add(url)
+                visual_candidato = {"tipo": "video" if tipo == "video" else "imagen", "ruta": destino, "keyword": keyword}
+                return visual_candidato
+
+        # Antes de resignarnos a un fondo genérico: generamos una imagen IA
+        # hecha a medida para ESTA frase exacta (gratis, sin límite). Este es
+        # ahora el camino MÁS FRECUENTE (no solo el último recurso), porque el
+        # stock gratuito casi nunca tiene la escena exacta que pide el guion,
+        # y una imagen mal relacionada es peor que una generada a propósito.
+        destino_ia = os.path.join(carpeta_salida, f"{tag}_{slugify(keyword)}_ia.jpg")
+        # Tamaño según orientación (bug real visto en el Short del 18-ago:
+        # las imágenes IA se generaban SIEMPRE en 1280x720 horizontal,
+        # también para Shorts verticales 1080x1920, quedando diminutas o
+        # recortadas sobre el fondo).
+        tamano_ia = (720, 1280) if self.orientacion == "portrait" else (1280, 720)
+        if _generar_imagen_ia(keyword, destino_ia, tamano=tamano_ia, contexto=contexto):
+            log(AGENT, f"'{keyword}': no había stock con buena coincidencia, se generó una imagen IA a medida.")
+            return {"tipo": "imagen", "ruta": destino_ia, "keyword": keyword}
+
+        # Penúltimo recurso (nuevo, 18-ago-2026, tras el reclamo del usuario
+        # "espacios sin imágenes... inaceptable"): antes de resignarse a un
+        # degradado vacío, REUTILIZAR una imagen/video REAL ya descargado
+        # para OTRO beat de este mismo video (elige al azar entre lo que ya
+        # está en la carpeta). Una escena real repetida es infinitamente
+        # mejor que un fondo vacío de 20 segundos.
+        try:
+            ya_descargados = [f for f in os.listdir(carpeta_salida)
+                              if f.lower().endswith((".jpg", ".jpeg", ".png", ".mp4"))
+                              and "_fallback" not in f and "intro_marca" not in f
+                              and "estudio" not in f.lower()]
+            # CORRECCIÓN (auditoría 21-ago-2026, reclamo real: "imagenes que
+            # se repiten en diferentes minutos del video"): antes elegía AL
+            # AZAR sin memoria, y el mismo visual podía reusarse 3-4 veces.
+            # Ahora se lleva registro de lo ya reusado y se prefiere lo
+            # nunca-reusado; si TODO ya se reusó una vez, se permite una
+            # segunda vuelta (peor es un fondo vacío), pero nunca la misma
+            # imagen dos veces seguidas.
+            if not hasattr(self, "_reusados"):
+                self._reusados = {}
+            candidatos_frescos = [f for f in ya_descargados if self._reusados.get(f, 0) == 0]
+            pool = candidatos_frescos or [f for f in ya_descargados
+                                           if self._reusados.get(f, 0) < 2]
+            if pool:
+                elegido = random.choice(pool)
+                self._reusados[elegido] = self._reusados.get(elegido, 0) + 1
+                ruta_reuso = os.path.join(carpeta_salida, elegido)
+                log(AGENT, f"'{keyword}': sin stock ni imagen IA disponibles; se REUTILIZA "
+                            f"un visual real de este mismo video ({elegido}, "
+                            f"reuso #{self._reusados[elegido]}) en vez de un fondo vacío.")
+                tipo_reuso = "video" if elegido.lower().endswith(".mp4") else "imagen"
+                return {"tipo": tipo_reuso, "ruta": ruta_reuso, "keyword": keyword}
+        except Exception:
+            pass
+
+        # Último recurso absoluto: nada descargado aún en todo el video
+        destino_png = os.path.join(carpeta_salida, f"{tag}_{slugify(keyword)}_fallback.png")
+        _generar_fondo_local(keyword, destino_png)
+        return {"tipo": "imagen", "ruta": destino_png, "keyword": keyword}
+
+    def re_obtener_evitando(self, keyword: str, carpeta_salida: str, tag: str, ruta_evitar: str,
+                             contexto: str = "") -> dict:
+        """Usado por el Verificador de Coherencia cuando Gemini Vision ya
+        calificó el recurso actual con baja coincidencia: en vez de repetir
+        otra búsqueda de stock (que ya demostró no tener nada mejor), vamos
+        DIRECTO a generar una imagen IA a medida para esa frase exacta, la
+        forma más confiable de garantizar coherencia real."""
+        try:
+            if os.path.exists(ruta_evitar):
+                os.remove(ruta_evitar)
+        except OSError:
+            pass
+        destino_ia = os.path.join(carpeta_salida, f"{tag}_{slugify(keyword)}_ia_v2.jpg")
+        tamano_ia = (720, 1280) if self.orientacion == "portrait" else (1280, 720)
+        if _generar_imagen_ia(keyword, destino_ia, tamano=tamano_ia, contexto=contexto):
+            return {"tipo": "imagen", "ruta": destino_ia, "keyword": keyword}
+        # Si por algún motivo Pollinations falla justo en este momento, como
+        # red de seguridad reintentamos el flujo normal (stock -> IA -> fondo).
+        return self.obtener(keyword, carpeta_salida, tag, contexto=contexto)
+
+
+
 def obtener_visuales_para_guion(guion: dict, carpeta_salida: str, orientacion="landscape") -> dict:
     """
     Devuelve un visual DISTINTO por cada beat (no por capítulo), para permitir

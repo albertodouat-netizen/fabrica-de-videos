@@ -1,5 +1,25 @@
 # 🤖 Fábrica de Videos de YouTube — Equipo de Agentes IA (100% Gratis)
 
+## 🚑 REPARACIÓN URGENTE + 3 SIMULACIONES COMPLETAS (28-ago-2026, noche)
+Auditoría de la corrida #52-53 (repo ya público, Actions ilimitado ✓):
+- El paso del Short duró 30s sin publicar. CAUSA ENCONTRADA reproduciendo
+  la corrida en local (simulación 1): al reescribir _generar_fondo_local
+  en el paquete COHERENCIA, el parche borró POR ACCIDENTE la clase
+  BuscadorVisualesUnicos completa => NameError y el Short moría (el paso
+  tiene continue-on-error, por eso salió "verde").
+- REPARADO: clase restaurada desde el paquete anterior; verificación de
+  que no falta NINGUNA otra función vs la versión previa.
+- SIMULACIÓN 2 (Short completo end-to-end): generado 28.4s, 3.2 MB, CON
+  3 CLIPS DE VIDEO IA en movimiento (Agente 37 estrenado: vaso con limón,
+  olla hirviendo, presentadora sonriendo — fotogramas verificados).
+- SIMULACIÓN 3 (visuales del largo): Agente 37 + stock + FLUX conviven;
+  todos los archivos existen en disco.
+- Suite integral: 33 agentes + orchestrator + scripts compilan; 14
+  módulos críticos importan sin error.
+- Nota: la corrida #53 del repo publicó su propio Short a las 22:23 UTC
+  (ver commit "Actualiza memoria"); el candado anti-duplicado del día
+  evitará otro hoy.
+
 ## 🎬 AGENTE 37: CLIPS DE VIDEO IA EN MOVIMIENTO (Meta 2 del plan élite, 28-ago-2026)
 El salto de realismo más grande hasta ahora. Los beats CLAVE (gancho, 2
 primeros de contenido y apertura de cada capítulo) ya no son imágenes con
