@@ -42,19 +42,28 @@ from agents.utils import load_config, load_state, save_state, log, limpiar_texto
 AGENT = "ShortIndependiente"
 
 # Formatos rotativos: cada uno produce una estructura de guion DISTINTA.
-FORMATOS = ["dato_sorprendente", "mito_vs_verdad", "top_3", "consejo_practico"]
+# PONDERADO POR DATOS REALES (auditoría 28-ago-2026): con 12 shorts
+# publicados, los formatos MITO (674 vistas prom.; el ganador de 1.334 es
+# de este formato) y CURIOSIDAD/dato ("Lo Que Nadie Te Dijo", 727) superan
+# 6-13x a top_3 (100) y consejo_practico. Se les da doble peso en la
+# rotación; los débiles se mantienen (1 de cada 6) para seguir midiendo.
+FORMATOS = ["mito_vs_verdad", "dato_sorprendente", "mito_vs_verdad",
+            "dato_sorprendente", "top_3", "consejo_practico"]
 
 # Cierres variados: NO todos llaman a lo mismo (anti-plantilla).
 # CIERRES v2 (21-ago-2026): los espectadores de Shorts NO leen
 # descripciones; hay que decirles con la VOZ cómo llegar al video largo
 # ("toca mi perfil"). Se mantienen cierres variados (anti-plantilla) pero
 # los que apuntan al largo ahora dan la instrucción concreta.
+# CIERRES-LOOP v3 (investigación élite 28-ago-2026): cortos, re-abren la
+# curiosidad del gancho (loop narrativo => replay => señal #1 del feed).
+# CTA largo/perfil vive en comentario fijado, no gasta segundos de video.
 CIERRES = [
-    ("largo", "Si quieres la guía completa, está en el video largo de mi canal: toca mi foto de perfil y búscalo. También te dejé el link en el primer comentario."),
-    ("largo2", "Esto es solo una parte. El video completo está en mi canal: tócame el perfil y míralo, te va a servir."),
-    ("suscribir", "Si te sirvió este dato, suscríbete. Publico contenido con respaldo científico real."),
-    ("curiosidad", "Y esto es solo una parte. El tema completo es aún más interesante: está en mi canal."),
+    ("loop_largo", "Y eso es solo el comienzo. Lo completo está en mi canal."),
+    ("loop_pregunta", "Ahora vuelve a escuchar el inicio: tiene más sentido, ¿verdad?"),
     ("interaccion", "¿Ya lo sabías? Cuéntame en los comentarios, te leo."),
+    ("compartir", "Comparte esto con alguien que lo necesite hoy."),
+    ("suscribir", "Sígueme para más datos con respaldo científico real."),
 ]
 
 PROMPT_SHORT = """Eres guionista de YouTube Shorts en español para un canal de salud natural \
@@ -143,7 +152,7 @@ def _videos_largos_existentes(estado: dict, cfg: dict) -> list:
 def _generar_guion_short(tema: str, formato: str, cfg: dict) -> dict:
     """Genera el mini-guion con Groq/Gemini. Si no hay LLM, usa una
     estructura simple basada en los estudios encontrados."""
-    duracion = random.randint(22, 42)  # duración objetivo variable (humanización)
+    duracion = random.randint(22, 32)  # duración objetivo variable (humanización)
     palabras = int(duracion * 2.4)     # ~145 palabras/min hablado
 
     # Estudios reales para el dato (si el tema los tiene disponibles)
@@ -202,7 +211,16 @@ def _generar_guion_short(tema: str, formato: str, cfg: dict) -> dict:
 
 
 def _titulo_short(tema: str, formato: str) -> str:
-    base = tema.split(":")[0].strip()
+    # CORRECCIÓN (auditoría 28-ago-2026): el ganador de 1.334 vistas salió
+    # con título cortado y raro ("...Antes de Tomar Magnesio (Y 5 Q #Shorts")
+    # porque se concatenaba el título COMPLETO del largo. Ahora se extrae el
+    # tema corto (sin paréntesis, máx 6 palabras) para títulos limpios tipo
+    # "El Mito Más Común Del Magnesio #Shorts".
+    try:
+        from agents.promocion_cruzada import _tema_corto_de
+        base = _tema_corto_de(tema).title()
+    except Exception:
+        base = tema.split(":")[0].split("(")[0].strip()
     prefijos = {
         "dato_sorprendente": ["El Dato Que No Conocías De", "Lo Que Nadie Te Dijo De"],
         "mito_vs_verdad": ["El Mito Más Común De", "La Verdad Sobre"],

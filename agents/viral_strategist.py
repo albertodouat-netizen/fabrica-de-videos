@@ -38,6 +38,21 @@ REGLAS_PARA_GUIONISTA = f"""
 REGLAS DE RETENCIÓN DE AUDIENCIA (basadas en investigación real de edición
 y guionismo de YouTube; síguelas de forma estricta):
 
+0-BIS. FÓRMULA DE TÍTULO 2026 (validada con datos del propio canal: los
+   títulos de curiosidad/mito promedian 674-727 vistas vs 50 de los
+   descriptivos; y la investigación del algoritmo 2026 confirma que el
+   Browse feed premia especificidad + beneficio claro):
+   - El título DEBE combinar: (a) el ERROR/MITO/SECRETO como gancho +
+     (b) la keyword buscable + (c) el beneficio o consecuencia concreta.
+   - Patrones ganadores: "El Error Que [empeora X] (Y Lo Que Sí Funciona)",
+     "Nadie Te Dijo Esto Sobre [keyword]", "[keyword]: El Mito Que Te Está
+     [costando Y]", "Por Qué [síntoma común] No Mejora (Y Cómo Cambiarlo)".
+   - PROHIBIDO el título puramente descriptivo tipo "Beneficios de X: Guía".
+   - Los PRIMEROS 30 SEGUNDOS son señal de ranking DIRECTA en 2026: el
+     gancho debe abrir con cifra + síntoma en segunda persona ("¿Sabías
+     que el 50% de quienes sienten X...?") y prometer el desenlace
+     concreto del video, sin saludos ni presentaciones.
+
 0. PROHIBIDO despedirse o sonar a cierre ("eso fue todo", "gracias por
    ver", "nos vemos", "para terminar", "ya para finalizar", "espero que te
    haya servido") en CUALQUIER beat que no sea el último del último

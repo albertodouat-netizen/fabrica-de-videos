@@ -164,11 +164,19 @@ def _armar_mini_guion(guion: dict) -> dict:
     # con la voz).
     import random as _rnd
     tema_cierre = (guion.get("keyword_principal") or guion.get("titulo", "este tema")).split("(")[0].strip()
+    # CIERRES-LOOP (investigación élite 28-ago-2026): los cierres largos con
+    # instrucciones ("toca mi perfil y búscalo...") rompen el loop y matan
+    # replays — y el replay es LA señal #1 del algoritmo de Shorts 2026
+    # (retención >100% = distribución compuesta). Nuevo diseño: cierre de
+    # UNA frase corta que RE-ABRE la pregunta del gancho (loop narrativo:
+    # el final conecta con el inicio y el cerebro vuelve a ver). El CTA al
+    # video largo vive en el comentario fijado y la descripción (donde el
+    # link es clicable y no cuesta segundos de video).
     cierres_puente = [
-        f"Y eso no es todo: lo más importante de {tema_cierre} te lo cuento en el video completo. Tócame el perfil y búscalo, es el más reciente.",
-        f"Esto es solo el comienzo. El paso a paso completo de {tema_cierre} está en el video largo de mi canal: toca mi foto de perfil.",
-        f"¿Quieres saber el resto? El video completo sobre {tema_cierre} ya está en mi canal. Entra desde mi perfil, te espero.",
-        f"Te acabo de dar una pista. Las demás señales de {tema_cierre} están en el video completo: tócame el perfil y míralo ahora.",
+        f"Y esto es solo la primera señal de {tema_cierre}. El resto, en el video completo de mi canal.",
+        f"¿Notaste el detalle del inicio? Vuelve a verlo. Y el video completo está en mi canal.",
+        f"Ahora que lo sabes, escucha otra vez el comienzo. Lo completo está en mi canal.",
+        f"Eso era lo básico de {tema_cierre}. Lo sorprendente está en el video completo de mi canal.",
     ]
     beats_short.append({
         "texto": limpiar_texto_para_voz(_rnd.choice(cierres_puente)),
@@ -312,7 +320,19 @@ def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_la
     shutil.rmtree(os.path.join(carpeta_salida, f"assets_{nombre_base}"), ignore_errors=True)
     shutil.rmtree(os.path.join(carpeta_salida, "audio"), ignore_errors=True)
 
-    titulo_short = (guion["titulo"][:80] + " 😱 #Shorts").strip()
+    # TÍTULO DE CURIOSIDAD (auditoría 28-ago-2026): los shorts derivados con
+    # título=copia del largo promedian 50 vistas; los de formato curiosidad/
+    # mito promedian 674-727 (el ganador de 1.334 es "El Mito Más Común
+    # De..."). El short derivado ahora usa gancho de curiosidad + tema corto.
+    import random as _rnd
+    try:
+        from agents.promocion_cruzada import _tema_corto_de
+        _tema = _tema_corto_de(guion["titulo"]).title()
+    except Exception:
+        _tema = guion["titulo"].split(":")[0].split("(")[0].strip()
+    _prefijos = ["Lo Que Nadie Te Dice De", "El Error Más Común Con",
+                 "La Verdad Sobre", "Esto Cambia Todo Sobre"]
+    titulo_short = f"{_rnd.choice(_prefijos)} {_tema}"[:85] + " #Shorts"
     # HONESTIDAD TÉCNICA (auditoría 14-ago-2026): YouTube NO hace clicables
     # los enlaces en las descripciones de Shorts (limitación oficial de la
     # plataforma, verificada). El enlace clicable REAL va en el comentario

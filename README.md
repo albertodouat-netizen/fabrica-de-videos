@@ -1,5 +1,40 @@
 # 🤖 Fábrica de Videos de YouTube — Equipo de Agentes IA (100% Gratis)
 
+## 🧠 ANATOMÍA DEL ALGORITMO 2026 APLICADA (investigación élite, 28-ago-2026)
+Investigación exhaustiva multi-fuente (confirmaciones oficiales de YouTube
++ 15 análisis independientes 2026) contrastada con nuestros datos. Claves:
+- SATISFACCIÓN reemplazó al watch time como señal #1 (abril 2026):
+  encuestas post-vista + REPLAYS + SHARES (valen 5-8x un like) + regreso
+  al canal en 7 días. Los primeros 30s de un largo son señal DIRECTA.
+- SHORTS: totalmente desacoplados del largo desde fines de 2025. La señal
+  es swipe-rate en 1-2s y completion >70-75%; el LOOP (final que conecta
+  con el inicio => retención >100%) es el arma máxima. Ventana de prueba:
+  30-60 min; canales nuevos se testean agresivo en días.
+- Canales nuevos SÍ pueden explotar sin subs (cohortes de prueba); nuestro
+  Short de 1.334 vistas es exactamente ese mecanismo.
+- Enero 2026: 16 canales IA masivos TERMINADOS ("AI slop"). Lo que protege:
+  investigación real, variación entre videos, disclosure (ya lo hacemos),
+  ritmo humano (1 largo/2 días — validado), punto de vista propio.
+CAMBIOS APLICADOS: cierres-LOOP en todos los Shorts (1 frase que re-abre
+el gancho; CTA al comentario fijado); fórmula de título 2026 para LARGOS
+(error/mito + keyword + beneficio); gancho de 30s con cifra + segunda
+persona como regla dura; duración Shorts 22-32s (ganadores: 26-28s).
+
+## 📊 AUDITORÍA DE ÉXITO: por qué el Short de 1.334 vistas ganó (28-ago-2026)
+Análisis de los 18 videos del canal con datos reales de la API. Hallazgos:
+1. FORMATO: MITO promedia 674 vistas y CURIOSIDAD 727 vs LISTA 100 y
+   DERIVADOS 50. El ganador combina: mito + gancho con cifra ("50% de la
+   gente...") + historia en 2ª persona ("Imagina que llevas meses con
+   calambres...") + tema de salud específico (magnesio).
+2. TEMA: magnesio máx 1.334; setas 727; música/estrés máx 194 (confirmación
+   DATA de la cuarentena); los temas de salud ESPECÍFICOS y searchables
+   ganan.
+3. Los shorts DERIVADOS (título = copia del largo + 😱) son los peores.
+CAMBIOS APLICADOS: rotación de formatos ponderada 2:2:1:1 hacia mito/dato;
+títulos de shorts SIEMPRE con gancho de curiosidad + tema corto limpio
+(el ganador salía cortado: "...(Y 5 Q #Shorts"); derivados ya no copian
+el título del largo.
+
 ## 🚑 REPARACIÓN URGENTE + 3 SIMULACIONES COMPLETAS (28-ago-2026, noche)
 Auditoría de la corrida #52-53 (repo ya público, Actions ilimitado ✓):
 - El paso del Short duró 30s sin publicar. CAUSA ENCONTRADA reproduciendo
