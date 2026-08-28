@@ -1,5 +1,19 @@
 # 🤖 Fábrica de Videos de YouTube — Equipo de Agentes IA (100% Gratis)
 
+## 🎬 AGENTE 37: CLIPS DE VIDEO IA EN MOVIMIENTO (Meta 2 del plan élite, 28-ago-2026)
+El salto de realismo más grande hasta ahora. Los beats CLAVE (gancho, 2
+primeros de contenido y apertura de cada capítulo) ya no son imágenes con
+Ken Burns: son CLIPS DE VIDEO EN MOVIMIENTO generados a medida con
+LTX-Video (Lightricks) vía Hugging Face Spaces, GRATIS.
+- Verificado EN VIVO con la cuenta del usuario: "elderly woman walking in
+  a sunny park" y "woman drinking herbal tea" — fotorrealistas, anatomía
+  correcta, ~11s de generación por clip, $0.
+- Presupuesto: máx 6 clips IA/video (cuota ZeroGPU gratis ~5 min GPU/día).
+- Diseño defensivo: sin token/cuota/Space caído => cae a imagen FLUX +
+  Ken Burns de siempre; el video NUNCA se bloquea por esto.
+- Nuevo secreto: HF_TOKEN (ya probado). Nuevo archivo: agents/video_ia.py.
+- requirements.txt: + gradio_client.
+
 ## 🔍 AUDITORÍA DEL VIDEO "CIRCULACIÓN PIERNAS 60+" — 4 CORRECCIONES (28-ago-2026, tarde)
 El video salió PUNTUAL a las 19:30 UTC (publishAt funcionando) con 22:07 de
 duración (¡récord!). Defectos reportados por el usuario y corregidos:

@@ -34,6 +34,7 @@ def main():
         "cloudflare_account_id": "CLOUDFLARE_ACCOUNT_ID",
         "nvidia_api_key": "NVIDIA_API_KEY",
         "deepseek_api_key": "DEEPSEEK_API_KEY",
+        "hf_token": "HF_TOKEN",
     }
 
     for clave_config, nombre_env in mapeo.items():

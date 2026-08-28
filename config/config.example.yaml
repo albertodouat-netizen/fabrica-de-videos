@@ -105,6 +105,7 @@ apis:
   openrouter_api_key: OBTENER_GRATIS_AQUI
   cloudflare_api_token: OBTENER_GRATIS_AQUI
   cloudflare_account_id: OBTENER_GRATIS_AQUI
+  hf_token: "OBTENER_GRATIS_AQUI"  # huggingface.co - clips de VIDEO IA gratis (Agente 37)
   deepseek_api_key: OBTENER_GRATIS_AQUI
   nvidia_api_key: OBTENER_GRATIS_AQUI
   jamendo_client_id: OBTENER_GRATIS_AQUI

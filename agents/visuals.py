@@ -590,6 +590,30 @@ def obtener_visuales_para_guion(guion: dict, carpeta_salida: str, orientacion="l
             contexto = beat.get("texto", "")
             if tema_general:
                 contexto = f"{contexto} (tema general del video: {tema_general})"
+
+            # AGENTE 37 (Meta 2 del plan élite, 28-ago-2026): los beats
+            # CLAVE (gancho + aperturas de capítulo) se intentan primero
+            # como CLIP DE VIDEO IA en movimiento (LTX vía HF Spaces,
+            # probado en vivo con la cuenta del usuario). Si no se puede
+            # (sin token, cuota agotada, Space caído), cae a la búsqueda
+            # normal de siempre sin bloquear nada.
+            try:
+                from agents.video_ia import generar_clip_ia, es_beat_clave
+                if es_beat_clave(i, j, beat):
+                    destino_ia_mp4 = os.path.join(
+                        carpeta_salida, f"cap{i}_b{j}_{slugify(keyword)[:40]}_videoia.mp4")
+                    ruta_clip = generar_clip_ia(
+                        keyword, destino_ia_mp4, contexto=beat.get("texto", ""),
+                        vertical=(orientacion == "portrait"))
+                    if ruta_clip:
+                        visuales_cap.append({"tipo": "video", "ruta": ruta_clip,
+                                              "keyword": keyword})
+                        log(AGENT, f"Cap {i+1} beat {j+1}/{len(beats)}: '{keyword}' -> "
+                                    f"🎬 CLIP DE VIDEO IA (movimiento real)")
+                        continue
+            except Exception as e:
+                log(AGENT, f"Aviso VideoClipIA ({e}); búsqueda normal para este beat.")
+
             visual = buscador.obtener(keyword, carpeta_salida, tag=f"cap{i}_b{j}", contexto=contexto)
             visuales_cap.append(visual)
             log(AGENT, f"Cap {i+1} beat {j+1}/{len(beats)}: '{keyword}' -> {visual['tipo']}")
