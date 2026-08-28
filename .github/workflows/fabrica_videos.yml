@@ -130,10 +130,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: resultado-${{ github.run_number }}
+          # CORRECCIÓN 28-ago-2026 (error real: "Artifact storage quota has
+          # been hit"): ya NO se guarda el video completo (200-500 MB por
+          # corrida x 14 días reventaba los 500 MB gratis de GitHub). El
+          # video ya está en YouTube; aquí solo memoria, miniatura y logs.
           path: |
             data/estado.json
-            output/**
-          retention-days: 14
+            output/thumbnails/**
+          retention-days: 5
 
       - name: Recordar ideas ya usadas (commit automático de la memoria)
         if: always()
