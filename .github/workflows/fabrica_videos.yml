@@ -51,7 +51,11 @@ permissions:
 jobs:
   generar_y_publicar_video:
     runs-on: ubuntu-latest
-    timeout-minutes: 110
+    # AMPLIADO 27-ago-2026 (fallo real: 2 corridas del 25-ago murieron con
+    # "exceeded the maximum execution time of 1h50m0s" ensamblando el video;
+    # los videos de 15+ min con las correcciones tardan más que los de 6-8
+    # min de antes). Límite duro de GitHub por job: 6h.
+    timeout-minutes: 300
     steps:
       - name: Clonar repositorio
         uses: actions/checkout@v4
