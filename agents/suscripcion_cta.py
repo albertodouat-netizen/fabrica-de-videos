@@ -67,15 +67,19 @@ FRASES_INICIO = [
     "Aprovecho para recordarte que suscribirte es gratis, y así este contenido te llega apenas sale.",
 ]
 
+# REESCRITAS 28-ago-2026 (reclamo real del usuario: "antes de los avisos de
+# suscripción parece que se despidiera, que terminara el video"). Regla
+# nueva: toda frase de mitad DEBE terminar anunciando lo que VIENE (puente
+# hacia adelante), nunca con tono de cierre o agradecimiento final.
 FRASES_MITAD = [
-    "Si este video te está sirviendo hasta ahora, aprovecha y suscríbete, así no te pierdes el resto.",
-    "Vamos a la mitad. Si te gusta lo que estás aprendiendo, suscríbete al canal, es gratis y ayuda mucho.",
-    "Antes de seguir con la siguiente parte, un favor rápido, suscríbete al canal si te está gustando el video.",
-    "Seguimos. Si quieres más contenido como este, suscribirte es la mejor forma de asegurarte de verlo.",
-    "Ya que llegaste hasta aquí, es buen momento para suscribirte si aún no lo has hecho. Sigamos.",
-    "Pausa de tres segundos, si esto te está aportando, dale a suscribirte. Listo, continuemos con lo bueno.",
-    "Lo que viene es la parte más práctica del video. Suscríbete si no quieres perderte contenido así cada día.",
-    "Si estás aprendiendo algo nuevo hoy, el botón de suscribirse es la forma más simple de apoyar este trabajo.",
+    "Y ojo, que ahora viene lo más importante. Mientras tanto, suscríbete gratis para más contenido como este.",
+    "Suscríbete si te está sirviendo, porque lo que sigue te va a interesar aún más. Vamos con la siguiente parte.",
+    "Aún queda lo mejor de este video. Aprovecha este segundo para suscribirte, y sigamos de una vez.",
+    "Suscribirte toma dos segundos y es gratis. Y ahora sí, vamos al punto que estabas esperando.",
+    "Antes de la parte más práctica, dale a suscribirte, es gratis. Listo, ahora presta atención a esto.",
+    "Lo que viene ahora es clave, así que quédate. Y si te está gustando, suscríbete para no perderte los próximos.",
+    "Esto apenas va por la mitad. Suscríbete gratis y sigamos, que ahora viene el paso a paso completo.",
+    "Suscríbete si quieres más videos así cada semana. Y atento, que la siguiente parte responde la gran pregunta.",
 ]
 
 FRASES_FINAL = [

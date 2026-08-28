@@ -38,6 +38,12 @@ REGLAS_PARA_GUIONISTA = f"""
 REGLAS DE RETENCIÓN DE AUDIENCIA (basadas en investigación real de edición
 y guionismo de YouTube; síguelas de forma estricta):
 
+0. PROHIBIDO despedirse o sonar a cierre ("eso fue todo", "gracias por
+   ver", "nos vemos", "para terminar", "ya para finalizar", "espero que te
+   haya servido") en CUALQUIER beat que no sea el último del último
+   capítulo. El video fluye continuo: cada sección termina ANUNCIANDO lo
+   que viene ("y ahora viene lo más importante..."), nunca despidiéndose.
+
 1. GANCHO (los primeros 15 segundos deciden si la persona se queda o se va,
    según datos reales de retención de YouTube 2026; síguelo con precisión
    quirúrgica, no es "una sugerencia más"):

@@ -1,5 +1,26 @@
 # 🤖 Fábrica de Videos de YouTube — Equipo de Agentes IA (100% Gratis)
 
+## 🔍 AUDITORÍA DEL VIDEO "CIRCULACIÓN PIERNAS 60+" — 4 CORRECCIONES (28-ago-2026, tarde)
+El video salió PUNTUAL a las 19:30 UTC (publishAt funcionando) con 22:07 de
+duración (¡récord!). Defectos reportados por el usuario y corregidos:
+1. **"Momentos sin imágenes" + "pantalla negra en aviso de suscripción"**:
+   los fondos de respaldo eran gris-casi-negro o degradados vacíos. Ahora
+   TODOS los respaldos (video_editor y visuals) usan el FONDO DE MARCA:
+   degradado verde del canal + logo real circular centrado. Generado y
+   verificado visualmente.
+2. **"Habla de remolacha y muestra pepino/mora"**: el QA se quedaba sin
+   cupo Gemini (16/día) y DEJABA DE VERIFICAR. Ahora verifica TODOS los
+   beats: los primeros con el Gemini principal y el resto con
+   gemini-flash-lite-latest (CUOTA SEPARADA, verificado en vivo 5/5 con la
+   cuota principal agotada; prueba de fuego: té-vs-té=10, té-vs-remolacha=1).
+   Se probaron y DESCARTARON los modelos de visión de NVIDIA con evidencia
+   (llamaron "Pineapple" y "Corgi" a una taza de té).
+3. **"Parece que se despidiera a mitad de video"**: las 8 frases de
+   suscripción de MITAD se reescribieron como PUENTES que anuncian lo que
+   viene ("y ahora viene lo más importante..."); regla nueva #0 en el
+   prompt del guionista: PROHIBIDO despedirse fuera del último beat.
+4. Retry del verificador ampliado a 429/500/503 (sobrecarga temporal).
+
 ## 🔧 AUDITORÍA CORRIDA 27-ago (4h46m, "falló") + 3 CORRECCIONES (28-ago-2026)
 LO PRIMERO: el video SÍ se generó y SÍ se subió. La corrida de anoche
 publicó "Dormir con Lluvia de Tres Minutos" (largo 19:21 + Short) como

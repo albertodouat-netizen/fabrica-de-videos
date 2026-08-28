@@ -110,9 +110,41 @@ def _ajustar_duraciones_a_ritmo(duraciones: list, total_real: float,
 
 
 def _fondo_respaldo_simple(destino_png, resolucion=RESOLUCION):
-    """Último recurso absoluto (archivo corrupto/no descargable): un fondo
-    neutro simple, 100% local, para que el video nunca falle por completo."""
-    img = Image.new("RGB", resolucion, (35, 35, 40))
+    """Último recurso absoluto (archivo corrupto/no descargable).
+    CORRECCIÓN 28-ago-2026 (reclamo real: "momentos sin imágenes" y
+    "pantalla en negro en el aviso de suscripción"): antes era un fondo
+    gris-casi-negro; ahora es el FONDO DE MARCA del canal (degradado verde
+    + logo real), el mismo estilo de la intro. Nunca más pantalla negra."""
+    import os as _os
+    w, h = resolucion
+    img = Image.new("RGB", resolucion)
+    px = img.load()
+    # degradado verde de marca (mismo tono de la intro/tarjetas del canal)
+    for y in range(h):
+        t = y / max(1, h - 1)
+        px_color = (int(16 + 14 * t), int(74 + 46 * t), int(52 + 30 * t))
+        for x in range(w):
+            px[x, y] = px_color
+    # halos suaves decorativos
+    try:
+        from PIL import ImageDraw
+        d = ImageDraw.Draw(img, "RGBA")
+        d.ellipse([w*0.68, h*0.08, w*0.95, h*0.55], fill=(255, 255, 255, 14))
+        d.ellipse([w*0.05, h*0.55, w*0.35, h*1.05], fill=(255, 255, 255, 10))
+    except Exception:
+        pass
+    # logo real del canal, centrado y circular
+    try:
+        ruta_logo = _os.path.join("assets", "logo_canal.jpg")
+        if _os.path.exists(ruta_logo):
+            from PIL import ImageDraw as _ID
+            lado = int(min(w, h) * 0.28)
+            logo = Image.open(ruta_logo).convert("RGB").resize((lado, lado))
+            mask = Image.new("L", (lado, lado), 0)
+            _ID.Draw(mask).ellipse([0, 0, lado, lado], fill=255)
+            img.paste(logo, ((w - lado) // 2, (h - lado) // 2), mask)
+    except Exception:
+        pass
     img.save(destino_png)
     return destino_png
 

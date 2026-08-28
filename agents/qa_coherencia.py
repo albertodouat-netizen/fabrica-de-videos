@@ -20,6 +20,8 @@ NUNCA fMalla por falta de esta verificación, solo pierde precisión.
 import base64
 import time
 
+import requests
+
 from PIL import Image
 from moviepy import VideoFileClip
 
@@ -105,6 +107,43 @@ def _preguntar_a_gemini_vision(ruta_jpg: str, keyword: str, texto_beat: str, api
 
 
 
+def _preguntar_a_flash_lite_vision(ruta_jpg: str, keyword: str, texto_beat: str, api_key: str,
+                                    tema_general: str = "", nombre_capitulo: str = ""):
+    """Verificador de RESPALDO con gemini-flash-lite-latest: visión precisa
+    y CUOTA SEPARADA del modelo del guionista (verificado en vivo
+    28-ago-2026: 5/5 llamadas OK con la cuota de flash normal agotada).
+    Nota: se probaron NVIDIA llama-3.2 11B/90B vision y fueron DESCARTADOS
+    con evidencia (describieron una taza de té como "Pineapple"/"Corgi")."""
+    with open(ruta_jpg, "rb") as fimg:
+        img_b64 = base64.b64encode(fimg.read()).decode("utf-8")
+    prompt = (
+        f"En un video de salud se narra: \"{texto_beat[:200]}\". La imagen "
+        f"debería mostrar: \"{keyword}\". PASO 1: identifica qué muestra "
+        f"REALMENTE la imagen. PASO 2: si el objeto/alimento/escena principal "
+        f"coincide con lo esperado, COHERENCIA alta (8-10); si muestra un "
+        f"alimento u objeto DISTINTO al mencionado, COHERENCIA baja (0-3). "
+        f"PASO 3: di si es inapropiada (desnudos/violencia). Responde SOLO: "
+        f"COHERENCIA:<n>|INAPROPIADA:<SI o NO>"
+    )
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key={api_key}"
+    body = {"contents": [{"parts": [{"text": prompt},
+            {"inline_data": {"mime_type": "image/jpeg", "data": img_b64}}]}]}
+    for intento in range(4):
+        r = requests.post(url, json=body, timeout=45)
+        if r.status_code in (429, 500, 503) and intento < 3:
+            time.sleep(12 * (intento + 1))
+            continue
+        r.raise_for_status()
+        texto = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip().upper()
+        import re as _re
+        m = _re.search(r"COHERENCIA\s*:?\s*(\d{1,2})", texto)
+        score = int(m.group(1)) if m else 5
+        score = min(10, score)
+        inapropiada = "INAPROPIADA:SI" in texto.replace(" ", "")
+        return {"score": score, "inapropiada": inapropiada}
+    r.raise_for_status()
+
+
 def verificar_y_corregir(guion: dict, visuales_info: dict, carpeta_salida: str) -> dict:
     cfg = load_config()
     gemini_key = cfg["apis"].get("gemini_api_key", "")
@@ -138,23 +177,19 @@ def verificar_y_corregir(guion: dict, visuales_info: dict, carpeta_salida: str) 
                 continue
             candidatos.append((i, j, beat, visual, cap.get("nombre", "")))
 
+    # flash-lite usa la MISMA llave gemini pero cuota separada => siempre
+    # disponible como respaldo si hay llave gemini (que ya validamos arriba).
+    hay_lite = True
     if cupo_qa <= 0:
-        log(AGENT, "Cupo diario de Gemini casi agotado (reservado para el Guionista): "
-                    "se omite la verificación visual en este video. El resto del pipeline sigue normal.")
-        return visuales_info
+        log(AGENT, "Cupo del Gemini principal agotado: la verificación visual la hace "
+                    "gemini-flash-lite (cuota SEPARADA). Nada se queda sin verificar.")
 
-    if len(candidatos) > cupo_qa:
-        # Muestreo parejo (no solo los primeros beats): tomamos 'cupo_qa'
-        # candidatos repartidos a lo largo de todo el video, para seguir
-        # detectando problemas en cualquier parte del video, no solo al inicio.
-        paso = len(candidatos) / cupo_qa
-        indices_muestra = sorted({int(k * paso) for k in range(cupo_qa)})
-        candidatos = [candidatos[idx] for idx in indices_muestra]
-        log(AGENT, f"Cupo limitado hoy: se verificarán {len(candidatos)} de los beats totales "
-                    f"(muestra repartida a lo largo del video, no solo el inicio).")
-    else:
-        log(AGENT, f"Verificando con Gemini Vision los {len(candidatos)} beats de este video "
-                    f"(cupo suficiente hoy).")
+    # CORRECCIÓN 28-ago-2026 (reclamo real: "remolacha y muestra pepino"):
+    # con NVIDIA de respaldo YA NO se recorta la muestra: se verifican
+    # TODOS los beats (los primeros 'cupo_qa' con Gemini, el resto con
+    # NVIDIA Vision, que no tiene cupo diario).
+    log(AGENT, f"Verificando TODOS los {len(candidatos)} beats: primeros {max(0, cupo_qa)} con "
+                f"el Gemini principal, el resto con flash-lite (cuota separada).")
 
     total = 0
     reemplazados = 0
@@ -171,9 +206,14 @@ def verificar_y_corregir(guion: dict, visuales_info: dict, carpeta_salida: str) 
             continue
 
         try:
-            resultado = _preguntar_a_gemini_vision(ruta_jpg, keyword, beat.get("texto", ""), gemini_key,
-                                                    tema_general=tema_general, nombre_capitulo=nombre_capitulo)
-            registrar_uso_gemini(1)
+            # Gemini mientras haya cupo; NVIDIA Vision para el resto.
+            if total <= max(0, cupo_qa):
+                resultado = _preguntar_a_gemini_vision(ruta_jpg, keyword, beat.get("texto", ""), gemini_key,
+                                                        tema_general=tema_general, nombre_capitulo=nombre_capitulo)
+                registrar_uso_gemini(1)
+            else:
+                resultado = _preguntar_a_flash_lite_vision(ruta_jpg, keyword, beat.get("texto", ""), gemini_key,
+                                                            tema_general=tema_general, nombre_capitulo=nombre_capitulo)
             errores_consecutivos = 0
         except Exception as e:
             errores_consecutivos += 1
