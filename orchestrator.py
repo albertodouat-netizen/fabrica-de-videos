@@ -279,6 +279,37 @@ def _categorias_recientes(estado):
     return estado.get("categorias_usadas", [])[-CATEGORIAS_RECIENTES_A_EVITAR:]
 
 
+
+
+def _anotar_tarea_video_relacionado(short_id: str, largo_id: str, titulo: str):
+    """La API de YouTube NO permite configurar el botón 'Vídeo relacionado'
+    de los Shorts (verificado 27-ago-2026: ni videos.update ni ningún
+    endpoint lo expone; Stack Overflow lo confirma). Lo máximo
+    automatizable: dejar la tarea A UN CLIC en el resumen de la corrida de
+    GitHub Actions y registrada en estado.json."""
+    import os as _os
+    url_editor = f"https://studio.youtube.com/video/{short_id}/edit"
+    linea = (f"🔗 TAREA MANUAL (30 seg): abre {url_editor} , pulsa "
+             f"'Vídeo relacionado' y elige el largo ({largo_id}).")
+    log(AGENT, linea)
+    resumen = _os.environ.get("GITHUB_STEP_SUMMARY")
+    if resumen:
+        try:
+            with open(resumen, "a", encoding="utf-8") as fh:
+                fh.write(f"\n### 🔗 Vincular video relacionado (30 seg)\n"
+                         f"- Short: **{titulo[:60]}**\n"
+                         f"- [Abrir editor del Short en Studio]({url_editor}) → "
+                         f"botón **Vídeo relacionado** → elegir el video largo\n")
+        except Exception:
+            pass
+    try:
+        est = load_state()
+        est.setdefault("tareas_video_relacionado", []).append(
+            {"short": short_id, "largo": largo_id, "url": url_editor})
+        save_state(est)
+    except Exception:
+        pass
+
 def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool):
     cfg = load_config()
     estado = load_state()
@@ -460,6 +491,8 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
                         agregar_a_playlist(short_id, cfg["canal"]["nicho"].title())
                     except Exception as e:
                         log(AGENT, f"Aviso: no se pudo añadir el Short a la playlist ({e}).")
+                    if video_id:
+                        _anotar_tarea_video_relacionado(short_id, video_id, guion.get("titulo", ""))
 
                 # Enlace cruzado por comentarios (100% gratis, sin configuración
                 # nueva): el video largo recibe un comentario con el link al
@@ -556,6 +589,10 @@ def publicar_short_independiente():
                       f"https://www.youtube.com/watch?v={resultado['video_largo_id']}"
         )
         log(AGENT, f"🔗 Short independiente publicado: https://youtube.com/shorts/{short_id}")
+        # Tarea a-un-clic para el botón "Vídeo relacionado" (no automatizable
+        # por API; ver _anotar_tarea_video_relacionado).
+        _anotar_tarea_video_relacionado(short_id, resultado["video_largo_id"],
+                                        resultado.get("titulo", ""))
 
 
 def main():
