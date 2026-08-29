@@ -590,3 +590,53 @@ def generar_portada_elite(guion, imagen_base: str, salida_png: str,
             pass
     log(AGENT_AUDITOR, f"Portada élite final -> {salida_png}")
     return salida_png
+
+
+# ---------------------------------------------------------------------------
+# INCRUSTAR PORTADA EN EL VIDEO (solución para la pestaña Shorts)
+# ---------------------------------------------------------------------------
+def incrustar_portada_como_primer_frame(ruta_video: str, ruta_portada: str,
+                                         segundos: float = 0.45) -> bool:
+    """Hallazgo verificado (29-ago-2026, con evidencia del CDN): la pestaña
+    /shorts del canal y el feed de Shorts NO usan la miniatura personalizada
+    (thumbnails.set): usan un FOTOGRAMA del propio video (frame0.jpg del
+    CDN), y la API no permite elegirlo. Solución: superponer la portada
+    élite sobre los primeros ~0.45s del video. Así frame0 = portada, y el
+    espectador apenas percibe un 'flash' de portada al arrancar (que además
+    actúa de gancho visual). El audio no se toca (-c:a copy) y la duración
+    no cambia (es un overlay, no una inserción)."""
+    import subprocess
+    if not (os.path.exists(ruta_video) and os.path.exists(ruta_portada)):
+        return False
+    tmp = ruta_video + "_conportada.mp4"
+    try:
+        # escalar la portada al tamaño exacto del video y superponerla
+        # solo durante los primeros `segundos`
+        cmd = [
+            "ffmpeg", "-y", "-i", ruta_video, "-i", ruta_portada,
+            "-filter_complex",
+            (f"[1:v][0:v]scale2ref=w=iw:h=ih[ov][base];"
+             f"[base][ov]overlay=0:0:enable='lte(t,{segundos})'"),
+            "-c:a", "copy", "-preset", "superfast", "-crf", "21",
+            tmp,
+        ]
+        r = subprocess.run(cmd, capture_output=True, timeout=600)
+        if r.returncode != 0 or not os.path.exists(tmp) or os.path.getsize(tmp) < 10000:
+            log(AGENT_FABRICA, f"No se pudo incrustar la portada en el video "
+                               f"({r.stderr.decode()[-120:] if r.stderr else 'sin detalle'}).")
+            try:
+                os.remove(tmp)
+            except OSError:
+                pass
+            return False
+        os.replace(tmp, ruta_video)
+        log(AGENT_FABRICA, f"Portada incrustada como primer frame del video "
+                           f"({segundos}s) -> la pestaña Shorts mostrará la portada élite.")
+        return True
+    except Exception as e:
+        log(AGENT_FABRICA, f"Incrustado de portada falló ({type(e).__name__}).")
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
+        return False

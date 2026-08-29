@@ -1,5 +1,36 @@
 # 🏭 Fábrica de Videos — Salud Natural Diaria
 
+## 🖼️ HALLAZGO: LA PESTAÑA SHORTS IGNORA LA MINIATURA + SOLUCIÓN (29-ago-2026, noche)
+
+Reporte del usuario con captura: "Los shorts no cambiaron" (pestaña /shorts).
+
+**Investigación con evidencia del CDN de YouTube:**
+- La miniatura personalizada (thumbnails.set) SÍ quedó subida en los 13
+  Shorts (verificada byte a byte en maxresdefault.jpg del CDN: es nuestra
+  portada élite). Se usa en: búsqueda, sugeridos, pestaña Videos, embeds.
+- PERO la pestaña /shorts del canal y el feed de Shorts usan OTRA imagen:
+  un FOTOGRAMA del propio video (frame0.jpg del CDN), y la API NO permite
+  elegirlo (solo se puede cambiar tocando la app móvil de YouTube, video
+  por video, y ni siquiera acepta imagen externa: solo un frame del video).
+
+**Solución construida y probada** (`incrustar_portada_como_primer_frame`
+en equipo_portadas.py): la portada élite se superpone en los primeros
+0.45s del video del Short (overlay ffmpeg; audio -c:a copy, duración
+intacta). Así frame0 = portada élite y la pestaña Shorts la muestra.
+El "flash" inicial de portada funciona además como gancho visual (patrón
+que usan varios shorts virales). Conectado en los 2 flujos de Shorts del
+orchestrator. Probado con render real: frame 0 = portada, frame 2s =
+video normal, duración exacta.
+
+**Limitación honesta para los 13 Shorts YA publicados:** su archivo de
+video no se puede reemplazar (limitación de YouTube, no nuestra). Sus
+portadas élite SÍ trabajan en búsqueda/sugeridos/pestaña Videos, pero la
+pestaña /shorts seguirá mostrando el fotograma viejo. Alternativa manual
+opcional documentada: app móvil de YouTube → video → Editar → elegir
+fotograma (sin poder subir imagen). Los Shorts NUEVOS ya salen perfectos.
+
+---
+
 ## 💬 SEMBRADOR DE CONVERSACIÓN + REACTIVACIÓN DE GANADORES (29-ago-2026)
 
 Dos ideas del usuario ejecutadas EN REAL sobre el canal:

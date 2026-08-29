@@ -567,12 +567,19 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
                 # largo. Antes iba None (fotograma al azar elegido por YouTube).
                 miniatura_short = None
                 try:
-                    from agents.equipo_portadas import generar_portada_elite
+                    from agents.equipo_portadas import (generar_portada_elite,
+                                                        incrustar_portada_como_primer_frame)
                     miniatura_short = generar_portada_elite(
                         {"titulo": titulo_short,
                          "keyword_principal": guion.get("keyword_principal", "")},
                         ruta_short, f"output/thumbnails/{nombre_base}_short.png",
                         vertical=True)
+                    # HALLAZGO 29-ago-2026 (verificado con el CDN): la pestaña
+                    # /shorts ignora thumbnails.set y muestra un FOTOGRAMA del
+                    # video (frame0). Incrustamos la portada en los primeros
+                    # ~0.45s para que ese fotograma SEA la portada élite.
+                    if miniatura_short:
+                        incrustar_portada_como_primer_frame(ruta_short, miniatura_short)
                 except Exception as e:
                     log(AGENT, f"Portada del Short no disponible ({type(e).__name__}); "
                                 f"YouTube usará un fotograma.")
@@ -681,13 +688,18 @@ def publicar_short_independiente():
     # 38-40): visible en pestaña del canal / búsqueda / sugeridos.
     miniatura_short = None
     try:
-        from agents.equipo_portadas import generar_portada_elite
+        from agents.equipo_portadas import (generar_portada_elite,
+                                            incrustar_portada_como_primer_frame)
         import datetime as _dt
         miniatura_short = generar_portada_elite(
             {"titulo": resultado["titulo"], "keyword_principal": ""},
             resultado["ruta"],
             "output/thumbnails/short_indep_" + _dt.datetime.now().strftime("%Y%m%d") + ".png",
             vertical=True)
+        # Ver nota en el pipeline principal: la pestaña /shorts muestra un
+        # fotograma del video, no la miniatura; la incrustamos al inicio.
+        if miniatura_short:
+            incrustar_portada_como_primer_frame(resultado["ruta"], miniatura_short)
     except Exception as e:
         log(AGENT, f"Portada del Short independiente no disponible ({type(e).__name__}); "
                     f"YouTube usará un fotograma.")
