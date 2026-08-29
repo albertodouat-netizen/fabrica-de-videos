@@ -154,6 +154,39 @@ _PREGUNTAS_INTERACCION = [
     "❓ ¿Qué otro tema sobre {tema} te gustaría que investigue a fondo?",
 ]
 
+# Banco de preguntas "cuéntame tu historia" (idea del usuario, 29-ago-2026):
+# preguntas que invitan a CONTAR EXPERIENCIAS PROPIAS. Los comentarios largos
+# y personales son la señal de interacción más valiosa para el algoritmo
+# 2026 (satisfacción + conversación), mucho más que un "me gusta".
+_PREGUNTAS_EXPERIENCIA = [
+    "¿Te ha pasado? Cuéntame tu caso con {tema}, te leo y te respondo 🙌",
+    "¿Cuánto tiempo llevas lidiando con esto? Comparte tu historia 👇",
+    "¿Ya probaste algo parecido para {tema}? ¿Qué te funcionó y qué no?",
+    "¿A qué edad empezaste a notar cambios con {tema}? Tu experiencia puede ayudar a otra persona 💚",
+    "¿Qué es lo que MÁS te cuesta de {tema}? Sé sincero, aquí nadie juzga.",
+    "Si pudieras hacerle UNA pregunta a un especialista sobre {tema}, ¿cuál sería? La investigo y hago un video 🎬",
+    "¿Tu familia también sufre de esto? Cuéntame, ¿a quién le vas a compartir este video?",
+    "¿Qué remedio casero te enseñaron tus abuelos para {tema}? Me encanta leer esas historias 🌿",
+]
+
+
+def comentario_conversacion(titulo_video: str, url_extra: str = "",
+                             etiqueta_url: str = "") -> str:
+    """Comentario 'semilla de conversación' (idea del usuario, 29-ago-2026):
+    3 preguntas sugestivas EN UN SOLO comentario (varios comentarios propios
+    seguidos parecen spam) que invitan a contar experiencias, + enlace
+    opcional. Diseñado para fijarse manualmente en YouTube Studio."""
+    tema = _tema_corto_de(titulo_video)
+    preguntas = _random.sample(_PREGUNTAS_EXPERIENCIA, 3)
+    numeros = ["1️⃣", "2️⃣", "3️⃣"]
+    cuerpo = "💬 CUÉNTAME TU EXPERIENCIA 👇\n\n"
+    cuerpo += "\n".join(f"{n} {p.format(tema=tema)}"
+                         for n, p in zip(numeros, preguntas))
+    cuerpo += "\n\nLeo y respondo todos los comentarios 💚"
+    if url_extra:
+        cuerpo += f"\n\n{etiqueta_url} {url_extra}"
+    return cuerpo
+
 
 def url_con_playlist(video_id: str, cfg=None, es_short: bool = False) -> str:
     """Construye el link de un video ANCLADO a la playlist del canal
@@ -193,6 +226,11 @@ def _tema_corto_de(titulo: str) -> str:
     (ej: '4 Señales Que Nunca Debes Ignorar Antes de Tomar Magnesio (Y...)'
     -> 'el magnesio'). Usa la parte más significativa del título."""
     t = (titulo or "").split(":")[0].split("(")[0].strip()
+    # Limpiar signos de pregunta/exclamación y hashtags (títulos renovados
+    # del 29-ago vienen como "¿Qué pasa si...?" y "#salud #Shorts"; sin esta
+    # limpieza salían temas como "piernas a los 60?" con doble signo).
+    t = re.sub(r"[¿?¡!]", "", t)
+    t = re.sub(r"#\w+", "", t).strip()
     palabras = t.split()
     if len(palabras) > 6:
         t = " ".join(palabras[-4:])  # el final suele llevar el sustantivo clave
@@ -200,9 +238,14 @@ def _tema_corto_de(titulo: str) -> str:
     # Quitar conectores iniciales que dejan la frase coja dentro de la
     # pregunta (bug visto en la prueba: "¿te ha pasado algo con ANTES DE
     # TOMAR magnesio?"). Se recortan hasta encontrar un sustantivo.
+    # Ampliado 29-ago: también verbos conjugados de los títulos-pregunta
+    # nuevos ("tomas esta bebida" → "esta bebida").
     _CONECTORES = ("antes de", "después de", "despues de", "para", "sobre",
                    "de", "del", "la", "el", "los", "las", "tu", "tus",
-                   "tomar", "usar", "hacer", "y")
+                   "tomar", "usar", "hacer", "y", "qué pasa si", "que pasa si",
+                   "por qué", "por que", "esto pasa si", "tomas", "escuchas",
+                   "ignoras", "reparas", "incluyes", "comes", "bebes",
+                   "sufres", "si", "en", "esta", "este", "estos", "estas")
     cambiado = True
     while cambiado and t:
         cambiado = False
@@ -210,7 +253,13 @@ def _tema_corto_de(titulo: str) -> str:
             if t.startswith(c + " "):
                 t = t[len(c) + 1:]
                 cambiado = True
-    return t.strip(" .,") or "este tema"
+    t = t.strip(" .,")
+    # Control de calidad final (29-ago-2026): si lo que quedó es muy corto,
+    # puro número ("60") o sigue empezando con verbo raro, mejor un tema
+    # genérico digno que una frase coja en la pregunta.
+    if len(t) < 5 or t.replace(" ", "").isdigit():
+        return "este tema"
+    return t
 
 
 def comentario_interactivo(titulo_video: str, url_extra: str = "",

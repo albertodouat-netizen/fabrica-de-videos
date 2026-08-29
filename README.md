@@ -1,5 +1,60 @@
 # 🏭 Fábrica de Videos — Salud Natural Diaria
 
+## 💬 SEMBRADOR DE CONVERSACIÓN + REACTIVACIÓN DE GANADORES (29-ago-2026)
+
+Dos ideas del usuario ejecutadas EN REAL sobre el canal:
+
+**Idea 2 — Comentarios que motivan a escribir:**
+- Nuevo `comentario_conversacion()` en promocion_cruzada: UN comentario
+  con 3 preguntas sugestivas (banco de 8 "cuéntame tu historia": qué te
+  pasó, qué te enseñaron tus abuelos, a quién se lo compartes...). En un
+  solo comentario porque varios seguidos parecen spam.
+- `scripts/sembrar_conversacion.py` ejecutado: **19/19 videos sembrados
+  sin errores** (verificado en vivo leyendo el comentario del ganador de
+  1.334 vistas). Anti-duplicado integrado (marca "CUÉNTAME TU EXPERIENCIA").
+- La fábrica usa ahora comentario_conversacion en videos FUTUROS
+  (orchestrator, 4 puntos del enlace cruzado largo↔short).
+- Bug corregido en _tema_corto_de: los títulos renovados (preguntas,
+  hashtags) generaban temas cojos ("piernas a los 60??", "con tomas esta
+  bebida") → limpieza de signos/hashtags/verbos + control de calidad final.
+
+**Idea 1 — Reactivar los videos ganadores (decisión razonada):**
+- A los ganadores NO se les cambia título/portada: su empaque YA demostró
+  funcionar y cambiarlo reinicia la prueba del algoritmo (riesgo de matar
+  lo ganado). Lo que SÍ se hizo (100% seguro):
+  a) comentario de conversación nuevo (señal fresca de actividad),
+  b) playlist añadida a su descripción (tráfico encadenado; 2 completadas),
+  c) la "explotación de éxito" ya integrada (UMBRAL_EXITO_OUTLIER=10x
+     mediana) hace videos NUEVOS de los temas ganadores — así reactivan
+     los canales gemelos (Vital Health HQ repite su hit con variantes).
+- Pendiente de 1 clic del usuario: FIJAR los comentarios de conversación
+  en YouTube Studio (⋮ → Fijar). La API no permite fijar (limitación real).
+
+---
+
+## ♻️ RENOVACIÓN MASIVA DEL CANAL COMPLETO (29-ago-2026)
+
+Pedido del usuario: actualizar TODOS los videos anteriores con todo lo
+investigado, salvo los de buenos resultados.
+
+- `scripts/renovar_videos_antiguos.py` ejecutado EN REAL sobre el canal:
+  **17 videos renovados** (título con fórmula validada + portada élite
+  Agentes 38-40 + descripción con playlist + tags), **2 GANADORES
+  PROTEGIDOS** sin tocar (1.334 y 727 vistas).
+- Rotación de 5 patrones de título (pregunta, STOP/NUNCA, "Esto pasa si",
+  error/mito, curiosidad) para no dejar el canal robótico; prohibido
+  inventar cifras.
+- Resultado 16/16 sin errores en la corrida masiva + 1 en la prueba previa.
+  Evidencia: primer renovado (Circulación) pasó de 2 → 44 vistas en horas.
+- BUG detectado en auditoría visual y corregido: la cifra gigante (ej.
+  "75%") se salía del borde en portadas verticales → ahora se auto-reduce
+  hasta caber (equipo_portadas.py). Las 2 portadas afectadas se
+  regeneraron y reasignaron en vivo.
+- El Renovador queda en el repo para usarse tras cada mejora futura
+  (--simular para plan, --solo ID, --excluir IDs; umbral protección 500).
+
+---
+
 ## 🎨 EQUIPO DE DISEÑO DE PORTADAS: Agentes 38-40 (28-ago-2026, noche)
 
 Pedido del usuario: las portadas llamativas atraen el clic aunque el título

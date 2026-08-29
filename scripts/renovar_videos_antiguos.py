@@ -199,7 +199,8 @@ def _descargar_thumb_actual(video_id: str, destino: str) -> str:
     return ""
 
 
-def renovar(simular: bool = False, solo_id: str = None):
+def renovar(simular: bool = False, solo_id: str = None, excluir=None):
+    excluir = set(excluir or [])
     os.makedirs(CARPETA_SALIDA, exist_ok=True)
     yt = _youtube()
     inv = _inventario(yt)
@@ -208,6 +209,10 @@ def renovar(simular: bool = False, solo_id: str = None):
     reporte = []
     for v in inv:
         if solo_id and v["id"] != solo_id:
+            continue
+        if v["id"] in excluir:
+            log(AGENT, f"⏭️ Excluido (ya renovado antes): {v['titulo'][:50]}")
+            reporte.append({**v, "accion": "excluido"})
             continue
         if v["vistas"] >= UMBRAL_PROTECCION:
             log(AGENT, f"🛡️ PROTEGIDO (ganador, {v['vistas']} vistas): {v['titulo'][:50]}")
@@ -299,5 +304,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--simular", action="store_true", help="No aplica cambios")
     ap.add_argument("--solo", default=None, help="Renovar solo este video ID")
+    ap.add_argument("--excluir", default="", help="IDs separados por coma que NO se tocan")
     args = ap.parse_args()
-    renovar(simular=args.simular, solo_id=args.solo)
+    renovar(simular=args.simular, solo_id=args.solo,
+            excluir=[x for x in args.excluir.split(",") if x.strip()])

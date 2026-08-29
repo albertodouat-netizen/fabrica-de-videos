@@ -412,6 +412,13 @@ def _componer(concepto: dict, fondo_path: str, salida: str, tamano=TAMANO) -> st
         tam_cifra = int(H * 0.42)
         f_cifra = _fuente(tam_cifra)
         dr = ImageDraw.Draw(base)
+        # BUG corregido (29-ago-2026, detectado en la renovación masiva): la
+        # cifra "75%" se salía del borde en vertical. Ahora se reduce el
+        # tamaño hasta que quepa entera con margen.
+        max_ancho_cifra = int(W * 0.85)
+        while tam_cifra > 60 and dr.textlength(cifra, font=f_cifra) > max_ancho_cifra:
+            tam_cifra -= 12
+            f_cifra = _fuente(tam_cifra)
         if W >= H:
             dr.text((46, 8), cifra, font=f_cifra, fill=AMARILLO,
                     stroke_width=10, stroke_fill=(0, 0, 0))
