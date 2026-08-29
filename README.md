@@ -1,5 +1,24 @@
 # 🏭 Fábrica de Videos — Salud Natural Diaria
 
+## 🎥 RONDA 2 CINE: LTX-2.5 INTEGRADO + DOBLE VÍA DE CUOTA (29-ago-2026, tarde)
+
+- **LTX-2.5** (Lightricks, 11-ago-2026, open weights): decoder de difusión
+  (0.28 fallos/clip vs 0.74 del 2.3), multi-shot nativo, 4K HDR, Gemma 4.
+  Space oficial verificado (`Lightricks/LTX-2.5`, endpoint /run, params
+  confirmados contra la API). INTEGRADO como primera opción en video_ia.py.
+- **Doble vía de cuota** (`_clientes_para`): primero SIN token (cuota
+  anónima por IP, separada — la IP del runner rota por corrida), después
+  CON token. Capacidad diaria de clips ~duplicada gratis.
+- Cascada de clips ahora: LTX-2.5 → LTX distilled → ZSky → imagen fija.
+- Detectados y verificados (pruebas mañana con cuota): MiniMax H3 (top 3
+  mundial open-weight, movimiento humano; Colombia NO excluida de licencia),
+  MiniMax Music3 (canciones con voz), OmniVoice (diseño de voces originales).
+- Corrección honesta: "Wan 2.7 open source" es SEO-bait — los pesos
+  abiertos oficiales llegan hasta Wan 2.2.
+- Informe: INVESTIGACION_RONDA2_cine_realista.md.
+
+---
+
 ## 🌐 AGENTE 42: PROVEEDOR ZSKY + AUDITORÍA DE HERRAMIENTAS DE YOUTUBE (29-ago-2026)
 
 El usuario compartió ~15 videos de YouTube sobre "IA gratis ilimitada 4K".

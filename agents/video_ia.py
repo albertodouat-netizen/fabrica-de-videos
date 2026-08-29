@@ -31,14 +31,64 @@ AGENT = "VideoClipIA"
 # cada clip consume ~10-30s de GPU en el Space distilled).
 MAX_CLIPS_IA_POR_VIDEO = 6
 
-# Spaces con LTX-Video (verificados vivos 28-ago-2026). El primero es el
-# oficial de Lightricks (distilled = rápido).
+# Spaces con LTX (verificados vivos 29-ago-2026). Orden = calidad:
+#   1) Lightricks/LTX-2.5 (OFICIAL, ago-2026): decoder de difusión nuevo
+#      (0.28 fallos/clip vs 0.74 del 2.3), 4K HDR, multi-shot nativo,
+#      duración automática. Endpoint /run.
+#   2) Lightricks/ltx-video-distilled (el original probado). /text_to_video.
+_SPACE_LTX25 = "Lightricks/LTX-2.5"
 _SPACES_LTX = [
     "Lightricks/ltx-video-distilled",
 ]
 
 _contador_clips = {"usados": 0}
 _cliente_cache = {}
+
+
+def _clientes_para(space: str, token: str):
+    """Estrategia doble cuota (hallazgo 29-ago-2026): la cuota ZeroGPU
+    ANÓNIMA (por IP) es SEPARADA de la de la cuenta. En GitHub Actions la
+    IP rota por corrida => casi siempre hay cuota anónima fresca. Se
+    intenta primero SIN token (guarda la cuota de la cuenta para cuando
+    la anónima se agote) y después CON token."""
+    from gradio_client import Client
+    claves = [(space, None), (space, token)] if token else [(space, None)]
+    for space_id, tok in claves:
+        cache_key = f"{space_id}|{'tok' if tok else 'anon'}"
+        try:
+            if cache_key not in _cliente_cache:
+                _cliente_cache[cache_key] = Client(space_id, token=tok,
+                                                   verbose=False)
+            yield _cliente_cache[cache_key], ("token" if tok else "anónimo")
+        except Exception:
+            continue
+
+
+def _intentar_ltx25(prompt: str, destino_mp4: str, vertical: bool,
+                    token: str):
+    """LTX-2.5 oficial: mejor calidad open source de agosto 2026."""
+    w, h = (768, 1152) if vertical else (1152, 768)
+    for cliente, modo in _clientes_para(_SPACE_LTX25, token):
+        try:
+            t0 = time.time()
+            r = cliente.predict(
+                prompt=prompt[:900], image_path=None,
+                height=h, width=w, duration_s=4,
+                seed=42, decoder="diffusion", auto_len=False,
+                randomize_seed=True, do_enhance=False,
+                api_name="/run")
+            ruta = r[0] if isinstance(r, (tuple, list)) else r
+            if isinstance(ruta, dict):
+                ruta = ruta.get("video") or ruta.get("path")
+            if ruta and os.path.exists(ruta) and os.path.getsize(ruta) > 10000:
+                shutil.copy(ruta, destino_mp4)
+                log(AGENT, f"Clip LTX-2.5 ({modo}) en {time.time()-t0:.0f}s.")
+                return destino_mp4
+        except Exception as e:
+            msg = str(e)[:90]
+            log(AGENT, f"LTX-2.5 ({modo}) no disponible ({msg}).")
+            continue
+    return None
 
 
 def _hf_token(cfg) -> str:
@@ -77,6 +127,15 @@ def generar_clip_ia(prompt_visual: str, destino_mp4: str,
     except ImportError:
         log(AGENT, "gradio_client no instalado; sin clips IA en esta corrida.")
         return None
+
+    # PRIMERO: LTX-2.5 oficial (mejor calidad ago-2026, decoder difusión,
+    # menos artefactos). Con doble vía de cuota (anónima → token).
+    ruta25 = _intentar_ltx25(prompt, destino_mp4, vertical, token)
+    if ruta25:
+        _contador_clips["usados"] += 1
+        log(AGENT, f"Clip IA (LTX-2.5) {_contador_clips['usados']}/"
+                   f"{MAX_CLIPS_IA_POR_VIDEO}: '{prompt_visual[:50]}'")
+        return ruta25
 
     for space in _SPACES_LTX:
         try:
