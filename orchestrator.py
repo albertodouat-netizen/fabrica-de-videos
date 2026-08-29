@@ -453,8 +453,19 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
             break
     if not primera_imagen:  # respaldo por si un video quedara sin ningún beat normal
         primera_imagen = visuales_info["visuales_por_capitulo"][0][0]["ruta"]
-    ruta_miniatura = generar_miniatura(guion, primera_imagen,
-                                        f"output/thumbnails/{nombre_base}.png")
+    # EQUIPO DE PORTADAS (Agentes 38-40, 28-ago-2026): portada estilo
+    # ganadores validados (texto gigante en bloques amarillo/negro/rojo,
+    # 2 variantes + auditor visual). Si el equipo falla por cualquier
+    # motivo, se cae a la miniatura clásica de siempre.
+    try:
+        from agents.equipo_portadas import generar_portada_elite
+        ruta_miniatura = generar_portada_elite(guion, primera_imagen,
+                                               f"output/thumbnails/{nombre_base}.png")
+    except Exception as e:
+        log(AGENT, f"Equipo de portadas falló ({type(e).__name__}: {e}); "
+                    f"uso la miniatura clásica de respaldo.")
+        ruta_miniatura = generar_miniatura(guion, primera_imagen,
+                                            f"output/thumbnails/{nombre_base}.png")
 
     try:
         productos = seleccionar_productos(guion)
@@ -550,8 +561,23 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
                 guion_short = {"titulo": titulo_short,
                                "tags": (guion.get("tags", []) + ["Shorts"])[:10],
                                "disclaimer": guion.get("disclaimer", "")}
+                # Portada vertical élite para el Short (Agentes 38-40): en el
+                # feed de Shorts no se ve, pero en la pestaña del canal, la
+                # búsqueda y los sugeridos SÍ, y ahí compite igual que un
+                # largo. Antes iba None (fotograma al azar elegido por YouTube).
+                miniatura_short = None
+                try:
+                    from agents.equipo_portadas import generar_portada_elite
+                    miniatura_short = generar_portada_elite(
+                        {"titulo": titulo_short,
+                         "keyword_principal": guion.get("keyword_principal", "")},
+                        ruta_short, f"output/thumbnails/{nombre_base}_short.png",
+                        vertical=True)
+                except Exception as e:
+                    log(AGENT, f"Portada del Short no disponible ({type(e).__name__}); "
+                                f"YouTube usará un fotograma.")
                 log(AGENT, "Publicando el Short en YouTube...")
-                short_id = publicar_video(ruta_short, None, guion_short, descripcion_short)
+                short_id = publicar_video(ruta_short, miniatura_short, guion_short, descripcion_short)
                 # Playlist compartida con el largo (21-ago-2026): al terminar
                 # el Short, YouTube prioriza el siguiente video de la misma
                 # playlist/canal en el feed => más tráfico interno propio.
@@ -651,8 +677,22 @@ def publicar_short_independiente():
     guion_short = {"titulo": resultado["titulo"],
                    "tags": ["Salud Natural Diaria", "salud natural", "Shorts"],
                    "disclaimer": "Este contenido es informativo y no sustituye una consulta médica."}
+    # Portada vertical élite también para el Short independiente (Agentes
+    # 38-40): visible en pestaña del canal / búsqueda / sugeridos.
+    miniatura_short = None
+    try:
+        from agents.equipo_portadas import generar_portada_elite
+        import datetime as _dt
+        miniatura_short = generar_portada_elite(
+            {"titulo": resultado["titulo"], "keyword_principal": ""},
+            resultado["ruta"],
+            "output/thumbnails/short_indep_" + _dt.datetime.now().strftime("%Y%m%d") + ".png",
+            vertical=True)
+    except Exception as e:
+        log(AGENT, f"Portada del Short independiente no disponible ({type(e).__name__}); "
+                    f"YouTube usará un fotograma.")
     log(AGENT, "Publicando el Short independiente en YouTube...")
-    short_id = publicar_video(resultado["ruta"], None, guion_short, resultado["descripcion"])
+    short_id = publicar_video(resultado["ruta"], miniatura_short, guion_short, resultado["descripcion"])
     if short_id and resultado.get("video_largo_id"):
         from agents.promocion_cruzada import publicar_comentario_cruzado
         publicar_comentario_cruzado(

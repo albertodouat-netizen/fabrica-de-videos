@@ -1,4 +1,44 @@
-# 🤖 Fábrica de Videos de YouTube — Equipo de Agentes IA (100% Gratis)
+# 🏭 Fábrica de Videos — Salud Natural Diaria
+
+## 🎨 EQUIPO DE DISEÑO DE PORTADAS: Agentes 38-40 (28-ago-2026, noche)
+
+Pedido del usuario: las portadas llamativas atraen el clic aunque el título
+no sea lo buscado → se hizo una investigación EXCLUSIVA de miniaturas.
+
+**Evidencia real analizada** (no teoría):
+- Se descargaron y midieron por computador 127 miniaturas REALES: 80 de los
+  videos ganadores del estudio de 1.630 (canales <5K subs, 1K+ vistas en
+  15 días) y 47 de control (fracasos <1K vistas de canales iguales).
+- Hallazgos medidos: los mega-ganadores (top 20) tienen saturación 117 vs
+  101 del resto; el rostro NO es obligatorio (44%); el color solo no basta
+  (los fracasos también son coloridos): lo decisivo es UN protagonista +
+  TEXTO GIGANTE en bloques de color legible a 168x94 px.
+- Patrón calcado en los campeones del nicho: "STOP Taking Magnesium" (248K),
+  "107 AÑOS" (152K), "AÑADE ESTO A TU AGUA" (55K): bloques amarillo/negro/
+  rojo, tipografía ultra-negra, 4-7 palabras de curiosidad (no el título).
+- Nuestras 15 portadas comparadas: texto pequeño gris sobre fondos apagados
+  = el eslabón más débil del canal. Informe completo:
+  INVESTIGACION_PORTADAS_youtube.md (en la carpeta del usuario).
+
+**Lo construido** (`agents/equipo_portadas.py`, probado EN VIVO):
+- Agente 38 Director: cascada LLM diseña 2 conceptos con los patrones
+  validados (palabras exactas, estilo, fondo). Respaldo local por reglas.
+- Agente 39 Fábrica: fondo IA (Pollinations flux → Cloudflare FLUX →
+  fotograma real), tipografía Anton (assets/fonts/, viaja con el repo),
+  3 estilos ganadores: bloque_amarillo, alerta_roja, cifra_gigante;
+  saturación reforzada, marca del canal, texto validado con bbox real.
+- Agente 40 Auditor: compara las 2 variantes con Gemini flash-lite VISION
+  (cuota separada) y rúbrica CTR de 5 criterios; sin visión decide con las
+  métricas del estudio (saturación/viveza).
+- Conectado en orchestrator.py para el LARGO, el SHORT del largo y el SHORT
+  independiente (los Shorts antes iban SIN miniatura: fotograma al azar).
+  Vertical 720x1280 con texto fuera de la zona de la interfaz de Shorts.
+- Caída con gracia: si el equipo falla → miniatura clásica (thumbnail.py).
+- Prueba en vivo 28-ago: Groq diseñó, Pollinations rindió los fondos, el
+  Auditor eligió variante A (CTR estimado 7 vs 5). Legibilidad verificada
+  a tamaño celular.
+
+---
 
 ## 🔬 ESTUDIO MASIVO DE 1.630 VIDEOS REALES + 3 MEJORAS (28-ago-2026, noche)
 Muestreo por API oficial: 1.630 videos de los últimos 15 días, 771 canales,
