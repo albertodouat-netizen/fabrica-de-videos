@@ -111,6 +111,24 @@ def generar_clip_ia(prompt_visual: str, destino_mp4: str,
             if "quota" in msg.lower() or "exceeded" in msg.lower():
                 _contador_clips["usados"] = MAX_CLIPS_IA_POR_VIDEO
             continue
+
+    # RESPALDO ZSKY (Agente 42, 29-ago-2026): fuente gratis ilimitada
+    # adicional de clips de 5s con audio, verificada en vivo. Se usa cuando
+    # LTX/ZeroGPU no pudo (cuota agotada o Spaces caídos). El clip trae la
+    # placa "MADE WITH zsky.ai" (free tier) y el QA visual decide si pasa.
+    # Timeout de cola corto para nunca eternizar la corrida.
+    try:
+        from agents.proveedor_zsky import generar_clip
+        ruta = generar_clip(prompt, destino_mp4, vertical=vertical,
+                            timeout_cola=300)
+        if ruta:
+            _contador_clips["usados"] += 1
+            log(AGENT, f"Clip de respaldo ZSky usado "
+                       f"({_contador_clips['usados']}/{MAX_CLIPS_IA_POR_VIDEO}).")
+            return ruta
+    except Exception as e:
+        log(AGENT, f"Respaldo ZSky tampoco disponible ({str(e)[:80]}); "
+                   f"imagen estática para este beat.")
     return None
 
 

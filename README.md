@@ -1,5 +1,39 @@
 # 🏭 Fábrica de Videos — Salud Natural Diaria
 
+## 🌐 AGENTE 42: PROVEEDOR ZSKY + AUDITORÍA DE HERRAMIENTAS DE YOUTUBE (29-ago-2026)
+
+El usuario compartió ~15 videos de YouTube sobre "IA gratis ilimitada 4K".
+Se auditó cada herramienta con fuentes independientes + pruebas en vivo:
+
+**Veredictos:**
+- ComfyUI+LTX2.3+RunPod (Camino Digital): LEGÍTIMO — es exactamente nuestro
+  "Peldaño 2" (GPU por horas). Confirma nuestro plan.
+- "Maestro"/Pinokio (IACASH): legítimo pero requiere GPU NVIDIA local.
+- ZSky AI: MIXTO→APROVECHABLE (ver abajo). Utopai Studios: TRAMPA ($100
+  mínimo, $50/min terminado, renders fallidos consumen créditos) — descartado.
+- Vibes de Meta: real (5s, 720p gratis) pero requiere login Meta en
+  navegador — NO automatizable desde Actions; descartado como proveedor.
+- Flujo "canal bíblico $10K/mes" (Tutoriales Informáticos): valida la
+  estrategia del canal #3 de novelas; su flujo manual es lo que nuestro
+  sistema ya hace automatizado.
+
+**AGENTE 42 (`agents/proveedor_zsky.py`) — construido y verificado:**
+- zsky.ai es "agent-friendly" OFICIAL (robots.txt + /agent.json + GraphQL
+  público invitan a agentes IA). Free tier: video 5s HD con AUDIO
+  sincronizado, ILIMITADO, uso comercial, sin tarjeta; placa pequeña
+  "MADE WITH zsky.ai" (no la ocultamos: atribución legítima, el QA decide).
+- Flujo verificado EN VIVO: signup anónimo Supabase → token → POST
+  /api/generate {"type":"video"} → job aceptado (credit_cost=0, tier=free)
+  → poll /api/job/{id}. Cola gratuita lenta (minutos): por eso es RESPALDO
+  con timeout, nunca proveedor principal.
+- Sesión persistente en estado.json (evita el rate-limit "429 Too many
+  signups"; refresh_token antes que signup nuevo). En Actions la IP rota
+  por corrida → el signup inicial pasa.
+- Conectado en video_ia.py: cascada LTX (ZeroGPU) → ZSky → imagen fija.
+  Nunca bloquea la corrida (timeout de cola 300s).
+
+---
+
 ## 🖼️ HALLAZGO: LA PESTAÑA SHORTS IGNORA LA MINIATURA + SOLUCIÓN (29-ago-2026, noche)
 
 Reporte del usuario con captura: "Los shorts no cambiaron" (pestaña /shorts).
