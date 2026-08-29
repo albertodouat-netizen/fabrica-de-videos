@@ -27,9 +27,12 @@ from agents.utils import load_config, log, slugify
 
 AGENT = "VideoClipIA"
 
-# Presupuesto conservador por video (cuota ZeroGPU gratis ~5 min GPU/día;
-# cada clip consume ~10-30s de GPU en el Space distilled).
-MAX_CLIPS_IA_POR_VIDEO = 6
+# Presupuesto por video. HISTORIA: 6 con cuenta gratis (5 min GPU/día).
+# Desde 29-ago-2026 la cuenta albertodouat es HF PRO ($9/mes, verificado
+# por API isPro=True): 40 MINUTOS de GPU al día + prioridad máxima de cola
+# + extensible con créditos. 22 clips ~= 8-11 min de GPU, deja de sobra
+# para el Short y reintentos, y la vía anónima suma aparte.
+MAX_CLIPS_IA_POR_VIDEO = 22
 
 # Spaces con LTX (verificados vivos 29-ago-2026). Orden = calidad:
 #   1) Lightricks/LTX-2.5 (OFICIAL, ago-2026): decoder de difusión nuevo
@@ -46,13 +49,12 @@ _cliente_cache = {}
 
 
 def _clientes_para(space: str, token: str):
-    """Estrategia doble cuota (hallazgo 29-ago-2026): la cuota ZeroGPU
-    ANÓNIMA (por IP) es SEPARADA de la de la cuenta. En GitHub Actions la
-    IP rota por corrida => casi siempre hay cuota anónima fresca. Se
-    intenta primero SIN token (guarda la cuota de la cuenta para cuando
-    la anónima se agote) y después CON token."""
+    """Doble cuota v2 (era PRO, 29-ago-2026): con HF PRO el token da
+    40 min/día y PRIORIDAD MÁXIMA de cola => se usa PRIMERO (rápido y
+    casi sin abortos). La cuota anónima por IP queda de RESPALDO para
+    cuando la de la cuenta se agote en corridas maratónicas."""
     from gradio_client import Client
-    claves = [(space, None), (space, token)] if token else [(space, None)]
+    claves = [(space, token), (space, None)] if token else [(space, None)]
     for space_id, tok in claves:
         cache_key = f"{space_id}|{'tok' if tok else 'anon'}"
         try:

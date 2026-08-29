@@ -1,5 +1,31 @@
 # 🏭 Fábrica de Videos — Salud Natural Diaria
 
+## 💎 ERA PRO ACTIVADA (29-ago-2026, 00:51 am)
+
+El usuario activó **Hugging Face PRO** ($9/mes, primer cobro prorrateado
+$0.81). Verificado por API: isPro=True en la cuenta albertodouat.
+
+**Qué cambió al instante (todo probado EN VIVO esa misma hora):**
+- LTX-2.5 con token PRO: clip cinematográfico 1152x768 con audio en 27s,
+  SIN cola (antes: esperas y "GPU aborted"). Calidad verificada por
+  fotogramas: piel real, luz de cine, física del líquido perfecta.
+- MiniMax H3 primer clip real: mujer caminando en huerto, luz dorada,
+  movimiento humano natural (40s de generación). El top 3 mundial
+  open-weight ya es NUESTRO proveedor utilizable.
+- OmniVoice: primera voz de personaje DISEÑADA ("Doña Rosa", español,
+  femenina) en 4 segundos. Base para los personajes del canal #3.
+
+**Cambios en la fábrica (video_ia.py):**
+- MAX_CLIPS_IA_POR_VIDEO: 6 → 22 (40 min GPU/día del plan PRO).
+- _clientes_para v2: ahora token PRIMERO (prioridad máxima PRO), cuota
+  anónima por IP como respaldo (antes era al revés).
+- Cascada de clips: LTX-2.5 (PRO) → LTX distilled → ZSky → imagen fija.
+
+**Capacidad nueva medida:** ~80-160 clips/día ≈ 8-13 min de video
+cinematográfico DIARIO ≈ 4-6 horas/mes, extensible a $1/10min extra.
+
+---
+
 ## 🎥 RONDA 2 CINE: LTX-2.5 INTEGRADO + DOBLE VÍA DE CUOTA (29-ago-2026, tarde)
 
 - **LTX-2.5** (Lightricks, 11-ago-2026, open weights): decoder de difusión
