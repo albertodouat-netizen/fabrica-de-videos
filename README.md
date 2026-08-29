@@ -1,5 +1,32 @@
 # 🏭 Fábrica de Videos — Salud Natural Diaria
 
+## 🎞️ ANTI-CONGELADO v3 + RESPUESTAS STUDIO (30-ago-2026)
+
+Reclamo real del usuario sobre el Short programado: "el video tiene unas
+partes donde se congela".
+
+**Causa raíz encontrada (auditoría del código):** el ANTI-LOOP v2 del
+21-ago sostenía el ÚLTIMO FOTOGRAMA CONGELADO cuando un clip era más
+corto que su beat. Con los clips IA nuevos (2-4s) en beats de 2-5s, ese
+congelado podía durar hasta el 40% del beat — visible y feo.
+
+**Arreglo (video_editor.py, _clip_desde_visual):** CÁMARA LENTA en vez de
+congelar: el clip se ralentiza suavemente (0.5-0.9x, imperceptible) hasta
+llenar el beat exacto. Clips muy cortos: boomerang continuo + lenta; caso
+extremo: fotograma final CON Ken Burns (nunca estático). Probado con
+render real y medición de movimiento frame a frame: 3/3 casos SIN
+congelados (antes 100% congelado en el tramo extendido). Aplica a largos
+Y shorts (misma función compartida).
+
+**Diagnóstico Shorts grises en Studio:** los shorts renovados (con
+miniatura vertical subida por API) se ven grises SOLO en la cuadrícula de
+Studio: YouTube no soporta oficialmente miniaturas custom en Shorts y su
+grid no regenera la vista previa. Verificado por CDN: nuestras miniaturas
+SÍ están servidas (HTTP 200) y trabajan en búsqueda/sugeridos. Cosmético,
+solo lo ve el dueño del canal.
+
+---
+
 ## 💎 ERA PRO ACTIVADA (29-ago-2026, 00:51 am)
 
 El usuario activó **Hugging Face PRO** ($9/mes, primer cobro prorrateado

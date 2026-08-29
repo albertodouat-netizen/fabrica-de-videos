@@ -21,20 +21,5 @@
     "usados": 1
   },
   "comentarios_respondidos": [],
-  "playlist_canal_id": "PLOm1dX9uH38g",
-  "shorts_independientes_por_video": {
-    "RyJs3pT8ho8": "2026-08-29T15:08:56.807665"
-  },
-  "ultimo_formato_short": "dato_sorprendente",
-  "ultimo_short_independiente": "2026-08-29",
-  "videos_programados": {
-    "x55DT2vikQk": "2026-08-29T19:30:00.0Z"
-  },
-  "tareas_video_relacionado": [
-    {
-      "short": "x55DT2vikQk",
-      "largo": "RyJs3pT8ho8",
-      "url": "https://studio.youtube.com/video/x55DT2vikQk/edit"
-    }
-  ]
+  "playlist_canal_id": "PLOm1dX9uH38g"
 }

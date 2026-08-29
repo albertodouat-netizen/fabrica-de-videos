@@ -171,37 +171,43 @@ def _clip_desde_visual(visual, duracion, carpeta_tmp, resolucion=RESOLUCION):
             if clip.duration >= duracion:
                 clip = clip.subclipped(0, duracion)
             else:
-                # ANTI-LOOP (auditoría 18-ago-2026, defecto real: "vuelven a
-                # repetirse algunos videos como en un loop"). Antes, un clip
-                # de stock de 4s en un beat de 12s se repetía 3 veces de
-                # corrido y el ojo lo nota de inmediato. Ahora:
-                #   - Si el clip cubre >=60% del beat: se reproduce UNA vez y
-                #     se sostiene el último fotograma congelado con Ken Burns
-                #     imperceptible (mejor que verlo reiniciarse).
-                #   - Si es muy corto (<60%): UNA pasada normal + una pasada
-                #     EN REVERSA (efecto "boomerang", continuo y sin salto) y
-                #     se recorta a la duración exacta.
-                if clip.duration >= duracion * 0.6:
-                    ultimo = clip.to_ImageClip(t=max(0, clip.duration - 0.05)) \
-                                 .with_duration(duracion - clip.duration)
-                    clip = concatenate_videoclips([clip, ultimo], method="chain")
+                # ANTI-CONGELADO v3 (auditoría 29-ago-2026, reclamo real del
+                # usuario: "el video tiene unas partes donde se congela").
+                # HISTORIA: v1 repetía el clip en loop (defecto 18-ago);
+                # v2 congelaba el último fotograma (defecto 29-ago: con los
+                # clips IA de 2-4s en beats más largos, el congelado duraba
+                # varios segundos y se notaba muchísimo).
+                # AHORA: CÁMARA LENTA. Si el clip cubre >=50% del beat, se
+                # ralentiza suavemente hasta llenar la duración exacta: el
+                # movimiento NUNCA se detiene y a 0.5-0.9x el ojo casi no
+                # percibe la ralentización (es un recurso cinematográfico
+                # normal). Si es muy corto, primero ida+vuelta (boomerang,
+                # continuo) y luego cámara lenta; solo como último recurso
+                # extremo queda un fotograma final CON zoom Ken Burns lento
+                # (nunca estático).
+                import moviepy.video.fx as vfx
+                factor = clip.duration / duracion
+                if factor >= 0.5:
+                    clip = clip.with_effects([vfx.MultiplySpeed(factor)])
                 else:
-                    # CORRECCIÓN ANTI-LOOP v2 (auditoría 21-ago-2026, reclamo
-                    # real del usuario: "imagenes que quedan en un loop"):
-                    # el boomerang se repetía N veces si el beat era largo
-                    # (clip 3s en beat 15s = 3 boomerangs visibles). Ahora:
-                    # UNA sola pasada ida+vuelta y el resto se sostiene con
-                    # el fotograma final congelado (estable, sin repetición).
-                    import moviepy.video.fx as vfx
                     reversa = clip.with_effects([vfx.TimeMirror()])
                     ida_vuelta = concatenate_videoclips([clip, reversa], method="chain")
-                    if ida_vuelta.duration < duracion:
-                        congelado = ida_vuelta.to_ImageClip(
-                            t=max(0, ida_vuelta.duration - 0.05))                             .with_duration(duracion - ida_vuelta.duration)
-                        clip = concatenate_videoclips([ida_vuelta, congelado], method="chain")
+                    factor2 = ida_vuelta.duration / duracion
+                    if factor2 >= 0.45:
+                        clip = ida_vuelta.with_effects([vfx.MultiplySpeed(factor2)])
                     else:
-                        clip = ida_vuelta
-                clip = clip.subclipped(0, duracion)
+                        lenta = ida_vuelta.with_effects([vfx.MultiplySpeed(0.45)])
+                        restante = duracion - lenta.duration
+                        if restante > 0.05:
+                            congelado = lenta.to_ImageClip(
+                                t=max(0, lenta.duration - 0.05)) \
+                                .with_duration(restante) \
+                                .with_effects([vfx.Resize(lambda t: 1.0 + 0.015 * t)])
+                            clip = concatenate_videoclips([lenta, congelado], method="chain")
+                        else:
+                            clip = lenta
+                if clip.duration > duracion:
+                    clip = clip.subclipped(0, duracion)
             clip = clip.without_audio().with_duration(duracion)
             return _cubrir_resolucion(clip, resolucion)
         except Exception as e:
