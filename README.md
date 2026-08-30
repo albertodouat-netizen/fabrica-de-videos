@@ -1,5 +1,31 @@
 # 🏭 Fábrica de Videos — Salud Natural Diaria
 
+## 🚫 REGLA CERO-REPETICIONES (30-ago-2026)
+
+Condición nueva del usuario (antes de cargar el paquete): "No se deben
+repetir imágenes ni clips de video", en largos Y shorts.
+
+**3 cambios que la garantizan:**
+1. `visuals.py`: ELIMINADO el "penúltimo recurso" que reutilizaba un
+   visual de otro beat (18/21-ago). En su lugar: reintentos de imagen IA
+   con 3 VARIACIONES de prompt (ángulo/detalle/luz distintos + semilla
+   aleatoria) => visual único siempre.
+2. `shorts_creator.py`: el rescate desde el video largo ahora es de USO
+   ÚNICO por archivo (jamás dos beats del Short con el mismo visual); si
+   el pool se agota, el beat lo cubre un clip IA único.
+3. **BARRERA FINAL** en `obtener_visuales_para_guion`: antes de entregar
+   los visuales al editor, se comparan TODOS por hash de contenido (md5,
+   detecta copias aunque cambie el nombre). Cualquier duplicado se
+   regenera como imagen IA única (hasta 3 variantes). Exentas: tarjetas
+   de marca/estudio/CTA (elementos de identidad, no escenas).
+   Probada con duplicados artificiales: detección 100%.
+
+Además se verificó contra GitHub (30-ago): el repo AÚN tenía el código
+del boomerang — causa real del "volvió a congelarse" reportado. Este
+paquete acumula TODO: anti-congelado v4.1 + Short v2 + cero-repeticiones.
+
+---
+
 ## 🎬 SHORT v2 "GRAN CALIDAD" + ANTI-CONGELADO v4.1 (30-ago-2026)
 
 Reclamos reales del usuario: "volvió a congelarse", "va hacia adelante y

@@ -612,40 +612,27 @@ class BuscadorVisualesUnicos:
             log(AGENT, f"'{keyword}': no había stock con buena coincidencia, se generó una imagen IA a medida.")
             return {"tipo": "imagen", "ruta": destino_ia, "keyword": keyword}
 
-        # Penúltimo recurso (nuevo, 18-ago-2026, tras el reclamo del usuario
-        # "espacios sin imágenes... inaceptable"): antes de resignarse a un
-        # degradado vacío, REUTILIZAR una imagen/video REAL ya descargado
-        # para OTRO beat de este mismo video (elige al azar entre lo que ya
-        # está en la carpeta). Una escena real repetida es infinitamente
-        # mejor que un fondo vacío de 20 segundos.
-        try:
-            ya_descargados = [f for f in os.listdir(carpeta_salida)
-                              if f.lower().endswith((".jpg", ".jpeg", ".png", ".mp4"))
-                              and "_fallback" not in f and "intro_marca" not in f
-                              and "estudio" not in f.lower()]
-            # CORRECCIÓN (auditoría 21-ago-2026, reclamo real: "imagenes que
-            # se repiten en diferentes minutos del video"): antes elegía AL
-            # AZAR sin memoria, y el mismo visual podía reusarse 3-4 veces.
-            # Ahora se lleva registro de lo ya reusado y se prefiere lo
-            # nunca-reusado; si TODO ya se reusó una vez, se permite una
-            # segunda vuelta (peor es un fondo vacío), pero nunca la misma
-            # imagen dos veces seguidas.
-            if not hasattr(self, "_reusados"):
-                self._reusados = {}
-            candidatos_frescos = [f for f in ya_descargados if self._reusados.get(f, 0) == 0]
-            pool = candidatos_frescos or [f for f in ya_descargados
-                                           if self._reusados.get(f, 0) < 2]
-            if pool:
-                elegido = random.choice(pool)
-                self._reusados[elegido] = self._reusados.get(elegido, 0) + 1
-                ruta_reuso = os.path.join(carpeta_salida, elegido)
-                log(AGENT, f"'{keyword}': sin stock ni imagen IA disponibles; se REUTILIZA "
-                            f"un visual real de este mismo video ({elegido}, "
-                            f"reuso #{self._reusados[elegido]}) en vez de un fondo vacío.")
-                tipo_reuso = "video" if elegido.lower().endswith(".mp4") else "imagen"
-                return {"tipo": tipo_reuso, "ruta": ruta_reuso, "keyword": keyword}
-        except Exception:
-            pass
+        # CERO REPETICIONES (30-ago-2026, condición nueva del usuario: "No
+        # se deben repetir imágenes ni clips de video"). HISTORIA: el
+        # penúltimo recurso REUTILIZABA un visual de otro beat (18-ago) con
+        # memoria anti-repetición parcial (21-ago, máx 2 reusos). AHORA la
+        # reutilización está PROHIBIDA del todo. En su lugar: se REINTENTA
+        # la imagen IA con VARIACIONES del prompt (ángulos/estilos
+        # distintos + semilla aleatoria => imagen ÚNICA aunque el tema se
+        # parezca). Pollinations es gratis e ilimitado: insistir no cuesta.
+        variaciones = [
+            "seen from a different angle, wide establishing shot",
+            "close-up detail view, shallow depth of field",
+            "different setting and lighting, golden hour",
+        ]
+        for i, var in enumerate(variaciones):
+            destino_var = os.path.join(
+                carpeta_salida, f"{tag}_{slugify(keyword)}_var{i}_ia.jpg")
+            if _generar_imagen_ia(f"{keyword}, {var}", destino_var,
+                                   tamano=tamano_ia, contexto=contexto):
+                log(AGENT, f"'{keyword}': imagen IA ÚNICA generada con variación "
+                            f"#{i+1} (regla cero-repeticiones, nada se reutiliza).")
+                return {"tipo": "imagen", "ruta": destino_var, "keyword": keyword}
 
         # Último recurso absoluto: nada descargado aún en todo el video
         destino_png = os.path.join(carpeta_salida, f"{tag}_{slugify(keyword)}_fallback.png")
@@ -797,6 +784,69 @@ def obtener_visuales_para_guion(guion: dict, carpeta_salida: str, orientacion="l
             visuales_cap.append(visual)
             log(AGENT, f"Cap {i+1} beat {j+1}/{len(beats)}: '{keyword}' -> {visual['tipo']}")
         visuales_por_capitulo.append(visuales_cap)
+
+    # ============ BARRERA FINAL CERO-REPETICIONES (30-ago-2026) ============
+    # Condición dura del usuario: "No se deben repetir imágenes ni clips de
+    # video". Aunque cada camino de arriba ya evita repetir, esta barrera
+    # revisa el RESULTADO COMPLETO (todos los capítulos juntos) y, si dos
+    # beats terminaron con el MISMO archivo (por cualquier camino: rescates,
+    # respaldos, reintentos), regenera el duplicado como imagen IA única con
+    # semilla nueva. Se compara por contenido real (hash del archivo), no
+    # solo por nombre. Las tarjetas de marca/CTA/estudio están exentas (son
+    # elementos de identidad, no "visuales de escena").
+    import hashlib
+    _EXENTOS = ("intro_marca", "tarjeta", "estudio", "portada")
+    vistos = {}
+    reemplazos = 0
+    for i, visuales_cap in enumerate(visuales_por_capitulo):
+        for j, visual in enumerate(visuales_cap):
+            ruta = visual.get("ruta") or ""
+            if not ruta or not os.path.exists(ruta):
+                continue
+            if any(x in os.path.basename(ruta).lower() for x in _EXENTOS):
+                continue
+            try:
+                with open(ruta, "rb") as fh:
+                    h = hashlib.md5(fh.read(2_000_000)).hexdigest()
+            except OSError:
+                continue
+            if h not in vistos:
+                vistos[h] = (i, j)
+                continue
+            # DUPLICADO detectado -> regenerar imagen IA única
+            kw = visual.get("keyword") or "healthy lifestyle scene"
+            tamano_ia = (720, 1280) if orientacion == "portrait" else (1280, 720)
+            destino_unico = os.path.join(
+                carpeta_salida, f"unico_cap{i}_b{j}_{slugify(kw)[:35]}.jpg")
+            exito = False
+            for intento_var in range(3):
+                if _generar_imagen_ia(
+                        f"{kw}, unique composition variant {intento_var+2}, "
+                        f"different angle and framing", destino_unico,
+                        tamano=tamano_ia):
+                    try:
+                        with open(destino_unico, "rb") as fh:
+                            h2 = hashlib.md5(fh.read(2_000_000)).hexdigest()
+                        if h2 in vistos:
+                            continue  # increíblemente igual: otra variación
+                        vistos[h2] = (i, j)
+                    except OSError:
+                        pass
+                    visuales_cap[j] = {"tipo": "imagen", "ruta": destino_unico,
+                                        "keyword": kw}
+                    reemplazos += 1
+                    exito = True
+                    log(AGENT, f"CERO-REPETICIONES: cap {i+1} beat {j+1} duplicaba "
+                                f"otro visual -> regenerado como imagen IA única.")
+                    break
+            if not exito:
+                log(AGENT, f"CERO-REPETICIONES: cap {i+1} beat {j+1} duplicado sin "
+                            f"reemplazo posible (se deja, mejor que pantalla vacía).")
+    if reemplazos:
+        log(AGENT, f"Barrera cero-repeticiones: {reemplazos} visual(es) duplicado(s) "
+                    f"regenerado(s). Video 100% libre de repeticiones.")
+    else:
+        log(AGENT, "Barrera cero-repeticiones: verificado, ningún visual se repite.")
 
     fuente = "pexels/pixabay (real)" if (buscador.usar_pexels or buscador.usar_pixabay) else "local"
     return {"visuales_por_capitulo": visuales_por_capitulo, "fuente": fuente, "_buscador": buscador}

@@ -238,17 +238,29 @@ def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_la
                         for f in os.listdir(carpeta_visuales_largo)
                         if f.lower().endswith((".jpg", ".jpeg", ".png", ".mp4"))
                         and "_fallback" not in f and "intro_marca" not in f]
+        # CERO REPETICIONES (30-ago-2026, condición del usuario): cada
+        # visual del largo se usa MÁXIMO UNA VEZ en el Short y, además, se
+        # excluyen los que el largo ya mostró de forma prominente no es
+        # posible rastrear aquí, así que la regla dura es: un rescate por
+        # visual, jamás dos beats del Short con el mismo archivo. Si el
+        # pool se agota, el beat conserva su fondo y el paso de clips IA
+        # de más abajo lo cubrirá con un clip ÚNICO generado a medida.
         _ya_usados_rescate = set()
         for visuales_cap_i in visuales_info["visuales_por_capitulo"]:
             for k, v in enumerate(visuales_cap_i):
                 ruta_v = (v.get("ruta") or "")
                 if "_fallback" in os.path.basename(ruta_v) and reales_largo:
-                    pool = [r for r in reales_largo if r not in _ya_usados_rescate] or reales_largo
+                    pool = [r for r in reales_largo if r not in _ya_usados_rescate]
+                    if not pool:
+                        log(AGENT, f"Short: beat {k} sin rescate disponible "
+                                    f"(regla cero-repeticiones); lo cubrirá el clip IA.")
+                        continue
                     elegido = _rnd.choice(pool)
                     _ya_usados_rescate.add(elegido)
                     tipo = "video" if elegido.lower().endswith(".mp4") else "imagen"
                     log(AGENT, f"Short: beat {k} tenía fondo degradado vacío; rescatado con "
-                                f"visual real del video largo ({os.path.basename(elegido)}).")
+                                f"visual real del video largo ({os.path.basename(elegido)}), "
+                                f"uso único garantizado.")
                     visuales_cap_i[k] = {"tipo": tipo, "ruta": elegido, "keyword": v.get("keyword", "")}
 
     beats = mini_guion["capitulos"][0]["beats"]
