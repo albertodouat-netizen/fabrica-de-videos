@@ -1,5 +1,40 @@
 # 🏭 Fábrica de Videos — Salud Natural Diaria
 
+## 🎬 SHORT v2 "GRAN CALIDAD" + ANTI-CONGELADO v4.1 (30-ago-2026)
+
+Reclamos reales del usuario: "volvió a congelarse", "va hacia adelante y
+luego en reversa, no se mira bien", "el short puede ser más largo, un
+verdadero abrebocas", "portada dentro del video".
+
+**1) Anti-congelado v4.1 (video_editor.py):**
+- ELIMINADO el boomerang/TimeMirror para siempre (la reversa se veía mal).
+- Solo cámara lenta natural (hasta 0.25x) y, en caso extremo, Ken Burns
+  REAL (zoom 6%/s + paneo lateral simultáneo, nunca imagen muerta).
+- v4 inicial falló la auditoría propia (Ken Burns 3%/s medía movimiento
+  0.1 = congelado al ojo) → v4.1 con zoom+paneo compuesto.
+- VERIFICADO con medición frame a frame: caso extremo clip 2s en beat 10s
+  = CERO congelados.
+
+**2) Short rediseñado (shorts_creator.py):**
+- MAX_BEATS 2→4 y duración objetivo 45s: abrebocas con más información.
+- Cierre en DOS beats: anzuelo concreto ("lo que NO te conté...") + CTA
+  directo (suscríbete + like + video completo en mi canal).
+- CLIPS IA PRECISOS por beat: el prompt usa el TEXTO NARRADO del beat
+  (no solo keyword) => coherencia exacta con lo que se dice; se
+  intercalan clips IA e imágenes verificadas (ritmo visual).
+- PORTADA ÉLITE INTEGRADA EN EL RENDER: primer clip de 0.6s con zoom
+  sutil => frame0 del video ES la portada (esquiva el impedimento de
+  YouTube de raíz). El orquestador ahora solo EXTRAE ese frame para
+  subirlo también como miniatura API (ya no re-codifica).
+
+**3) Prueba integral real:** Short completo de 56s renderizado con el
+flujo nuevo: portada como frame 0 verificada, 7 beats, clips IA a medida
+del texto + imágenes SDXL, cascada de cuota funcionando (PRO agotada por
+pruebas → anónima → ZSky → imagen). Auditoría frame a frame detectó los
+últimos 4 tramos lentos → corregidos en v4.1.
+
+---
+
 ## 🎞️ ANTI-CONGELADO v3 + RESPUESTAS STUDIO (30-ago-2026)
 
 Reclamo real del usuario sobre el Short programado: "el video tiene unas

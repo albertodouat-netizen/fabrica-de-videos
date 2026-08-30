@@ -565,23 +565,25 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
                 # feed de Shorts no se ve, pero en la pestaña del canal, la
                 # búsqueda y los sugeridos SÍ, y ahí compite igual que un
                 # largo. Antes iba None (fotograma al azar elegido por YouTube).
+                # v2 (30-ago-2026): la portada élite ahora va INTEGRADA en el
+                # render del Short (primer clip de 0.6s, ver shorts_creator).
+                # Aquí solo se EXTRAE ese primer fotograma para subirlo
+                # también como miniatura oficial vía API (búsqueda/sugeridos).
+                # Ya no se re-codifica el video (incrustar_... quedó para el
+                # flujo del Short independiente antiguo si hiciera falta).
                 miniatura_short = None
                 try:
-                    from agents.equipo_portadas import (generar_portada_elite,
-                                                        incrustar_portada_como_primer_frame)
-                    miniatura_short = generar_portada_elite(
-                        {"titulo": titulo_short,
-                         "keyword_principal": guion.get("keyword_principal", "")},
-                        ruta_short, f"output/thumbnails/{nombre_base}_short.png",
-                        vertical=True)
-                    # HALLAZGO 29-ago-2026 (verificado con el CDN): la pestaña
-                    # /shorts ignora thumbnails.set y muestra un FOTOGRAMA del
-                    # video (frame0). Incrustamos la portada en los primeros
-                    # ~0.45s para que ese fotograma SEA la portada élite.
-                    if miniatura_short:
-                        incrustar_portada_como_primer_frame(ruta_short, miniatura_short)
+                    import subprocess as _sp
+                    miniatura_short = f"output/thumbnails/{nombre_base}_short.png"
+                    os.makedirs("output/thumbnails", exist_ok=True)
+                    _sp.run(["ffmpeg", "-y", "-i", ruta_short, "-vf",
+                             "select=eq(n\\,0)", "-vframes", "1",
+                             miniatura_short], capture_output=True, timeout=120)
+                    if not (os.path.exists(miniatura_short)
+                            and os.path.getsize(miniatura_short) > 5000):
+                        miniatura_short = None
                 except Exception as e:
-                    log(AGENT, f"Portada del Short no disponible ({type(e).__name__}); "
+                    log(AGENT, f"Miniatura del Short no extraída ({type(e).__name__}); "
                                 f"YouTube usará un fotograma.")
                 log(AGENT, "Publicando el Short en YouTube...")
                 short_id = publicar_video(ruta_short, miniatura_short, guion_short, descripcion_short)

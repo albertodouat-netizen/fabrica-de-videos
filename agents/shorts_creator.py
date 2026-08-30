@@ -27,14 +27,14 @@ from agents.voice import narrar_guion
 
 AGENT = "ShortsCreator"
 RESOLUCION_SHORT = (720, 1280)   # 720p vertical: se ve nítido en móvil y usa mucha menos RAM/CPU
-MAX_BEATS_SHORT = 2          # cuántos beats del capítulo 1 se reutilizan (antes del CTA).
-                             # Bajado de 4 a 2 (14-ago-2026): la investigación real de
-                             # Shorts (métrica "swipe rate" + duración media vista cercana
-                             # al 100%) favorece Shorts de ~25-35s que se ven COMPLETOS y
-                             # se repiten, sobre Shorts de 40-50s que la gente abandona.
-                             # El Short real del 14-ago duró 38s y arrastraba una tarjeta
-                             # final estática; más corto = más % visto = más recomendación.
-DURACION_MAX_OBJETIVO = 50   # segundos, sin contar la tarjeta final de CTA
+MAX_BEATS_SHORT = 4          # HISTORIA: 4→2 el 14-ago (retención), 2→4 el
+                             # 30-ago-2026 por pedido del usuario: "el short
+                             # puede ser un poco más largo con mayor
+                             # información, que sea un verdadero abrebocas".
+                             # Con la era PRO cada beat lleva clip IA en
+                             # movimiento => un Short de 35-45s ya no aburre
+                             # como el de imágenes fijas del 14-ago.
+DURACION_MAX_OBJETIVO = 45   # segundos, sin contar la tarjeta final de CTA
 DURACION_MIN_CORTE_SHORT = 2.0   # cortes más rápidos que el video largo (ideal para Shorts)
 DURACION_MAX_CORTE_SHORT = 5.0
 
@@ -172,14 +172,29 @@ def _armar_mini_guion(guion: dict) -> dict:
     # el final conecta con el inicio y el cerebro vuelve a ver). El CTA al
     # video largo vive en el comentario fijado y la descripción (donde el
     # link es clicable y no cuesta segundos de video).
-    cierres_puente = [
-        f"Y esto es solo la primera señal de {tema_cierre}. El resto, en el video completo de mi canal.",
-        f"¿Notaste el detalle del inicio? Vuelve a verlo. Y el video completo está en mi canal.",
-        f"Ahora que lo sabes, escucha otra vez el comienzo. Lo completo está en mi canal.",
-        f"Eso era lo básico de {tema_cierre}. Lo sorprendente está en el video completo de mi canal.",
+    # ABREBOCAS SUGESTIVO v2 (30-ago-2026, pedido del usuario: "que sea un
+    # verdadero abrebocas sugestionando, incitando a que se suscriban, le
+    # den like y vayan realmente al video largo"). El cierre ahora tiene
+    # DOS beats: (1) el anzuelo — una promesa CONCRETA de lo que se pierde
+    # quien no va al largo; (2) el CTA directo — suscríbete + like + el
+    # video completo, en lenguaje hablado natural.
+    anzuelos = [
+        f"Pero espera: lo que NO te conté es el error que casi todos cometen con {tema_cierre}... y ese sí te puede costar caro.",
+        f"Y esto es apenas el comienzo. En el video completo te muestro el paso exacto, con las cantidades y los tiempos, que aquí no caben.",
+        f"Lo que sigue es lo mejor: la señal que casi nadie nota de {tema_cierre}... y que puede cambiar tu día a día.",
+        f"Te dejé lo más sorprendente para el video completo: el detalle de {tema_cierre} que hasta los médicos olvidan mencionar.",
+    ]
+    ctas_finales = [
+        "Suscríbete y dale like, que es gratis. El video completo te espera en mi canal.",
+        "Si esto te sirvió, suscríbete y deja tu like. El video completo está en mi canal.",
+        "Suscríbete para no perderte lo que viene, dale like, y mira el video completo en mi canal.",
     ]
     beats_short.append({
-        "texto": limpiar_texto_para_voz(_rnd.choice(cierres_puente)),
+        "texto": limpiar_texto_para_voz(_rnd.choice(anzuelos)),
+        "visual": "close-up of surprised curious senior person raising eyebrows warm light",
+    })
+    beats_short.append({
+        "texto": limpiar_texto_para_voz(_rnd.choice(ctas_finales)),
         # En inglés SIEMPRE (auditoría con Short real, 14-ago-2026: esta
         # keyword estaba en español, los bancos de stock no devolvían nada
         # y el Short terminaba con un fondo genérico que mostraba el texto
@@ -239,6 +254,37 @@ def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_la
     beats = mini_guion["capitulos"][0]["beats"]
     audio_cap = audio_info["capitulos"][0]
     visuales_cap = visuales_info["visuales_por_capitulo"][0]
+
+    # CLIPS IA PRECISOS POR BEAT (30-ago-2026, pedido del usuario: "que los
+    # clips sean precisos de lo que se está hablando, interactúa entre los
+    # clips y las imágenes, no importa cuánto se demore"). Con la era PRO
+    # (40 min GPU/día) el Short se merece sus propios clips generados A
+    # MEDIDA del texto de cada beat, en vez de solo stock. El prompt del
+    # clip usa el TEXTO NARRADO (no solo la keyword) => coherencia visual
+    # exacta con lo que se dice. Se intercalan: los beats pares buscan clip
+    # IA, los impares conservan el visual verificado del largo/stock (esa
+    # mezcla clip-imagen da ritmo visual y reparte la cuota).
+    try:
+        from agents.video_ia import generar_clip_ia
+        for k, (beat_k, visual_k) in enumerate(zip(beats, visuales_cap)):
+            es_video_ya = (visual_k.get("tipo") == "video")
+            if k % 2 == 1 and es_video_ya:
+                continue  # impar y ya tiene video: se queda (mezcla)
+            destino_ia = os.path.join(carpeta_salida, f"assets_{nombre_base}",
+                                       f"ia_short_beat{k}.mp4")
+            prompt_preciso = (f"{visual_k.get('keyword', '')}. "
+                              f"Scene illustrating: {beat_k.get('texto', '')[:180]}")
+            ruta_ia = generar_clip_ia(prompt_preciso, destino_ia,
+                                       contexto="vertical smartphone video",
+                                       vertical=True)
+            if ruta_ia:
+                visuales_cap[k] = {"tipo": "video", "ruta": ruta_ia,
+                                    "keyword": visual_k.get("keyword", "")}
+                log(AGENT, f"Short: beat {k} ahora lleva clip IA a medida del texto narrado.")
+    except Exception as e:
+        log(AGENT, f"Clips IA del Short no disponibles ({type(e).__name__}); "
+                   f"se usan los visuales de stock verificados.")
+
     # Ritmo más rápido que el video largo (2 a 5s por corte, como recomienda
     # la investigación de retención para formato Short/vertical).
     duraciones = _ajustar_duraciones_a_ritmo(audio_cap["duraciones_beats"], audio_cap["duracion_total"],
@@ -297,7 +343,34 @@ def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_la
     clip_cta = clip_cta.with_audio(silencio_cta)
 
 
-    video_final = concatenate_videoclips([video_narrado, clip_cta], method="chain")
+    # PORTADA COMO PRIMER FOTOGRAMA, DENTRO DEL RENDER (30-ago-2026, pedido
+    # del usuario: "procura que la primera imagen sea la portada del short
+    # ... dentro del video para que quede como portada"). La portada élite
+    # (Agentes 38-40) se genera ANTES del render y se antepone como clip de
+    # 0.6s con zoom sutil (gancho visual + frame0 del feed de Shorts = la
+    # portada). Así se esquiva de raíz el impedimento de YouTube.
+    clips_secuencia = []
+    try:
+        from agents.equipo_portadas import generar_portada_elite
+        ruta_portada_short = generar_portada_elite(
+            {"titulo": guion.get("titulo", ""),
+             "keyword_principal": guion.get("keyword_principal", "")},
+            "", os.path.join(carpeta_tmp, "portada_short.png"), vertical=True)
+        import moviepy.video.fx as _vfx
+        clip_portada = (ImageClip(ruta_portada_short)
+                        .with_duration(0.6)
+                        .with_effects([_vfx.Resize(lambda t: 1.0 + 0.06 * t)]))
+        clip_portada = clip_portada.resized(RESOLUCION_SHORT)  # asegurar tamaño
+        silencio_p = _AudioClip(lambda t: 0, duration=0.6, fps=44100)
+        clip_portada = clip_portada.with_audio(silencio_p)
+        clips_secuencia.append(clip_portada)
+        log(AGENT, "Portada élite integrada como primer fotograma del Short (0.6s).")
+    except Exception as e:
+        log(AGENT, f"Aviso: portada inicial no disponible ({type(e).__name__}); "
+                   f"el Short arranca directo con el gancho.")
+
+    clips_secuencia += [video_narrado, clip_cta]
+    video_final = concatenate_videoclips(clips_secuencia, method="chain")
 
     salida = os.path.join(carpeta_salida, f"{nombre_base}_short.mp4")
     log(AGENT, f"Renderizando Short -> {salida} ...")
