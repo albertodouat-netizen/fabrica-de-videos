@@ -47,6 +47,14 @@ _SPACES_LTX = [
 _contador_clips = {"usados": 0}
 _cliente_cache = {}
 
+# CORTACIRCUITOS (30-ago-2026, corrida real de 2h44m diagnosticada): con la
+# cuota agotada, CADA beat esperaba rechazos de LTX + hasta 300s de cola
+# ZSky => ~2h de esperas inútiles acumuladas. Ahora, al primer síntoma
+# claro de "no hay más clips hoy", el proveedor se apaga para el RESTO de
+# la corrida y los beats caen a imagen al instante.
+_apagados = {"ltx": False, "zsky_fallos": 0}
+_MAX_FALLOS_ZSKY = 2
+
 
 def _clientes_para(space: str, token: str):
     """Doble cuota v2 (era PRO, 29-ago-2026): con HF PRO el token da
@@ -69,6 +77,8 @@ def _clientes_para(space: str, token: str):
 def _intentar_ltx25(prompt: str, destino_mp4: str, vertical: bool,
                     token: str):
     """LTX-2.5 oficial: mejor calidad open source de agosto 2026."""
+    if _apagados["ltx"]:
+        return None
     w, h = (768, 1152) if vertical else (1152, 768)
     for cliente, modo in _clientes_para(_SPACE_LTX25, token):
         try:
@@ -89,6 +99,11 @@ def _intentar_ltx25(prompt: str, destino_mp4: str, vertical: bool,
         except Exception as e:
             msg = str(e)[:90]
             log(AGENT, f"LTX-2.5 ({modo}) no disponible ({msg}).")
+            if modo == "token" and ("quota" in msg.lower() or "exceeded" in msg.lower()):
+                # cuota del token agotada; si el anónimo tampoco puede
+                # (lo dirá su propio error), el bucle terminará y el
+                # cortacircuitos de abajo hará el resto.
+                pass
             continue
     return None
 
@@ -102,6 +117,8 @@ def _hf_token(cfg) -> str:
 
 def reiniciar_presupuesto():
     _contador_clips["usados"] = 0
+    _apagados["ltx"] = False
+    _apagados["zsky_fallos"] = 0
 
 
 def generar_clip_ia(prompt_visual: str, destino_mp4: str,
@@ -140,6 +157,8 @@ def generar_clip_ia(prompt_visual: str, destino_mp4: str,
         return ruta25
 
     for space in _SPACES_LTX:
+        if _apagados["ltx"]:
+            break  # cortacircuitos: no insistir con cuota agotada
         try:
             if space not in _cliente_cache:
                 _cliente_cache[space] = Client(space, token=token, verbose=False)
@@ -168,9 +187,14 @@ def generar_clip_ia(prompt_visual: str, destino_mp4: str,
             msg = str(e)[:100]
             log(AGENT, f"Aviso: Space {space} no disponible ({msg}); "
                        f"se usa imagen estática para este beat.")
-            # cuota agotada => apagar el resto de la corrida
+            # cuota agotada => CORTACIRCUITOS: apagar TODO LTX (2.5 y
+            # distilled) para el resto de la corrida. OJO: ya NO se pone
+            # usados=MAX (eso también bloqueaba a ZSky, que tiene SU propia
+            # capacidad ilimitada independiente de ZeroGPU).
             if "quota" in msg.lower() or "exceeded" in msg.lower():
-                _contador_clips["usados"] = MAX_CLIPS_IA_POR_VIDEO
+                _apagados["ltx"] = True
+                log(AGENT, "Cuota ZeroGPU agotada: LTX apagado por el resto "
+                           "de la corrida (los beats caen a ZSky/imagen al instante).")
             continue
 
     # RESPALDO ZSKY (Agente 42, 29-ago-2026): fuente gratis ilimitada
@@ -178,18 +202,26 @@ def generar_clip_ia(prompt_visual: str, destino_mp4: str,
     # LTX/ZeroGPU no pudo (cuota agotada o Spaces caídos). El clip trae la
     # placa "MADE WITH zsky.ai" (free tier) y el QA visual decide si pasa.
     # Timeout de cola corto para nunca eternizar la corrida.
+    if _apagados["zsky_fallos"] >= _MAX_FALLOS_ZSKY:
+        return None
     try:
         from agents.proveedor_zsky import generar_clip
+        # timeout corto (120s): si la cola gratuita de ZSky está lenta hoy,
+        # mejor perder el clip que arrastrar la corrida (lección de la
+        # corrida de 2h44m). 2 timeouts seguidos => ZSky apagado por hoy.
         ruta = generar_clip(prompt, destino_mp4, vertical=vertical,
-                            timeout_cola=300)
+                            timeout_cola=120)
         if ruta:
             _contador_clips["usados"] += 1
+            _apagados["zsky_fallos"] = 0
             log(AGENT, f"Clip de respaldo ZSky usado "
                        f"({_contador_clips['usados']}/{MAX_CLIPS_IA_POR_VIDEO}).")
             return ruta
     except Exception as e:
-        log(AGENT, f"Respaldo ZSky tampoco disponible ({str(e)[:80]}); "
-                   f"imagen estática para este beat.")
+        _apagados["zsky_fallos"] += 1
+        log(AGENT, f"Respaldo ZSky no disponible ({str(e)[:80]}); "
+                   f"fallo {_apagados['zsky_fallos']}/{_MAX_FALLOS_ZSKY} "
+                   f"(al llegar al máximo se apaga por hoy).")
     return None
 
 

@@ -1,5 +1,30 @@
 # 🏭 Fábrica de Videos — Salud Natural Diaria
 
+## ⚡ CORTACIRCUITOS ANTI-CORRIDA-ETERNA (30-ago-2026, tarde)
+
+Reporte del usuario: generación manual llevaba 2h44m.
+
+**Diagnóstico con matemática exacta:** la cuota ZeroGPU del día ya estaba
+agotada (se verificó en vivo: "-78s left"). Cada uno de los 22 beats
+esperaba: rechazos LTX (~15s) + cola ZSky hasta el timeout de 300s
+= ~116 MINUTOS de esperas inútiles acumuladas. Coincide con lo reportado.
+
+**Arreglo (video_ia.py):**
+- Cortacircuitos LTX: al primer error de cuota, LTX (2.5 y distilled) se
+  apaga por el RESTO de la corrida. Ya no marca usados=MAX (eso además
+  bloqueaba injustamente a ZSky, que tiene capacidad propia).
+- Cortacircuitos ZSky: timeout de cola 300→120s y a los 2 fallos seguidos
+  se apaga por hoy.
+- reiniciar_presupuesto() resetea ambos al inicio de cada corrida.
+- SIMULADO: 22 beats sin cuota pasan de ~116 min de overhead a <5 min
+  (peor caso real) y 0.5s si todo está apagado.
+
+NOTA: la corrida de 2h44m del usuario terminará sola (no está colgada,
+está esperando colas); el video saldrá bien pero con pocos clips IA.
+Las corridas siguientes ya no sufrirán esto.
+
+---
+
 ## 🚫 REGLA CERO-REPETICIONES (30-ago-2026)
 
 Condición nueva del usuario (antes de cargar el paquete): "No se deben
