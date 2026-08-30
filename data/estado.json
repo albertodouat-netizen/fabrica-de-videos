@@ -17,13 +17,13 @@
   ],
   "ultima_ejecucion": "2026-08-09T19:11:04.550686",
   "uso_gemini": {
-    "fecha": "2026-08-29",
-    "usados": 5
+    "fecha": "2026-08-30",
+    "usados": 1
   },
   "comentarios_respondidos": [],
   "playlist_canal_id": "PLOm1dX9uH38g",
   "zsky_sesion": {
-    "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6IjVick9YeVhUK0pPZUlWSDciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3lya2ZwdXRrdmlvanNodG5ndXd0LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI0NzcyMjNiMy1kYWM0LTRiOGUtOTJlOC1kNDRmNWQwZjg0N2UiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg4MDUwMzE2LCJpYXQiOjE3ODgwNDY3MTYsImVtYWlsIjoiIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnt9LCJ1c2VyX21ldGFkYXRhIjp7fSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJhbm9ueW1vdXMiLCJ0aW1lc3RhbXAiOjE3ODgwNDY3MTZ9XSwic2Vzc2lvbl9pZCI6ImY5ODVhZTU2LTM5Y2YtNGMwOC1iYWNlLTNkOTUwY2I3MjAxOSIsImlzX2Fub255bW91cyI6dHJ1ZX0.6ylfgJWJGQnUIUUYJQrTSVeQ9kiNpst5uMPFZHbYyFw",
-    "refresh_token": "rfjxzzcmpoig"
+    "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6IjVick9YeVhUK0pPZUlWSDciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3lya2ZwdXRrdmlvanNodG5ndXd0LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI0NzcyMjNiMy1kYWM0LTRiOGUtOTJlOC1kNDRmNWQwZjg0N2UiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg4MDUzNzM1LCJpYXQiOjE3ODgwNTAxMzUsImVtYWlsIjoiIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnt9LCJ1c2VyX21ldGFkYXRhIjp7fSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJhbm9ueW1vdXMiLCJ0aW1lc3RhbXAiOjE3ODgwNDY3MTZ9XSwic2Vzc2lvbl9pZCI6ImY5ODVhZTU2LTM5Y2YtNGMwOC1iYWNlLTNkOTUwY2I3MjAxOSIsImlzX2Fub255bW91cyI6dHJ1ZX0.xTdgVCMJiTXdbqypVhYYhilYwouO1w2uNsta4HYQUVA",
+    "refresh_token": "5s5k4im7c3xr"
   }
 }
