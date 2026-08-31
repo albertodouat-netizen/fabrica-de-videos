@@ -1,5 +1,34 @@
 # 🏭 Fábrica de Videos — Salud Natural Diaria
 
+## 🕚 MODO EFICIENCIA MULTICANAL + HORARIO 11 AM (31-ago-2026, noche)
+
+Pedido del usuario: empezar a las 11:00 am, videos >15-20 min, mínimo
+tiempo y mínimo consumo de recursos (preparación para el canal #2).
+
+**Inspección minuciosa realizada:**
+- Compilación de TODOS los .py: OK. Imports críticos del pipeline
+  completo verificados en proceso limpio: cero NameErrors ocultos
+  (lección del bug BuscadorVisualesUnicos).
+- Sumideros de tiempo auditados: render (fps24/superfast/720p OK, unión
+  -c copy OK), cascada LLM (sleep20 solo 1 reintento Mistral, razonable),
+  QA (cupo administrado), clips IA (ver abajo).
+
+**Cambios:**
+1. Cron 15:00→16:00 UTC (11:00 am Colombia) + respaldo 17:15→18:15.
+   BONUS: a las 11 la cuota GPU diaria ya se renovó (~10:30), a las 10
+   arrancaba con cuota residual del día anterior.
+2. PRESUPUESTO_MINUTOS 120→90: generación más ágil, publicación igual
+   de garantizada (render siempre cabe).
+3. MAX_CLIPS_IA_POR_VIDEO 22→12 (modo eficiencia multicanal): ~12 min
+   GPU/video en beats CLAVE (gancho + aperturas), dejando ~28 min diarios
+   de cuota PRO LIBRES para el canal #2 "Reconecta Tu Amor".
+4. duracion_minima_min 15→16 (margen para nunca bajar de 15 real;
+   objetivo sigue 20; el guionista calcula ~185 palabras/min reales).
+
+**Tiempo estimado de corrida con este perfil: ~1h15m-1h45m.**
+
+---
+
 ## ⏰ RELOJ GLOBAL ANTI-CORRIDA-ETERNA (31-ago-2026) — LA CORRECCIÓN DEFINITIVA
 
 3 corridas seguidas murieron en el tope de 5h SIN publicar. Auditoría del

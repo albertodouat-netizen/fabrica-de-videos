@@ -85,7 +85,7 @@ canal:
     - seasonal allergy natural relief
 estrategia:
   videos_por_semana: 4
-  duracion_minima_min: 15
+  duracion_minima_min: 16
   duracion_objetivo_min: 20
   max_suscriptores_referencia: 250000
   dias_publicado_max: 365

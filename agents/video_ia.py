@@ -32,7 +32,9 @@ AGENT = "VideoClipIA"
 # por API isPro=True): 40 MINUTOS de GPU al día + prioridad máxima de cola
 # + extensible con créditos. 22 clips ~= 8-11 min de GPU, deja de sobra
 # para el Short y reintentos, y la vía anónima suma aparte.
-MAX_CLIPS_IA_POR_VIDEO = 22
+MAX_CLIPS_IA_POR_VIDEO = 12  # 31-ago-2026: 22→12 (modo eficiencia
+# multicanal pedido por el usuario: ~12 min GPU/video deja cuota libre
+# para el canal #2. Los 12 van a los beats CLAVE: gancho + aperturas).
 
 # Spaces con LTX (verificados vivos 29-ago-2026). Orden = calidad:
 #   1) Lightricks/LTX-2.5 (OFICIAL, ago-2026): decoder de difusión nuevo
