@@ -569,6 +569,12 @@ def generar_portada_elite(guion, imagen_base: str, salida_png: str,
         titulo, keyword = (guion or ""), ""
 
     conceptos = disenar_conceptos(titulo, keyword)["variantes"]
+    try:
+        from agents.reloj import apurado
+        if apurado():
+            conceptos = conceptos[:1]  # modo apurado: 1 sola variante
+    except Exception:
+        pass
     rutas = []
     for i, concepto in enumerate(conceptos[:2]):
         destino = salida_png + f"_v{'AB'[i]}.png"

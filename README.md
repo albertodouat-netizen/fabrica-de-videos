@@ -1,5 +1,31 @@
 # 🏭 Fábrica de Videos — Salud Natural Diaria
 
+## ⏰ RELOJ GLOBAL ANTI-CORRIDA-ETERNA (31-ago-2026) — LA CORRECCIÓN DEFINITIVA
+
+3 corridas seguidas murieron en el tope de 5h SIN publicar. Auditoría del
+log real (captura del usuario): cadenas de 429 de Gemini Vision en la
+verificación de imágenes con personas, más reintentos Pollinations, más
+regeneraciones de la barrera cero-repeticiones = reintentos POR BEAT sin
+techo GLOBAL de tiempo.
+
+**Correcciones (probadas con 6 simulaciones):**
+1. `agents/reloj.py` (NUEVO): presupuesto global de generación
+   (PRESUPUESTO_MINUTOS=120, configurable en el workflow). Al agotarse,
+   TODOS los agentes entran en "modo apurado": cero reintentos, cero
+   esperas, cero clips IA nuevos, 1 variante de portada, duplicados
+   tolerados => el pipeline corre DIRECTO a render y publicación.
+   Un video imperfecto PUBLICADO > un video perfecto CANCELADO.
+2. Cortacircuitos Gemini Vision: tras un 429, la verificación pasa a
+   gemini-flash-lite (CUOTA SEPARADA verificada) y el flash principal
+   queda en pausa 10 min. Ya no hay cadenas de 429.
+3. Pollinations: en modo apurado 1 solo intento sin sleeps.
+4. qa_coherencia: reintentos con espera solo si hay tiempo.
+5. Barrera cero-repeticiones: en modo apurado detecta pero no regenera.
+6. Simulado el peor caso absoluto (TODO en 429): 50 beats en ~2-4 min
+   (antes: horas) y todos caen al fondo de marca.
+
+---
+
 ## ⚡ CORTACIRCUITOS ANTI-CORRIDA-ETERNA (30-ago-2026, tarde)
 
 Reporte del usuario: generación manual llevaba 2h44m.

@@ -132,6 +132,14 @@ def generar_clip_ia(prompt_visual: str, destino_mp4: str,
         return None
     if _contador_clips["usados"] >= MAX_CLIPS_IA_POR_VIDEO:
         return None
+    # RELOJ GLOBAL (31-ago-2026): pasado el presupuesto de generación,
+    # cero clips IA nuevos — el video termina con lo que ya tiene.
+    try:
+        from agents.reloj import apurado
+        if apurado():
+            return None
+    except Exception:
+        pass
 
     prompt = (
         f"{prompt_visual}. {contexto}".strip(". ").strip()

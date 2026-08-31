@@ -131,6 +131,9 @@ def _preguntar_a_flash_lite_vision(ruta_jpg: str, keyword: str, texto_beat: str,
     for intento in range(4):
         r = requests.post(url, json=body, timeout=45)
         if r.status_code in (429, 500, 503) and intento < 3:
+            from agents.reloj import apurado
+            if apurado():
+                r.raise_for_status()
             time.sleep(12 * (intento + 1))
             continue
         r.raise_for_status()

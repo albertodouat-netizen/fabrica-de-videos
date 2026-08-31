@@ -383,8 +383,11 @@ def _generar_imagen_ia(descripcion: str, destino_jpg: str, tamano=(1280, 720),
     #   2) Si un intento devuelve 429, espera creciente (5s, 10s) y reintenta.
     #   3) Doble modelo: si "flux" falla los 3 intentos, se prueba "turbo"
     #      (mismo servicio, cola distinta y más rápida; verificado en vivo).
-    time.sleep(2)
-    for intento in range(4):
+    from agents.reloj import apurado, muy_apurado
+    if not apurado():
+        time.sleep(2)
+    max_intentos = 1 if apurado() else 4
+    for intento in range(max_intentos):
         semilla = random.randint(1, 999999)
         modelo = "flux" if intento < 3 else "turbo"
         url = (f"https://image.pollinations.ai/prompt/{prompt_codificado}"
@@ -393,6 +396,8 @@ def _generar_imagen_ia(descripcion: str, destino_jpg: str, tamano=(1280, 720),
         try:
             r = requests.get(url, timeout=60)
             if r.status_code == 429:
+                if apurado():
+                    return False  # modo apurado: sin esperas por 429
                 espera = 5 * (intento + 1)
                 log(AGENT, f"Pollinations saturado (429); esperando {espera}s antes de reintentar...")
                 time.sleep(espera)
@@ -439,6 +444,9 @@ def _generar_imagen_ia(descripcion: str, destino_jpg: str, tamano=(1280, 720),
     return False
 
 
+_GEMINI_VISION_CAIDO = {"desde": 0.0}
+
+
 def _imagen_es_segura_gemini(ruta_jpg: str) -> bool:
     """Verificación REAL (no un heurístico de color) de que una imagen no
     contiene desnudos ni contenido inapropiado, usando Gemini Vision -- el
@@ -472,9 +480,24 @@ def _imagen_es_segura_gemini(ruta_jpg: str) -> bool:
         "(3) texto ilegible o palabras inventadas/mal escritas en etiquetas "
         "o carteles. Sé estricto: cualquier duda razonable cuenta como SI."
     )
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={gemini_key}"
+    # CORTACIRCUITOS GEMINI VISION (31-ago-2026, auditoría de las corridas
+    # de 5h): cuando Gemini devuelve 429, TODAS las llamadas siguientes
+    # también darán 429 durante minutos -- pero el código seguía intentando
+    # una por una (3 intentos x N imágenes x N beats = horas). Ahora, tras
+    # un 429, la verificación se declara caída por 10 minutos y las
+    # imágenes de ese lapso se resuelven con el heurístico local.
+    modelo_vision = "gemini-flash-latest"
+    if time.time() - _GEMINI_VISION_CAIDO["desde"] < 600:
+        # flash principal en pausa por 429: usar flash-lite (CUOTA SEPARADA,
+        # verificado en vivo 28-ago-2026) en vez de rendirse.
+        modelo_vision = "gemini-flash-lite-latest"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{modelo_vision}:generateContent?key={gemini_key}"
     body = {"contents": [{"parts": [{"text": prompt}, {"inline_data": {"mime_type": "image/jpeg", "data": img_b64}}]}]}
     r = requests.post(url, json=body, timeout=30)
+    if r.status_code == 429:
+        _GEMINI_VISION_CAIDO["desde"] = time.time()
+        log(AGENT, "Gemini Vision saturado (429): verificación en pausa 10 min "
+                   "(cortacircuitos anti-corrida-eterna).")
     r.raise_for_status()
     registrar_uso_gemini(1)
     texto = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip().upper()
@@ -814,6 +837,11 @@ def obtener_visuales_para_guion(guion: dict, carpeta_salida: str, orientacion="l
                 vistos[h] = (i, j)
                 continue
             # DUPLICADO detectado -> regenerar imagen IA única
+            from agents.reloj import apurado as _apurado_rep
+            if _apurado_rep():
+                log(AGENT, "CERO-REPETICIONES: duplicado detectado pero modo "
+                           "apurado activo; se tolera para no arriesgar la publicación.")
+                continue
             kw = visual.get("keyword") or "healthy lifestyle scene"
             tamano_ia = (720, 1280) if orientacion == "portrait" else (1280, 720)
             destino_unico = os.path.join(
