@@ -35,14 +35,14 @@ on:
     # los días, pero el candado (scripts/verificar_si_ya_publico_hoy.py)
     # solo deja publicar si han pasado al menos 2 días desde el último
     # video. Así el día exacto no depende de si GitHub saltó un cron.
-    - cron: "0 15 * * *"
+    - cron: "0 16 * * *"
     # Horario de RESPALDO (añadido 15-ago-2026): los cron de GitHub Actions
     # NO están garantizados -- en horas de alta carga se retrasan o se
     # SALTAN por completo (limitación documentada de GitHub; pasó de verdad
     # el 15-ago-2026: no hubo ninguna corrida a las 19:30). Si el primer
     # horario corrió bien, este segundo se da cuenta (candado de abajo,
     # paso "Evitar doble publicación") y termina sin publicar nada.
-    - cron: "15 17 * * *"
+    - cron: "15 18 * * *"
   workflow_dispatch: {}   # también puedes lanzarlo manualmente desde la pestaña "Actions"
 
 permissions:
@@ -75,7 +75,7 @@ jobs:
           # Reloj global (31-ago-2026): presupuesto de GENERACIÓN en minutos.
           # Al agotarse, los agentes entran en modo apurado (sin reintentos
           # ni extras) y el pipeline corre directo a render + publicación.
-          PRESUPUESTO_MINUTOS: "120"
+          PRESUPUESTO_MINUTOS: "90"
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
