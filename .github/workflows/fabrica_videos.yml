@@ -72,6 +72,10 @@ jobs:
 
       - name: Restaurar credenciales secretas (nunca se suben al repo)
         env:
+          # Reloj global (31-ago-2026): presupuesto de GENERACIÓN en minutos.
+          # Al agotarse, los agentes entran en modo apurado (sin reintentos
+          # ni extras) y el pipeline corre directo a render + publicación.
+          PRESUPUESTO_MINUTOS: "120"
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
