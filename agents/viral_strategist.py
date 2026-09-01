@@ -34,6 +34,40 @@ PALABRAS_MAX_POR_FRASE = 20        # frases cortas = mejor ritmo y subtítulos m
 MINUTOS_ENTRE_MINI_GANCHOS = 3     # cada cuánto insertar un "reset" de atención
 
 
+def _resumen_humano_desde_guion(guion: dict) -> str:
+    """Construye un resumen limpio y natural para la descripción.
+
+    31-ago-2026: dejamos de confiar ciegamente en el resumen SEO del LLM,
+    porque un video real publicó un primer párrafo con keyword stuffing y
+    frases raras en inglés. Este resumen usa solo datos del propio guion y
+    mantiene tono humano, útil y creíble."""
+    keyword = (guion.get("keyword_principal") or guion.get("titulo") or "este tema").strip(" .")
+    caps = []
+    for cap in guion.get("capitulos", []):
+        nombre = (cap.get("nombre") or "").strip()
+        if not nombre:
+            continue
+        nombre_l = nombre.lower()
+        if any(x in nombre_l for x in ["suscr", "coment", "interacción", "interaccion"]):
+            continue
+        caps.append(nombre)
+        if len(caps) >= 4:
+            break
+
+    base = (f"En este video te explico de forma clara qué dice la evidencia sobre {keyword} "
+            f"y cómo aplicarlo con seguridad en la vida real.")
+    if caps:
+        if len(caps) == 1:
+            detalle = caps[0].lower()
+        elif len(caps) == 2:
+            detalle = f"{caps[0].lower()} y {caps[1].lower()}"
+        else:
+            detalle = ", ".join(c.lower() for c in caps[:-1]) + f" y {caps[-1].lower()}"
+        base += f" Verás {detalle}."
+    base += " Al final tendrás pasos concretos para empezar hoy mismo sin complicarte de más."
+    return re.sub(r"\s+", " ", base).strip()
+
+
 REGLAS_PARA_GUIONISTA = f"""
 REGLAS DE RETENCIÓN DE AUDIENCIA (basadas en investigación real de edición
 y guionismo de YouTube; síguelas de forma estricta):
@@ -324,7 +358,7 @@ def construir_descripcion_publicacion(guion: dict, timestamps_capitulos: list, n
       - 3-5 hashtags al final (los primeros 3 se muestran arriba del título).
     timestamps_capitulos: lista de tuplas (nombre_capitulo, segundos_inicio).
     """
-    resumen = guion.get("descripcion", "").strip()
+    resumen = _resumen_humano_desde_guion(guion)
     gancho = guion.get("gancho", "").strip()
     keyword_principal = guion.get("keyword_principal", "").strip()
 

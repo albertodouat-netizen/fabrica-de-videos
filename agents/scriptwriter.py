@@ -217,19 +217,33 @@ def _llamar_ollama(prompt, modelo):
 # --- Extensión automática cuando el guion sale corto (bug real encontrado en
 # la auditoría de agosto 2026): el LLM a veces no respeta "8 a 14 beats por
 # capítulo" y entrega guiones de apenas ~2 minutos, muy por debajo del
-# objetivo de 8-15 minutos (el mínimo real para que YouTube habilite
-# anuncios intermedios, que suben el RPM 40-100%). En vez de solo pedirlo
-# más fuerte en el prompt (no garantiza nada), se MIDE la duración real del
-# guion ya escrito y, si falta, se le pide al LLM contenido NUEVO adicional
-# (nunca relleno/repetición) hasta acercarse al objetivo. ---
-# CALIBRADO CON DATOS REALES (auditoría 18-ago-2026): el valor anterior
-# (140) era una estimación de manual; midiendo videos REALES publicados,
-# la voz de edge-tts con rate -8% narra ~180 palabras/minuto en español.
-# Con 140, un guion "de 15 minutos" (2100 palabras) duraba solo ~11m40s
-# (defecto real reportado por el usuario). Con 185 (los 180 medidos + un
-# pequeño margen), el objetivo de 15 minutos exige ~2775 palabras y el
-# video real SÍ llega al mínimo.
-PALABRAS_POR_MINUTO_HABLADO = 185
+# Objetivo actualizado (31-ago-2026, pedido explícito del usuario):
+# el video largo NUNCA debe quedar por debajo de 16 minutos reales y,
+# cuando el material lo permita, debe aspirar a la franja "élite" de
+# 29-31 minutos para monetización futura y más tiempo de sesión.
+#
+# CALIBRADO MÁS CONSERVADOR: el valor de 185 palabras/minuto resultó
+# demasiado optimista en producción: permitió que un guion aparentemente
+# "suficiente" terminara publicado en solo 8m24s reales. Para no volver a
+# quedarnos cortos, usamos una estimación más lenta y cautelosa.
+PALABRAS_POR_MINUTO_HABLADO = 145
+DURACION_MINIMA_DURA_MIN = 16
+DURACION_OBJETIVO_ELITE_MIN = 29
+
+
+def _objetivos_duracion(cfg: dict) -> tuple[int, int]:
+    """Devuelve (mínimo_duro, objetivo_elite) en minutos.
+
+    La configuración puede pedir más, pero nunca menos de lo acordado por el
+    usuario: 16 min mínimos y 29 min objetivo cuando sí hay material."""
+    estrategia = cfg.get("estrategia", {}) or {}
+    dur_min = max(int(estrategia.get("duracion_minima_min", DURACION_MINIMA_DURA_MIN)),
+                  DURACION_MINIMA_DURA_MIN)
+    dur_obj = max(int(estrategia.get("duracion_objetivo_min", DURACION_OBJETIVO_ELITE_MIN)),
+                  DURACION_OBJETIVO_ELITE_MIN)
+    if dur_obj < dur_min:
+        dur_obj = dur_min
+    return dur_min, dur_obj
 
 # Versión CONDENSADA de las reglas, solo para las rondas de extensión.
 # Por qué existe (hallazgo real de la auditoría): la versión completa
@@ -360,14 +374,14 @@ def _intentar_llamar_llm_LEGACY(prompt: str, cfg: dict, provider_preferido: str)
 
 
 def _asegurar_duracion_minima(guion: dict, cfg: dict, idea: dict, fuentes_texto: str,
-                               max_intentos: int = 12) -> dict:
-    dur_min = cfg["estrategia"]["duracion_minima_min"]
-    dur_max = cfg["estrategia"]["duracion_objetivo_min"]
-    # +8% de margen sobre el mínimo (auditoría 18-ago-2026): apuntar JUSTO al
-    # mínimo dejaba el video por debajo cuando la voz real iba algo más
-    # rápida que la estimación. Mejor quedar en 16 min que en 14.
-    palabras_min = int(dur_min * PALABRAS_POR_MINUTO_HABLADO * 1.08)
-    palabras_max = int(dur_max * PALABRAS_POR_MINUTO_HABLADO)
+                               max_intentos: int = 16) -> dict:
+    dur_min, dur_max = _objetivos_duracion(cfg)
+    # Doble umbral:
+    #   - palabras_min_duras: por debajo de esto NO se permite publicar.
+    #   - palabras_min_seguras: colchón para no quedarnos cortos en la voz real.
+    palabras_min_duras = int(dur_min * PALABRAS_POR_MINUTO_HABLADO)
+    palabras_min = int(dur_min * PALABRAS_POR_MINUTO_HABLADO * 1.12)
+    palabras_max = int(dur_max * PALABRAS_POR_MINUTO_HABLADO * 1.02)
     provider_preferido = cfg["apis"].get("llm_provider", "gemini")
     rondas_pobres_consecutivas = 0
 
@@ -443,6 +457,15 @@ def _asegurar_duracion_minima(guion: dict, cfg: dict, idea: dict, fuentes_texto:
     palabras_finales = _contar_palabras_guion(guion)
     log(AGENT, f"Duración final estimada del guion: ~{palabras_finales / PALABRAS_POR_MINUTO_HABLADO:.1f} min "
                 f"({palabras_finales} palabras habladas), objetivo {dur_min}-{dur_max} min.")
+    if palabras_finales < palabras_min_duras:
+        raise RuntimeError(
+            f"Guion insuficiente para publicar: quedó en ~{palabras_finales / PALABRAS_POR_MINUTO_HABLADO:.1f} min "
+            f"estimados, por debajo del mínimo duro de {dur_min} min. Se aborta para no volver a subir "
+            f"videos demasiado cortos."
+        )
+    if palabras_finales < palabras_min:
+        log(AGENT, f"Aviso: el guion superó el mínimo duro pero quedó por debajo del colchón de seguridad "
+                    f"({dur_min} min + margen). Revísalo si vuelve a salir justo.")
     return guion
 
 
@@ -634,8 +657,7 @@ def generar_guion(idea: dict) -> dict:
     cfg = load_config()
     provider_preferido = cfg["apis"].get("llm_provider", "none")
     nicho = cfg["canal"]["nicho"]
-    dur_min = cfg["estrategia"]["duracion_minima_min"]
-    dur_max = cfg["estrategia"]["duracion_objetivo_min"]
+    dur_min, dur_max = _objetivos_duracion(cfg)
 
     # Investigación científica ANTES de escribir (nunca al revés): se buscan
     # estudios reales sobre el tema exacto para que el guionista solo pueda

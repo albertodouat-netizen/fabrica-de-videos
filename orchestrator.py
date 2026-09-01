@@ -48,6 +48,8 @@ AGENT = "Orquestador"
 
 
 CATEGORIAS_RECIENTES_A_EVITAR = 4  # cuántos videos anteriores se toman en cuenta para variar el tema
+DURACION_LARGO_MINIMA_DURA_MIN = 16
+DURACION_LARGO_OBJETIVO_ELITE_MIN = 29
 
 
 def _titulos_ya_publicados_en_canal(cfg) -> set:
@@ -133,13 +135,15 @@ _CONCEPTOS_BILINGUES = [
 
 def _conceptos_de(texto: str) -> set:
     """Conjunto de índices de conceptos bilingües presentes en un texto.
-    CORRECCIÓN 28-ago-2026: los términos de VARIAS palabras ("white noise",
-    "ruido blanco") no se detectaban comparando palabra por palabra; ahora
-    también se buscan como frase dentro del texto completo."""
+    CORRECCIÓN 31-ago-2026: además de frases como "white noise", detecta
+    frecuencias escritas pegadas al número ("432Hz", "528 hz"), que se
+    estaban escapando y dejaron pasar ideas vetadas de sonido/frecuencias."""
     texto_bajo = " " + texto.lower() + " "
     palabras = set(texto.lower().split())
-    palabras |= {p.strip("¿?¡!.,:;()") for p in palabras}
+    palabras |= {p.strip("¿?¡!.,:;()[]{}|/\\") for p in palabras}
     encontrados = set()
+    if re.search(r"\b\d{2,4}\s*hz\b", texto_bajo, re.IGNORECASE):
+        encontrados.add(_CONCEPTO_MUSICA)
     for i, grupo in enumerate(_CONCEPTOS_BILINGUES):
         for termino in grupo:
             if " " in termino:
@@ -269,9 +273,20 @@ _INICIO_CUARENTENA_MUSICA = "2026-08-18"
 
 
 def _tema_esta_vetado(titulo_idea: str) -> bool:
-    """Cuarentena de música: activa solo mientras no hayan pasado
-    VENTANA_TEMA_MUSICA_DIAS desde el último incidente. No es eterna."""
-    if _CONCEPTO_MUSICA not in _conceptos_de(titulo_idea):
+    """Cuarentena de música/sonidos/frecuencias.
+
+    Además del mapa conceptual, aplica un detector explícito para patrones
+    típicos de este clúster (432Hz, binaural, ruido blanco, ASMR, lluvia,
+    etc.). Así no vuelve a colarse un tema disfrazado de "sueño profundo"
+    que en realidad es otro video de audio/frecuencias."""
+    texto = (titulo_idea or "").lower()
+    patron_audio = re.compile(
+        r"\b(?:\d{2,4}\s*hz|asmr|binaural(?:es)?|white noise|ruido blanco|"
+        r"ambient sounds?|nature sounds?|lluvia|rain|mantra(?:s)?|sound(?:s)?|"
+        r"music|m[úu]sica|frequency|frequencies|frecuencia(?:s)?)\b",
+        re.IGNORECASE,
+    )
+    if _CONCEPTO_MUSICA not in _conceptos_de(texto) and not patron_audio.search(texto):
         return False
     import datetime as _dt
     inicio = _dt.date.fromisoformat(_INICIO_CUARENTENA_MUSICA)
@@ -419,6 +434,19 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
 
     log(AGENT, "3/9 Narrando el guion (Narrador, voz gratuita)...")
     audio_info = narrar_guion(guion, "output/audio", nombre_base)
+    duracion_audio_total = sum(cap.get("duracion_total", 0.0) for cap in audio_info.get("capitulos", []))
+    duracion_audio_min = duracion_audio_total / 60.0
+    if duracion_audio_total < DURACION_LARGO_MINIMA_DURA_MIN * 60:
+        raise RuntimeError(
+            f"La narración real quedó en {duracion_audio_min:.1f} min, por debajo del mínimo duro de "
+            f"{DURACION_LARGO_MINIMA_DURA_MIN} min. Se aborta para no subir otro largo demasiado corto."
+        )
+    if duracion_audio_total < DURACION_LARGO_OBJETIVO_ELITE_MIN * 60:
+        log(AGENT, f"Aviso: la narración real llegó a {duracion_audio_min:.1f} min. Supera el mínimo duro, "
+                    f"pero no la meta élite de {DURACION_LARGO_OBJETIVO_ELITE_MIN}+ min.")
+    else:
+        log(AGENT, f"Duración real de narración OK: {duracion_audio_min:.1f} min "
+                    f"(meta élite {DURACION_LARGO_OBJETIVO_ELITE_MIN}+ min alcanzada).")
 
     log(AGENT, "4/9 Buscando recursos visuales reales por cada beat (VisualScout)...")
     carpeta_assets = f"output/video/assets_{nombre_base}"
@@ -576,9 +604,13 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
                     import subprocess as _sp
                     miniatura_short = f"output/thumbnails/{nombre_base}_short.png"
                     os.makedirs("output/thumbnails", exist_ok=True)
-                    _sp.run(["ffmpeg", "-y", "-i", ruta_short, "-vf",
-                             "select=eq(n\\,0)", "-vframes", "1",
-                             miniatura_short], capture_output=True, timeout=120)
+                    # Se extrae a 1.0s, no en n=0: como ahora la portada del
+                    # Short se mantiene varios fotogramas al inicio, sacar la
+                    # miniatura dentro de esa ventana evita frames negros o
+                    # transiciones raras del arranque.
+                    _sp.run(["ffmpeg", "-y", "-ss", "1.0", "-i", ruta_short,
+                             "-vframes", "1", miniatura_short],
+                            capture_output=True, timeout=120)
                     if not (os.path.exists(miniatura_short)
                             and os.path.getsize(miniatura_short) > 5000):
                         miniatura_short = None
