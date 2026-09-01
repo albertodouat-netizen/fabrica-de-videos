@@ -35,10 +35,10 @@ MAX_BEATS_SHORT = 3          # 31-ago-2026: volvemos a 3 beats de contenido
 DURACION_MAX_OBJETIVO = 34   # segundos de narración antes de la tarjeta final
 DURACION_MIN_CORTE_SHORT = 1.8
 DURACION_MAX_CORTE_SHORT = 4.0
-PORTADA_INICIAL_SEG = 2.2    # la misma portada dura varios frames para que
-                             # YouTube y el selector manual sigan viendo ESA
-                             # portada, no un frame siguiente.
-DURACION_CTA_FINAL_SEG = 1.5
+PORTADA_INICIAL_SEG = 3.2    # se cubren varios segundos del arranque con la
+                             # MISMA portada exacta para que YouTube y la
+                             # selección manual sigan viendo esa imagen.
+DURACION_CTA_FINAL_SEG = 1.2
 
 
 def _fuente(tam):
@@ -183,8 +183,10 @@ def _armar_mini_guion(guion: dict) -> dict:
 
 
 def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_largo: str = "",
-                carpeta_visuales_largo: str = None) -> tuple:
-    """Genera el Short completo. Devuelve (ruta_mp4, titulo_short, descripcion_short).
+                carpeta_visuales_largo: str = None, titulo_short_override: str = "") -> tuple:
+    """Genera el Short completo.
+
+    Devuelve (ruta_mp4, titulo_short, descripcion_short, ruta_portada_short).
 
     carpeta_visuales_largo (nuevo, 21-ago-2026): carpeta con los visuales YA
     descargados/verificados del video largo. Si la búsqueda vertical de un
@@ -193,6 +195,21 @@ def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_la
     real del largo en su lugar. Un visual horizontal recortado a 9:16 es
     infinitamente mejor que un degradado vacío."""
     os.makedirs(carpeta_salida, exist_ok=True)
+
+    # TÍTULO DEL SHORT ANTES DEL RENDER: así la portada integrada, la
+    # miniatura oficial y el título publicado nacen ALINEADOS y dejan de
+    # pelearse entre sí.
+    import random as _rnd
+    try:
+        from agents.promocion_cruzada import _tema_corto_de
+        _tema = _tema_corto_de(guion["titulo"]).title()
+    except Exception:
+        _tema = guion["titulo"].split(":")[0].split("(")[0].strip()
+    _prefijos = ["Lo Que Nadie Te Dice De", "El Error Más Común Con",
+                 "La Verdad Sobre", "Esto Cambia Todo Sobre"]
+    titulo_short = (titulo_short_override or (f"{_rnd.choice(_prefijos)} {_tema}"[:85] + " #Shorts")).strip()
+    titulo_portada = re.sub(r"\s+#\w+.*$", "", titulo_short).strip()
+
     mini_guion = _armar_mini_guion(guion)
 
     log(AGENT, "Narrando el guion reducido del Short...")
@@ -329,7 +346,7 @@ def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_la
         audio_clip = audio_clip.with_duration(duracion_visual_real)
     video_narrado = video_narrado.with_duration(duracion_visual_real).with_audio(audio_clip)
 
-    ruta_cta = _tarjeta_cta_final(os.path.join(carpeta_tmp, "cta.png"), guion["titulo"])
+    ruta_cta = _tarjeta_cta_final(os.path.join(carpeta_tmp, "cta.png"), titulo_portada)
     duracion_cta = DURACION_CTA_FINAL_SEG
     clip_cta = ImageClip(ruta_cta).with_duration(duracion_cta)
     # Le agregamos una pista de audio silenciosa: si un clip de la concatenación
@@ -339,32 +356,25 @@ def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_la
     clip_cta = clip_cta.with_audio(silencio_cta)
 
 
-    # PORTADA COMO PRIMEROS FOTOGRAMAS, DENTRO DEL RENDER: la portada élite
-    # se mantiene ~2s al inicio, no solo un flash. Así, tanto YouTube como
-    # el selector manual siguen viendo ESA misma portada aunque elijan unos
-    # frames después del inicio real.
-    clips_secuencia = []
+    # PORTADA ÚNICA DEL SHORT: se guarda FUERA de la carpeta temporal para
+    # reutilizar EXACTAMENTE la misma imagen en tres sitios: overlay inicial,
+    # miniatura oficial y selección manual en Studio. Sin regenerar variantes.
+    ruta_portada_short = None
     try:
         from agents.equipo_portadas import generar_portada_elite
+        os.makedirs("output/thumbnails", exist_ok=True)
+        ruta_portada_destino = os.path.join("output/thumbnails", f"{nombre_base}_short_cover.png")
         ruta_portada_short = generar_portada_elite(
-            {"titulo": guion.get("titulo", ""),
+            {"titulo": titulo_portada,
              "keyword_principal": guion.get("keyword_principal", "")},
-            "", os.path.join(carpeta_tmp, "portada_short.png"), vertical=True)
-        import moviepy.video.fx as _vfx
-        clip_portada = (ImageClip(ruta_portada_short)
-                        .with_duration(PORTADA_INICIAL_SEG)
-                        .with_effects([_vfx.Resize(lambda t: 1.0 + 0.015 * t)]))
-        clip_portada = clip_portada.resized(RESOLUCION_SHORT)  # asegurar tamaño
-        silencio_p = _AudioClip(lambda t: 0, duration=PORTADA_INICIAL_SEG, fps=44100)
-        clip_portada = clip_portada.with_audio(silencio_p)
-        clips_secuencia.append(clip_portada)
-        log(AGENT, f"Portada élite integrada al inicio del Short ({PORTADA_INICIAL_SEG:.1f}s).")
+            "", ruta_portada_destino, vertical=True)
+        log(AGENT, f"Portada élite del Short lista: {ruta_portada_short}")
     except Exception as e:
-        log(AGENT, f"Aviso: portada inicial no disponible ({type(e).__name__}); "
-                   f"el Short arranca directo con el gancho.")
+        log(AGENT, f"Aviso: portada del Short no disponible ({type(e).__name__}); "
+                   f"se usará miniatura por fotograma si hace falta.")
+        ruta_portada_short = None
 
-    clips_secuencia += [video_narrado, clip_cta]
-    video_final = concatenate_videoclips(clips_secuencia, method="chain")
+    video_final = concatenate_videoclips([video_narrado, clip_cta], method="chain")
 
     salida = os.path.join(carpeta_salida, f"{nombre_base}_short.mp4")
     log(AGENT, f"Renderizando Short -> {salida} ...")
@@ -372,6 +382,17 @@ def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_la
         salida, fps=30, codec="libx264", audio_codec="aac",
         threads=4, preset="superfast", logger=None,
     )
+
+    # Refuerzo final: además del archivo de miniatura, se superpone ESA misma
+    # portada sobre los primeros segundos del mp4 ya renderizado. Así el
+    # audio arranca desde el segundo 0, pero visualmente el Short mantiene
+    # la portada exacta durante varios frames/segundos.
+    if ruta_portada_short:
+        try:
+            from agents.equipo_portadas import incrustar_portada_como_primer_frame
+            incrustar_portada_como_primer_frame(salida, ruta_portada_short, segundos=PORTADA_INICIAL_SEG)
+        except Exception as e:
+            log(AGENT, f"Aviso: no se pudo reforzar la portada dentro del mp4 ({type(e).__name__}).")
 
     for c in clips_video_beats:
         try:
@@ -387,19 +408,6 @@ def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_la
     shutil.rmtree(os.path.join(carpeta_salida, f"assets_{nombre_base}"), ignore_errors=True)
     shutil.rmtree(os.path.join(carpeta_salida, "audio"), ignore_errors=True)
 
-    # TÍTULO DE CURIOSIDAD (auditoría 28-ago-2026): los shorts derivados con
-    # título=copia del largo promedian 50 vistas; los de formato curiosidad/
-    # mito promedian 674-727 (el ganador de 1.334 es "El Mito Más Común
-    # De..."). El short derivado ahora usa gancho de curiosidad + tema corto.
-    import random as _rnd
-    try:
-        from agents.promocion_cruzada import _tema_corto_de
-        _tema = _tema_corto_de(guion["titulo"]).title()
-    except Exception:
-        _tema = guion["titulo"].split(":")[0].split("(")[0].strip()
-    _prefijos = ["Lo Que Nadie Te Dice De", "El Error Más Común Con",
-                 "La Verdad Sobre", "Esto Cambia Todo Sobre"]
-    titulo_short = f"{_rnd.choice(_prefijos)} {_tema}"[:85] + " #Shorts"
     # HONESTIDAD TÉCNICA (auditoría 14-ago-2026): YouTube NO hace clicables
     # los enlaces en las descripciones de Shorts (limitación oficial de la
     # plataforma, verificada). El enlace clicable REAL va en el comentario
@@ -419,7 +427,7 @@ def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_la
     )
 
     log(AGENT, "Render del Short completado.")
-    return salida, titulo_short, descripcion_short
+    return salida, titulo_short, descripcion_short, ruta_portada_short
 
 
 
@@ -429,8 +437,11 @@ if __name__ == "__main__":
 
     idea = buscar_ideas_potenciales()[0]
     guion = generar_guion(idea)
-    ruta, titulo, descripcion = crear_short(guion, "output/video", "demo_short",
-                                             url_video_largo="https://youtube.com/watch?v=EJEMPLO")
+    ruta, titulo, descripcion, miniatura = crear_short(
+        guion, "output/video", "demo_short",
+        url_video_largo="https://youtube.com/watch?v=EJEMPLO"
+    )
     print(ruta)
     print(titulo)
     print(descripcion)
+    print(miniatura)

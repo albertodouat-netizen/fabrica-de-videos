@@ -48,7 +48,7 @@ AGENT = "ShortIndependiente"
 # 6-13x a top_3 (100) y consejo_practico. Se les da doble peso en la
 # rotación; los débiles se mantienen (1 de cada 6) para seguir midiendo.
 FORMATOS = ["mito_vs_verdad", "dato_sorprendente", "mito_vs_verdad",
-            "dato_sorprendente", "top_3", "consejo_practico"]
+            "dato_sorprendente", "top_3", "mito_vs_verdad"]
 
 # Cierres variados: NO todos llaman a lo mismo (anti-plantilla).
 # CIERRES v2 (21-ago-2026): los espectadores de Shorts NO leen
@@ -98,6 +98,15 @@ REGLAS DE SEGURIDAD MÉDICA (obligatorias):
 - NUNCA digas que algo cura, elimina o revierte una enfermedad.
 - NUNCA sugieras reemplazar medicamentos o tratamientos.
 - Usa "puede apoyar", "se ha asociado con", "la evidencia sugiere".
+- Si mencionas una frecuencia, número, porcentaje, duración o fase del sueño,
+  ese dato debe aparecer de forma EXPLÍCITA en las fuentes dadas arriba. Si
+  no aparece ahí, NO lo digas.
+
+REGLAS VISUALES DEL SHORT (obligatorias):
+- PROHIBIDO pedir visuales abstractos o pobres: ondas, waveforms, líneas,
+  pantallas con texto, gráficos, documentos vacíos, fondos lisos o dibujos.
+- Cada visual debe ser una escena REAL, filmable y preferiblemente con una
+  persona, un objeto claro o una acción concreta.
 
 FORMATO DE RESPUESTA (JSON estricto, sin nada más):
 {{"beats": [{{"texto": "...", "visual": "english visual keyword here"}}, ...]}}
@@ -111,6 +120,21 @@ FORMATO_INSTRUCCIONES = {
     "top_3": "Los 3 puntos más útiles del tema, contados con ritmo (el mejor al final, para que vean hasta el final).",
     "consejo_practico": "UN consejo práctico y accionable del tema que la persona pueda aplicar HOY, con el paso a paso mínimo.",
 }
+
+
+def _tema_vetado_para_short(titulo: str) -> bool:
+    """Evita exprimir el clúster que el usuario decidió enfriar.
+
+    01-sep-2026: si el largo base trata de música/sonidos/frecuencias/ASMR,
+    no debe seguir generando Shorts independientes a menos que no exista
+    ninguna otra opción. Es mejor rotar de tema que sonar repetitivos."""
+    txt = (titulo or "").lower()
+    return bool(re.search(
+        r"\b(?:\d{2,4}\s*hz|asmr|binaural(?:es)?|white noise|ruido blanco|"
+        r"lluvia|rain|sound(?:s)?|music|m[úu]sica|frequency|frequencies|"
+        r"frecuencia(?:s)?)\b",
+        txt, re.IGNORECASE,
+    ))
 
 
 def _videos_largos_existentes(estado: dict, cfg: dict) -> list:
@@ -147,6 +171,39 @@ def _videos_largos_existentes(estado: dict, cfg: dict) -> list:
             if v.get("video_id") and v.get("titulo"):
                 videos.append({"video_id": v["video_id"], "titulo": v["titulo"]})
     return videos
+
+
+def _suavizar_afirmaciones_no_verificadas(beats: list, estudios: list) -> list:
+    """Rebaja afirmaciones que el LLM inventó por fuera de las fuentes.
+
+    Caso real corregido 01-sep-2026: apareció un Short diciendo que "solo
+    los tonos de 0.5 a 4 Hz" ayudan a entrar en fase delta, dato que NO
+    estaba en las fuentes del tema. Aquí se limpian ese tipo de excesos de
+    forma determinista antes de narrar/publicar."""
+    fuente = " ".join(f"{e.get('titulo','')} {e.get('resumen','')}" for e in (estudios or [])).lower()
+    frecuencias_validas = {
+        re.sub(r"\s+", "", m.lower())
+        for m in re.findall(r"\b\d+(?:[\.,]\d+)?\s*hz\b", fuente, re.IGNORECASE)
+    }
+    beats_limpios = []
+    for b in beats:
+        txt = (b.get("texto") or "").strip()
+        txt_l = txt.lower()
+        necesita_suavizar = False
+        for m in re.findall(r"\b\d+(?:[\.,]\d+)?\s*hz\b", txt, re.IGNORECASE):
+            if re.sub(r"\s+", "", m.lower()) not in frecuencias_validas:
+                necesita_suavizar = True
+                break
+        if "delta" in txt_l and "delta" not in fuente:
+            necesita_suavizar = True
+        if necesita_suavizar:
+            if any(p in txt_l for p in ["hz", "frecuencia", "frecuencias", "tono", "tonos"]):
+                txt = "La evidencia sobre estas frecuencias es limitada y se interpreta mejor como un posible apoyo a la relajación, no como una garantía."
+            else:
+                txt = "La evidencia disponible sugiere un posible apoyo, pero no permite hacer promesas tajantes."
+            b["texto"] = txt
+        beats_limpios.append(b)
+    return beats_limpios
 
 
 def _generar_guion_short(tema: str, formato: str, cfg: dict) -> dict:
@@ -198,6 +255,7 @@ def _generar_guion_short(tema: str, formato: str, cfg: dict) -> dict:
         return None
 
     # Limpieza + seguridad médica sobre cada beat
+    beats = _suavizar_afirmaciones_no_verificadas(beats, estudios)
     for b in beats:
         b["texto"] = limpiar_texto_para_voz(b.get("texto", ""))
     guion = {"titulo": tema, "capitulos": [{"nombre": "short", "beats": beats}],
@@ -254,10 +312,15 @@ def crear_short_independiente() -> dict:
         log(AGENT, "No hay videos largos publicados aún; no se genera Short independiente.")
         return None
 
-    # Rotación: el largo menos recientemente usado para un Short independiente
+    # Rotación: el largo menos recientemente usado para un Short independiente.
+    # Pero primero se intentan temas NO vetados, para no seguir exprimiendo
+    # clústeres que el usuario decidió enfriar.
     usados = estado.get("shorts_independientes_por_video", {})
     largos_ordenados = sorted(largos, key=lambda v: usados.get(v["video_id"], ""))
-    elegido = largos_ordenados[0]
+    candidatos = [v for v in largos_ordenados if not _tema_vetado_para_short(v.get("titulo", ""))]
+    if not candidatos:
+        candidatos = largos_ordenados
+    elegido = candidatos[0]
 
     # Rotación de formatos: nunca repetir el del día anterior
     ultimo_formato = estado.get("ultimo_formato_short", "")
@@ -290,10 +353,13 @@ def crear_short_independiente() -> dict:
         url_largo = url_con_playlist(elegido["video_id"])
     except Exception:
         url_largo = f"https://youtube.com/watch?v={elegido['video_id']}"
-    ruta, titulo_auto, _desc = crear_short(guion, "output/video", nombre_base,
-                                            url_video_largo=url_largo)
-
     titulo = _titulo_short(elegido["titulo"], formato)
+    ruta, titulo_auto, _desc, miniatura = crear_short(
+        guion, "output/video", nombre_base,
+        url_video_largo=url_largo,
+        titulo_short_override=titulo,
+    )
+
     descripcion = (
         f"{guion['capitulos'][0]['beats'][0]['texto']}\n\n"
         f"👉 El video COMPLETO del tema está en el PRIMER COMENTARIO 📌\n"
@@ -309,7 +375,7 @@ def crear_short_independiente() -> dict:
     save_state(estado)
 
     return {"ruta": ruta, "titulo": titulo, "descripcion": descripcion,
-            "video_largo_id": elegido["video_id"]}
+            "video_largo_id": elegido["video_id"], "miniatura": miniatura}
 
 
 if __name__ == "__main__":

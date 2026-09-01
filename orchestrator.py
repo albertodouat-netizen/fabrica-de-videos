@@ -580,7 +580,7 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
             log(AGENT, "9/9 Generando Short para atraer tráfico al video completo (ShortsCreator)...")
             from agents.promocion_cruzada import url_con_playlist
             url_largo = url_con_playlist(video_id, cfg) if video_id else ""
-            ruta_short, titulo_short, descripcion_short = crear_short(
+            ruta_short, titulo_short, descripcion_short, miniatura_short = crear_short(
                 guion, "output/video", nombre_base, url_video_largo=url_largo,
                 carpeta_visuales_largo=carpeta_assets
             )
@@ -599,24 +599,25 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
                 # también como miniatura oficial vía API (búsqueda/sugeridos).
                 # Ya no se re-codifica el video (incrustar_... quedó para el
                 # flujo del Short independiente antiguo si hiciera falta).
-                miniatura_short = None
-                try:
-                    import subprocess as _sp
-                    miniatura_short = f"output/thumbnails/{nombre_base}_short.png"
-                    os.makedirs("output/thumbnails", exist_ok=True)
-                    # Se extrae a 1.0s, no en n=0: como ahora la portada del
-                    # Short se mantiene varios fotogramas al inicio, sacar la
-                    # miniatura dentro de esa ventana evita frames negros o
-                    # transiciones raras del arranque.
-                    _sp.run(["ffmpeg", "-y", "-ss", "1.0", "-i", ruta_short,
-                             "-vframes", "1", miniatura_short],
-                            capture_output=True, timeout=120)
-                    if not (os.path.exists(miniatura_short)
-                            and os.path.getsize(miniatura_short) > 5000):
-                        miniatura_short = None
-                except Exception as e:
-                    log(AGENT, f"Miniatura del Short no extraída ({type(e).__name__}); "
-                                f"YouTube usará un fotograma.")
+                # La miniatura oficial del Short debe ser EXACTAMENTE la
+                # misma portada que va incrustada dentro del mp4. Si por algún
+                # motivo crear_short no la devolvió, se cae al fotograma 1.5s.
+                if not (miniatura_short and os.path.exists(miniatura_short)
+                        and os.path.getsize(miniatura_short) > 5000):
+                    miniatura_short = None
+                    try:
+                        import subprocess as _sp
+                        miniatura_short = f"output/thumbnails/{nombre_base}_short_fallback.png"
+                        os.makedirs("output/thumbnails", exist_ok=True)
+                        _sp.run(["ffmpeg", "-y", "-ss", "1.5", "-i", ruta_short,
+                                 "-vframes", "1", miniatura_short],
+                                capture_output=True, timeout=120)
+                        if not (os.path.exists(miniatura_short)
+                                and os.path.getsize(miniatura_short) > 5000):
+                            miniatura_short = None
+                    except Exception as e:
+                        log(AGENT, f"Miniatura del Short no extraída ({type(e).__name__}); "
+                                    f"YouTube usará un fotograma.")
                 log(AGENT, "Publicando el Short en YouTube...")
                 short_id = publicar_video(ruta_short, miniatura_short, guion_short, descripcion_short)
                 # Playlist compartida con el largo (21-ago-2026): al terminar
@@ -718,22 +719,18 @@ def publicar_short_independiente():
     guion_short = {"titulo": resultado["titulo"],
                    "tags": ["Salud Natural Diaria", "salud natural", "Shorts"],
                    "disclaimer": "Este contenido es informativo y no sustituye una consulta médica."}
-    # Portada vertical élite también para el Short independiente (Agentes
-    # 38-40): visible en pestaña del canal / búsqueda / sugeridos.
-    miniatura_short = None
+    # La miniatura del Short independiente debe ser la MISMA portada que se
+    # usó dentro del render. Solo si falta, se regenera una de respaldo.
+    miniatura_short = resultado.get("miniatura") if isinstance(resultado, dict) else None
     try:
-        from agents.equipo_portadas import (generar_portada_elite,
-                                            incrustar_portada_como_primer_frame)
-        import datetime as _dt
-        miniatura_short = generar_portada_elite(
-            {"titulo": resultado["titulo"], "keyword_principal": ""},
-            resultado["ruta"],
-            "output/thumbnails/short_indep_" + _dt.datetime.now().strftime("%Y%m%d") + ".png",
-            vertical=True)
-        # Ver nota en el pipeline principal: la pestaña /shorts muestra un
-        # fotograma del video, no la miniatura; la incrustamos al inicio.
-        if miniatura_short:
-            incrustar_portada_como_primer_frame(resultado["ruta"], miniatura_short)
+        if not (miniatura_short and os.path.exists(miniatura_short) and os.path.getsize(miniatura_short) > 5000):
+            from agents.equipo_portadas import generar_portada_elite
+            import datetime as _dt
+            miniatura_short = generar_portada_elite(
+                {"titulo": resultado["titulo"], "keyword_principal": ""},
+                resultado["ruta"],
+                "output/thumbnails/short_indep_" + _dt.datetime.now().strftime("%Y%m%d") + ".png",
+                vertical=True)
     except Exception as e:
         log(AGENT, f"Portada del Short independiente no disponible ({type(e).__name__}); "
                     f"YouTube usará un fotograma.")
