@@ -39,5 +39,20 @@
   },
   "categorias_usadas": [
     "estrés y ansiedad"
+  ],
+  "shorts_independientes_por_video": {
+    "HacgBVYqXtw": "2026-09-01T08:15:39.436819"
+  },
+  "ultimo_formato_short": "consejo_practico",
+  "ultimo_short_independiente": "2026-09-01",
+  "videos_programados": {
+    "0ZEv-hcbtCk": "2026-09-01T19:30:00.0Z"
+  },
+  "tareas_video_relacionado": [
+    {
+      "short": "0ZEv-hcbtCk",
+      "largo": "HacgBVYqXtw",
+      "url": "https://studio.youtube.com/video/0ZEv-hcbtCk/edit"
+    }
   ]
 }
