@@ -111,6 +111,10 @@ jobs:
         if: steps.candado.outputs.ya_publico != 'true'
         run: python3 orchestrator.py --videos 1
 
+      - name: Verificar que la corrida larga produjo publicación real
+        if: steps.candado.outputs.ya_publico != 'true'
+        run: python3 scripts/verificar_resultado_corrida.py --modo largo
+
       # Días de "descanso" del video largo: se publica UN Short
       # independiente con contenido completo y propio, alineado a un video
       # largo ya existente (estrategia de crecimiento acordada 16-ago-2026:
@@ -121,8 +125,11 @@ jobs:
       # largo) y el paso guarda su propia marca del día en estado.json.
       - name: Short independiente (días sin video largo)
         if: steps.candado.outputs.ya_publico == 'true'
-        continue-on-error: true
         run: python3 orchestrator.py --solo-short-independiente
+
+      - name: Verificar que la corrida de Short independiente produjo resultado real
+        if: steps.candado.outputs.ya_publico == 'true'
+        run: python3 scripts/verificar_resultado_corrida.py --modo short-independiente
 
       - name: Responder comentarios de espectadores (interacción = algoritmo)
         if: always()
@@ -140,6 +147,7 @@ jobs:
           # video ya está en YouTube; aquí solo memoria, miniatura y logs.
           path: |
             data/estado.json
+            output/resultado_corrida.json
             output/thumbnails/**
           retention-days: 5
 
