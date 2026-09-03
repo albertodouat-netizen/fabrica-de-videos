@@ -130,9 +130,19 @@ def buscar_ideas_potenciales(max_resultados=15, categorias_evitar=None):
     canal_cache = {}
     hubo_error_api = False
 
-    for eje in ejes_ordenados:
+    # PRESUPUESTO DE CUOTA (02-sep-2026, fallo real: 45 keywords x 100
+    # unidades = 4.500 por corrida; con corrida+respaldo+vigilante la cuota
+    # diaria de 10.000 moría y hasta el candado RSS fallaba). Ahora se
+    # muestrean 12 keywords al azar (rotan cada corrida => misma variedad
+    # a lo largo de la semana, 73% menos consumo).
+    import random as _rnd
+    _pares = [(eje, kw) for eje in ejes_ordenados
+              for kw in eje["palabras_clave"]]
+    _rnd.shuffle(_pares)
+    _pares = _pares[:12]
+    for eje, kw in _pares:
         categoria = eje["categoria"]
-        for kw in eje["palabras_clave"]:
+        if True:
             log(AGENT, f"Buscando: '{kw}' (eje: {categoria}) ...")
             try:
                 search_resp = youtube.search().list(

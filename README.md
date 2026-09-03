@@ -1,5 +1,33 @@
 # 🏭 Fábrica de Videos — Salud Natural Diaria
 
+## 🔍 AUDITORÍA DE LA PRIMERA CORRIDA COMPLETA + 3 CORRECCIONES (02-sep-2026)
+
+**LO BUENO — la corrida del 31-ago con el sistema completo SÍ publicó:**
+largo "Frecuencias Para Dormir" (8:25, HacgBVYqXtw) + Short (1V3dkFui_gU,
+47 vistas) + Short independiente del 01-sep (0ZEv-hcbtCk, 68 vistas)
+publicado PUNTUAL a las 19:30. El reloj global y los cortacircuitos
+funcionaron: se acabaron las corridas de 5h muertas.
+
+**LO MALO — 3 fallos reales detectados y corregidos:**
+1. **Tema VETADO publicado**: "Frecuencias Para Dormir" está en cuarentena
+   (frecuencias/hz). El veto solo se aplicaba a la IDEA de la competencia;
+   el GUIONISTA re-tituló hacia el tema vetado DESPUÉS del filtro.
+   → DOBLE VETO: el título final del guion se re-verifica; si cae en
+   cuarentena, se aborta. Simulado 5/5 casos.
+2. **Duración 8:25 con mínimo 16**: _asegurar_duracion_minima se rendía
+   sin bloquear. → BARRERA DURA: guion estimado < (mínimo-2) min = se
+   aborta y el respaldo de las 18:15 reintenta. Simulado.
+3. **Cuota YouTube API agotada** (hasta el candado RSS y search fallaban):
+   trend_scout hacía 45 búsquedas x100 unidades = 4.500/corrida.
+   → Muestreo rotatorio de 12 keywords (~1.200/corrida, misma variedad
+   semanal, 73% menos). El fallo de hoy 1-min ("failure" workflow_dispatch)
+   fue precisamente cuota agotada + sin candidatos.
+
+**Video vetado publicado (HacgBVYqXtw + 1V3dkFui_gU + 0ZEv-hcbtCk):
+decisión del usuario pendiente (borrar o dejar).**
+
+---
+
 ## 🕚 MODO EFICIENCIA MULTICANAL + HORARIO 11 AM (31-ago-2026, noche)
 
 Pedido del usuario: empezar a las 11:00 am, videos >15-20 min, mínimo

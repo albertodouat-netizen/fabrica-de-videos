@@ -602,15 +602,15 @@ def generar_portada_elite(guion, imagen_base: str, salida_png: str,
 # INCRUSTAR PORTADA EN EL VIDEO (solución para la pestaña Shorts)
 # ---------------------------------------------------------------------------
 def incrustar_portada_como_primer_frame(ruta_video: str, ruta_portada: str,
-                                         segundos: float = 2.2) -> bool:
+                                         segundos: float = 0.45) -> bool:
     """Hallazgo verificado (29-ago-2026, con evidencia del CDN): la pestaña
     /shorts del canal y el feed de Shorts NO usan la miniatura personalizada
     (thumbnails.set): usan un FOTOGRAMA del propio video (frame0.jpg del
     CDN), y la API no permite elegirlo. Solución: superponer la portada
-    élite sobre los primeros ~2s del video. Así frame0 y varios frames
-    siguientes siguen siendo la MISMA portada, incluso si YouTube o el
-    selector manual eligen un fotograma posterior. El audio no se toca
-    (-c:a copy) y la duración no cambia (es un overlay, no una inserción)."""
+    élite sobre los primeros ~0.45s del video. Así frame0 = portada, y el
+    espectador apenas percibe un 'flash' de portada al arrancar (que además
+    actúa de gancho visual). El audio no se toca (-c:a copy) y la duración
+    no cambia (es un overlay, no una inserción)."""
     import subprocess
     if not (os.path.exists(ruta_video) and os.path.exists(ruta_portada)):
         return False
