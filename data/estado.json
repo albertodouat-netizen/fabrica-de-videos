@@ -1,7 +1,8 @@
 {
   "ideas_usadas": [
     "5 Morning Habits That Fixed My Gut Health",
-    "Why You Should Stop Drinking Water Without Thirst"
+    "Why You Should Stop Drinking Water Without Thirst",
+    "432Hz + 528Hz + 741Hz | The DEEPEST Healing Sleep: Whole Body Regeneration, Relieve Stress #6"
   ],
   "videos_publicados": [
     {
@@ -11,19 +12,50 @@
       "video_id": "00j03rzZxmE",
       "ruta_short": "output/video/la-verdad-sobre-why-you-should-stop-drinking-water-without-t_20260809_190522_short.mp4",
       "short_id": "JdB_RFXrCM0",
-      "descripcion": "🔥 Esto sobre salud y bienestar natural podría estar afectándote sin que lo notes.\n\nDescubre todo sobre salud y bienestar natural: en este video te explicamos Why You Should Stop Drinking Water Without Thirst y cómo aplicarlo hoy mismo, con cambios simples y respaldados por la evidencia disponible. Si te interesa salud y bienestar natural, este contenido es para ti.\n\n📌 ÍNDICE DEL VIDEO:\n00:00 Lo que nadie te dice\n00:20 El problema real\n00:33 Qué hacer hoy mismo\n00:47 Antes de irte\n\n#saludybienestarnatural #consejos #hábitossaludables #bienestar #rutinadiaria\n\n⚠️ Este video es solo informativo y no sustituye una consulta médica o profesional.",
+      "descripcion": "",
       "fecha": "2026-08-09T19:11:04.550658"
+    },
+    {
+      "titulo": "Frecuencias Para Dormir: Qué Dice La Ciencia Y Qué Es Mito",
+      "ruta_video": "output/video/frecuencias-para-dormir-el-error-que-roba-sueno-y-solucion_20260831_183235.mp4",
+      "ruta_miniatura": "output/thumbnails/frecuencias-para-dormir-el-error-que-roba-sueno-y-solucion_20260831_183235.png",
+      "video_id": "HacgBVYqXtw",
+      "ruta_short": "output/video/frecuencias-para-dormir-el-error-que-roba-sueno-y-solucion_20260831_183235_short.mp4",
+      "short_id": "1V3dkFui_gU",
+      "descripcion": "",
+      "fecha": "2026-08-31T20:34:46.496101"
     }
   ],
-  "ultima_ejecucion": "2026-08-09T19:11:04.550686",
+  "ultima_ejecucion": "2026-09-01T08:15:39.436819",
   "uso_gemini": {
     "fecha": "2026-08-29",
     "usados": 5
   },
   "comentarios_respondidos": [],
   "playlist_canal_id": "PLOm1dX9uH38g",
-  "zsky_sesion": {
-    "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6IjVick9YeVhUK0pPZUlWSDciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3lya2ZwdXRrdmlvanNodG5ndXd0LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI0NzcyMjNiMy1kYWM0LTRiOGUtOTJlOC1kNDRmNWQwZjg0N2UiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg4MDUwMzE2LCJpYXQiOjE3ODgwNDY3MTYsImVtYWlsIjoiIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnt9LCJ1c2VyX21ldGFkYXRhIjp7fSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJhbm9ueW1vdXMiLCJ0aW1lc3RhbXAiOjE3ODgwNDY3MTZ9XSwic2Vzc2lvbl9pZCI6ImY5ODVhZTU2LTM5Y2YtNGMwOC1iYWNlLTNkOTUwY2I3MjAxOSIsImlzX2Fub255bW91cyI6dHJ1ZX0.6ylfgJWJGQnUIUUYJQrTSVeQ9kiNpst5uMPFZHbYyFw",
-    "refresh_token": "rfjxzzcmpoig"
+  "categorias_usadas": [
+    "estrés y ansiedad"
+  ],
+  "shorts_independientes_por_video": {
+    "HacgBVYqXtw": "2026-09-01T08:15:39.436819"
+  },
+  "ultimo_formato_short": "consejo_practico",
+  "ultimo_short_independiente": "2026-09-01",
+  "ultimo_short_independiente_video_id": "0ZEv-hcbtCk",
+  "ultimo_short_independiente_largo_id": "HacgBVYqXtw",
+  "videos_programados": {
+    "0ZEv-hcbtCk": "2026-09-01T19:30:00.0Z"
+  },
+  "tareas_video_relacionado": [
+    {
+      "short": "0ZEv-hcbtCk",
+      "largo": "HacgBVYqXtw",
+      "url": "https://studio.youtube.com/video/0ZEv-hcbtCk/edit"
+    }
+  ],
+  "ultimo_largo_confirmado": {
+    "video_id": "HacgBVYqXtw",
+    "titulo": "Frecuencias Para Dormir: Qué Dice La Ciencia Y Qué Es Mito",
+    "fecha": "2026-08-31T20:13:52+00:00"
   }
 }
