@@ -367,15 +367,15 @@ def crear_short_independiente() -> dict:
         f"#Shorts #SaludNatural"
     )
 
-    # Registro de rotación + candado del día
-    usados[elegido["video_id"]] = dt.datetime.now().isoformat()
-    estado["shorts_independientes_por_video"] = usados
-    estado["ultimo_formato_short"] = formato
-    estado["ultimo_short_independiente"] = hoy
-    save_state(estado)
-
+    # IMPORTANTE (02-sep-2026): la marca de "short independiente ya
+    # publicado hoy" NO se debe guardar aquí, porque aún no se ha subido a
+    # YouTube. Si la subida falla y dejáramos la marca puesta ahora, la
+    # corrida de respaldo del mismo día se bloquearía por error. El
+    # orquestador la escribe SOLO después de que publicar_video devuelve un
+    # short_id real.
     return {"ruta": ruta, "titulo": titulo, "descripcion": descripcion,
-            "video_largo_id": elegido["video_id"], "miniatura": miniatura}
+            "video_largo_id": elegido["video_id"], "miniatura": miniatura,
+            "formato": formato}
 
 
 if __name__ == "__main__":
