@@ -32,6 +32,25 @@ from agents.utils import load_config, log
 
 AGENT = "TrendScout"
 
+# La cuota gratuita de YouTube Search es el cuello de botella real:
+# search.list cuesta 100 unidades por llamada. Antes este agente recorría
+# TODAS las palabras clave del config (45 consultas = ~4500 unidades por
+# corrida), lo que elevaba mucho el riesgo de agotar la cuota diaria.
+# Ahora se pone un techo duro por corrida y se corta temprano cuando ya hay
+# suficientes candidatos para elegir una buena idea.
+MAX_BUSQUEDAS_YOUTUBE_POR_CORRIDA = 6
+MAX_CANDIDATOS_OBJETIVO = 12
+
+
+def _es_error_de_cuota(exc: Exception) -> bool:
+    texto = str(exc).lower()
+    return (
+        "quota" in texto
+        or "429" in texto
+        or "too many requests" in texto
+        or "rate limit" in texto
+    )
+
 
 def _parse_duration_seconds(iso_duration: str) -> int:
     try:
@@ -129,21 +148,26 @@ def buscar_ideas_potenciales(max_resultados=15, categorias_evitar=None):
     casi_candidatos = []  # guardamos todo lo visto, por si el filtro estricto no deja nada
     canal_cache = {}
     hubo_error_api = False
+    busquedas_realizadas = 0
+    detener_busqueda = False
 
-    # PRESUPUESTO DE CUOTA (02-sep-2026, fallo real: 45 keywords x 100
-    # unidades = 4.500 por corrida; con corrida+respaldo+vigilante la cuota
-    # diaria de 10.000 moría y hasta el candado RSS fallaba). Ahora se
-    # muestrean 12 keywords al azar (rotan cada corrida => misma variedad
-    # a lo largo de la semana, 73% menos consumo).
-    import random as _rnd
-    _pares = [(eje, kw) for eje in ejes_ordenados
-              for kw in eje["palabras_clave"]]
-    _rnd.shuffle(_pares)
-    _pares = _pares[:12]
-    for eje, kw in _pares:
+    for eje in ejes_ordenados:
+        if detener_busqueda:
+            break
         categoria = eje["categoria"]
-        if True:
+        palabras = list(eje.get("palabras_clave", []))
+        if palabras:
+            giro = dt.datetime.utcnow().timetuple().tm_yday % len(palabras)
+            palabras = palabras[giro:] + palabras[:giro]
+        for kw in palabras:
+            if busquedas_realizadas >= MAX_BUSQUEDAS_YOUTUBE_POR_CORRIDA:
+                log(AGENT, f"Tope de seguridad alcanzado: {MAX_BUSQUEDAS_YOUTUBE_POR_CORRIDA} búsquedas en vivo en esta corrida. "
+                           "Se deja de consultar para ahorrar cuota y tiempo.")
+                detener_busqueda = True
+                break
+
             log(AGENT, f"Buscando: '{kw}' (eje: {categoria}) ...")
+            busquedas_realizadas += 1
             try:
                 search_resp = youtube.search().list(
                     q=kw,
@@ -199,10 +223,24 @@ def buscar_ideas_potenciales(max_resultados=15, categorias_evitar=None):
                     if ratio >= estrategia["ratio_minimo_vistas_subs"]:
                         candidatos.append(item)
 
+                if len(candidatos) >= MAX_CANDIDATOS_OBJETIVO:
+                    log(AGENT, f"Muestra suficiente conseguida ({len(candidatos)} candidatos sólidos). "
+                               "Se corta la búsqueda para no gastar más cuota.")
+                    detener_busqueda = True
+                    break
+
             except Exception as e:
                 hubo_error_api = True
+                if _es_error_de_cuota(e):
+                    log(AGENT, f"Cuota/rate limit detectado en '{kw}' ({e}). "
+                               "Se detiene la búsqueda en vivo para no seguir golpeando la API.")
+                    detener_busqueda = True
+                    break
                 log(AGENT, f"Aviso: la búsqueda de '{kw}' falló ({e}). Se continúa con las demás palabras clave.")
                 continue
+
+    log(AGENT, f"Resumen TrendScout: {busquedas_realizadas} búsquedas en vivo, "
+                f"{len(candidatos)} candidatos sólidos, {len(casi_candidatos)} candidatos totales.")
 
     if not candidatos and casi_candidatos:
         log(AGENT, "Ningún video superó el ratio-outlier mínimo esta vez; "
