@@ -1,100 +1,118 @@
-# PAQUETE UPDATE COMPLETO GITHUB (03-sep-2026)
+# HOTFIX listo para subir a GitHub
 
-Este paquete es para el **repo actual**:
-- `albertodouat-netizen/fabrica-de-videos`
+## Qué corrige este paquete
+Este paquete corrige el error real que tumbó la corrida manual más reciente:
 
-## Súbelo COMPLETO
-No subas solo una parte.
+- Error visto en GitHub Actions: `NameError: name 're' is not defined`
+- Archivo afectado: `orchestrator.py`
+- Solución aplicada: se agregó `import re` al inicio del archivo.
 
-Debes reemplazar exactamente estos archivos en GitHub:
+## Importante
+Este hotfix **sí corrige el bug del código**.
 
-1. `.github/workflows/fabrica_videos.yml`
-2. `orchestrator.py`
-3. `agents/short_independiente.py`
-4. `scripts/verificar_resultado_corrida.py`
-5. `data/estado.json`
+Pero la corrida también mostró otro problema aparte:
 
----
+- YouTube Data API devolvió errores `429` por **quota/search quota exceeded**.
 
-## Por qué este paquete es completo
-Porque hoy el repo quedó mezclado:
-- partes del workflow sí se actualizaron
-- partes del orquestador no quedaron bien sincronizadas
-- y `data/estado.json` quedó regresado a una memoria vieja
-
-Este paquete deja todo alineado otra vez.
+Eso significa que, aunque suba este hotfix, conviene volver a ejecutar cuando la cuota de la API ya se haya recuperado, o usando una clave/proyecto con cuota disponible.
 
 ---
 
-## Qué corrige
+## Qué trae este paquete
+Este paquete contiene:
 
-### 1. GitHub ya no debería mostrar "success" falso
-Si falla la publicación real, el workflow debe quedar en rojo.
-
-### 2. Se valida el resultado real de la corrida
-Se usa:
-- `scripts/verificar_resultado_corrida.py`
-- `output/resultado_corrida.json`
-
-### 3. Se fortalece el candado
-Si el largo sí alcanza a subirse, queda checkpoint en memoria para que la corrida de respaldo no duplique trabajo.
-
-### 4. Se corrige la memoria pública
-`data/estado.json` queda restaurado con los videos confirmados recientes y sin volver a una versión vieja.
+- `orchestrator.py`  ← archivo corregido
+- `INSTRUCCIONES.md` ← esta guía
 
 ---
 
-## Muy importante sobre `data/estado.json`
-Este archivo en el repo público quedó mal y por eso también debe reemplazarse.
+## Dónde va el archivo en GitHub
+El archivo corregido debe quedar en esta ruta del repositorio:
 
-No omitas este archivo en la subida.
+- `orchestrator.py`
 
----
+Es decir: va en la **raíz** del repositorio, reemplazando el archivo actual.
 
-## Cómo subirlo
+Repositorio:
 
-1. Abre el repo en GitHub.
-2. Entra a cada ruta correspondiente.
-3. Reemplaza los archivos por los de este paquete.
-4. Haz commit a `main`.
-
-Si usas **Upload files** por web:
-- sube el contenido respetando EXACTAMENTE las carpetas:
-  - `.github/workflows/`
-  - `agents/`
-  - `scripts/`
-  - `data/`
+- `https://github.com/albertodouat-netizen/fabrica-de-videos`
 
 ---
 
-## Qué hacer inmediatamente después de subirlo
+## Cómo subirlo paso a paso
 
-1. Lanza una corrida manual desde **Actions**.
-2. Mira si pasa una de estas dos cosas:
-   - publica de verdad
-   - o falla en rojo con error visible
-
-Eso ya será mejor que seguir teniendo éxitos falsos.
-
----
-
-## Qué verificar después de subirlo
-
-### En GitHub
-Debe existir el paso:
-- `Verificar que la corrida larga produjo publicación real`
-
-Y también:
-- `Verificar que la corrida de Short independiente produjo resultado real`
-
-### En el repo
-Debe existir:
-- `scripts/verificar_resultado_corrida.py`
-
-### En `data/estado.json`
-Deben volver a aparecer registros recientes del largo y shorts confirmados.
+### Opción simple: reemplazar el archivo desde la web de GitHub
+1. Descargue este paquete ZIP.
+2. Descomprímalo.
+3. Entre a su repositorio:
+   - `https://github.com/albertodouat-netizen/fabrica-de-videos`
+4. Verifique que esté en la rama `main`.
+5. Abra el archivo actual `orchestrator.py`.
+6. Pulse el ícono del lápiz **Edit this file**.
+7. Borre todo el contenido del archivo actual.
+8. Abra el `orchestrator.py` de este paquete en su computador.
+9. Copie todo.
+10. Péguelo completo en GitHub.
+11. Baje hasta abajo.
+12. En el cuadro de mensaje escriba algo como:
+    - `Hotfix: agregar import re en orchestrator`
+13. Pulse **Commit changes**.
 
 ---
 
-## Recomendación
-Sube este paquete completo y no mezcles archivos de otros paquetes encima.
+## Cómo comprobar que sí quedó bien subido
+Después del commit:
+
+1. Abra otra vez este enlace:
+   - `https://github.com/albertodouat-netizen/fabrica-de-videos/blob/main/orchestrator.py`
+2. Revise el inicio del archivo.
+3. Debe verse una línea así:
+
+```python
+import re
+```
+
+Si esa línea aparece en los imports de arriba, el hotfix quedó subido.
+
+---
+
+## Cuándo volver a ejecutar
+Como también hubo error de cuota de YouTube API, lo recomendable es:
+
+1. Subir primero este hotfix.
+2. Esperar a que la cuota de la API vuelva a estar disponible.
+3. Luego lanzar una nueva corrida manual.
+
+---
+
+## Cómo lanzar la corrida manual
+1. Entre aquí:
+   - `https://github.com/albertodouat-netizen/fabrica-de-videos/actions`
+2. Abra el workflow:
+   - `fabrica_videos.yml`
+3. Pulse **Run workflow**.
+4. Elija la rama `main`.
+5. Ejecútelo.
+
+---
+
+## Qué resultado esperar
+Después de este hotfix pueden pasar 2 cosas:
+
+### Caso 1: sale bien
+Perfecto. Eso confirma que el bug `import re` era el bloqueo principal.
+
+### Caso 2: vuelve a fallar
+También sirve, porque ahora el sistema ya está mostrando el fallo real en rojo.
+En ese caso me envía la captura o el log y yo le preparo el siguiente arreglo.
+
+---
+
+## Resumen corto
+Haga esto en este orden:
+
+1. Suba el `orchestrator.py` de este paquete.
+2. Verifique que tenga `import re`.
+3. Espere cuota disponible de YouTube API.
+4. Lance una nueva corrida manual.
+5. Si falla, me manda la captura y yo le doy el siguiente paquete ya listo.
