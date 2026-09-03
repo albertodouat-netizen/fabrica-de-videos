@@ -1,141 +1,112 @@
-# PAQUETE LISTO — rescate del Short faltante del video largo
+# HOTFIX listo — corrige el fallo del rescate del Short pendiente
 
-Este paquete está hecho para corregir exactamente este problema:
+## Qué pasó
+La corrida manual nueva sí detectó correctamente que había un **Short derivado pendiente** del video largo de cortisol.
 
-- el video largo **sí** quedó publicado
-- pero su **Short derivado no quedó publicado**
-- en este caso concreto: el largo de **cortisol** quedó sin su Short
+Pero falló por este error:
 
----
+- `TypeError: crear_short() got an unexpected keyword argument 'titulo_short_override'`
 
-## Qué hace este paquete
-Trae una mejora nueva para que el sistema haga esto:
+## Causa real
+Había una **mezcla de versiones** en GitHub:
 
-### 1) Detectar un largo publicado sin Short
-Si encuentra un video largo publicado que quedó con `short_id` vacío, lo marca como pendiente.
+- `orchestrator.py` ya estaba actualizado
+- pero `agents/shorts_creator.py` seguía en una versión anterior
 
-### 2) Reintentar SOLO el Short faltante
-Ya no toca volver a generar otro video largo.
-
-### 3) Priorizar ese rescate antes de un Short independiente
-O sea:
-- primero intenta sacar el **Short faltante del largo**
-- solo si no hay ningún faltante, entonces publica el **Short independiente normal**
-
-### 4) Dejar evidencia clara en GitHub Actions
-Ahora el workflow muestra pasos específicos para eso.
+Entonces el orquestador nuevo intentó usar una función del Short que el archivo viejo todavía no tenía.
 
 ---
 
-## Este paquete sirve también para el caso actual del cortisol
-Sí.
+## Qué corrige este paquete
+Este paquete corrige eso de dos formas:
 
-Este paquete está pensado para que, después de subirlo y lanzar una corrida manual:
+### 1) Actualiza `agents/shorts_creator.py`
+Sube la versión correcta y completa del creador de Shorts.
 
-- el sistema detecte que el largo de cortisol ya existe
-- vea que ese largo no tiene `short_id`
-- e intente crear/publicar **solo ese Short faltante**
+### 2) Refuerza `orchestrator.py`
+Ahora quedó **compatible** con versiones viejas y nuevas del creador de Shorts.
+
+En palabras simples:
+si alguna vez vuelve a quedar un archivo mezclado, el sistema ya no debería romperse tan fácil por ese desfase.
 
 ---
 
-## Archivos que debe subir al repositorio
-Suba estos archivos exactamente en estas rutas:
+## Archivos que trae este paquete
+Suba estos 2 archivos al repositorio:
 
 - `orchestrator.py`
-- `scripts/verificar_resultado_corrida.py`
-- `scripts/detectar_short_pendiente.py`
-- `.github/workflows/fabrica_videos.yml`
+- `agents/shorts_creator.py`
 
 Repositorio:
 - `https://github.com/albertodouat-netizen/fabrica-de-videos`
 
 ---
 
-## Cómo subirlo paso por paso
+## Cómo subirlo paso a paso
 
-### Paso 1
-Descargue el ZIP y descomprímalo.
-
-### Paso 2
-Abra su repositorio GitHub.
-
-### Paso 3
-Suba/reemplace estos 4 archivos uno por uno:
-
-#### Archivo 1
+### Archivo 1
 - Ruta: `orchestrator.py`
+- Reemplace el archivo actual por el de este paquete
 
-#### Archivo 2
-- Ruta: `scripts/verificar_resultado_corrida.py`
+### Archivo 2
+- Ruta: `agents/shorts_creator.py`
+- Reemplace el archivo actual por el de este paquete
 
-#### Archivo 3
-- Ruta: `scripts/detectar_short_pendiente.py`
-
-#### Archivo 4
-- Ruta: `.github/workflows/fabrica_videos.yml`
-
-### Paso 4
-Haga el commit con un mensaje como este:
+### Commit
+Use este mensaje:
 
 ```text
-Rescate: reintentar short faltante de largo publicado
+Hotfix: sincronizar shorts_creator con rescate de short pendiente
 ```
 
 ---
 
-## Qué debe hacer después de subirlo
-Después de subir el paquete, haga una corrida manual.
+## Qué hacer después
+Después de subir estos 2 archivos:
 
-### Pasos
-1. Entre a:
-   - `https://github.com/albertodouat-netizen/fabrica-de-videos/actions`
-2. Abra el workflow:
-   - `Fabrica de Videos YouTube (100% gratis y automatico)`
+1. Vaya a **GitHub > Actions**
+2. Abra el workflow **Fabrica de Videos YouTube (100% gratis y automatico)**
 3. Pulse **Run workflow**
 4. Elija la rama `main`
-5. Pulse **Run workflow** otra vez
+5. Ejecútelo
 
 ---
 
-## Qué debería pasar en esta corrida
-Como hoy ya existe el largo de cortisol, el sistema **no debería crear otro largo**.
+## Qué debe pasar ahora
+Como ya existe un largo de cortisol sin Short, el sistema debe hacer esto:
 
-Debería hacer esto:
-
-1. detectar que ya hubo largo
-2. detectar que hay un **Short derivado pendiente**
-3. intentar publicar **solo el Short faltante del cortisol**
-4. no publicar el Short independiente mientras exista ese faltante
+1. detectar el Short derivado pendiente
+2. reintentar solo ese Short faltante
+3. no crear otro video largo
+4. no publicar un Short independiente mientras exista ese pendiente
 
 ---
 
-## Cómo reconocer en GitHub que sí hizo lo correcto
-En la corrida deberían aparecer pasos como estos:
+## Qué debe mirar en la corrida
+Debe ver pasos como estos:
 
 - `Detectar si hay Short derivado pendiente`
 - `Reintentar Short derivado pendiente (si existe)`
 - `Verificar que el Short derivado pendiente produjo resultado real`
 
-Si ve esos pasos, el paquete quedó funcionando.
+Si esos pasos salen bien, entonces se recuperó el Short faltante del cortisol.
 
 ---
 
-## Resultado esperado
-### Si sale bien
-Debe quedar:
-- el largo de cortisol ya publicado
-- y ahora también su **Short faltante** publicado
+## Importante
+En la captura también apareció un aviso de traducción `429` de Google Translate.
+Eso **no fue la causa principal del fallo**.
+El bloqueo real fue el desfase entre:
 
-### Si falla
-No pasa nada: me manda la captura del error y yo le preparo el siguiente arreglo.
+- `orchestrator.py`
+- `agents/shorts_creator.py`
 
 ---
 
 ## Resumen corto
-Haga esto en este orden:
+Haga esto:
 
-1. Suba los 4 archivos del paquete
-2. Haga commit
-3. Lance **Run workflow**
-4. El sistema debe intentar recuperar el **Short faltante del cortisol**
-5. Si falla, me manda captura
+1. suba estos 2 archivos
+2. haga commit
+3. corra **Run workflow**
+4. me manda el resultado

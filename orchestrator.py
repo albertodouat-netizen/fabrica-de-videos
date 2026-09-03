@@ -610,6 +610,43 @@ def _anotar_tarea_video_relacionado(short_id: str, largo_id: str, titulo: str):
     except Exception:
         pass
 
+
+def _crear_short_con_compatibilidad(guion: dict, carpeta_salida: str, nombre_base: str,
+                                    url_video_largo: str = "", carpeta_visuales_largo: str = None,
+                                    titulo_short_override: str = ""):
+    """Llama a shorts_creator soportando versiones viejas y nuevas.
+
+    Caso real 03-sep-2026: el repositorio público quedó mezclado con un
+    orchestrator nuevo y un shorts_creator viejo. El viejo no aceptaba
+    `titulo_short_override` y devolvía 3 valores; el nuevo acepta ese
+    argumento y devuelve 4. Aquí se toleran ambos para que un desfase así
+    no vuelva a romper el rescate del Short pendiente."""
+    import inspect
+    from agents.shorts_creator import crear_short
+
+    kwargs = {"url_video_largo": url_video_largo}
+    try:
+        firma = inspect.signature(crear_short)
+        params = firma.parameters
+    except Exception:
+        params = {}
+
+    if carpeta_visuales_largo is not None and "carpeta_visuales_largo" in params:
+        kwargs["carpeta_visuales_largo"] = carpeta_visuales_largo
+    if titulo_short_override and "titulo_short_override" in params:
+        kwargs["titulo_short_override"] = titulo_short_override
+
+    resultado = crear_short(guion, carpeta_salida, nombre_base, **kwargs)
+    if not isinstance(resultado, tuple):
+        raise RuntimeError("crear_short no devolvió una tupla utilizable.")
+    if len(resultado) == 4:
+        return resultado
+    if len(resultado) == 3:
+        ruta_short, titulo_short, descripcion_short = resultado
+        return ruta_short, titulo_short, descripcion_short, None
+    raise RuntimeError(f"crear_short devolvió {len(resultado)} valores; se esperaban 3 o 4.")
+
+
 def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool):
     cfg = load_config()
     estado = load_state()
@@ -824,11 +861,10 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
 
     if generar_short:
         try:
-            from agents.shorts_creator import crear_short
             log(AGENT, "9/9 Generando Short para atraer tráfico al video completo (ShortsCreator)...")
             from agents.promocion_cruzada import url_con_playlist
             url_largo = url_con_playlist(video_id, cfg) if video_id else ""
-            ruta_short, titulo_short, descripcion_short, miniatura_short = crear_short(
+            ruta_short, titulo_short, descripcion_short, miniatura_short = _crear_short_con_compatibilidad(
                 guion, "output/video", nombre_base, url_video_largo=url_largo,
                 carpeta_visuales_largo=carpeta_assets
             )
@@ -1053,7 +1089,6 @@ def publicar_short_pendiente():
 
     cfg = load_config()
     from agents.promocion_cruzada import url_con_playlist, publicar_comentario_cruzado, comentario_conversacion
-    from agents.shorts_creator import crear_short
     from agents.publisher import publicar_video
 
     nombre_base = slugify((guion.get("titulo") or pendiente.get("titulo_largo") or "short_pendiente"))
@@ -1061,7 +1096,7 @@ def publicar_short_pendiente():
     url_largo = url_con_playlist(pendiente.get("video_id", ""), cfg) if pendiente.get("video_id") else ""
 
     log(AGENT, "Regenerando el Short derivado pendiente...")
-    ruta_short, titulo_short, descripcion_short, miniatura_short = crear_short(
+    ruta_short, titulo_short, descripcion_short, miniatura_short = _crear_short_con_compatibilidad(
         guion,
         "output/video",
         nombre_base,
