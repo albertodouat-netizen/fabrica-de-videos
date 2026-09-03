@@ -115,20 +115,32 @@ jobs:
         if: steps.candado.outputs.ya_publico != 'true'
         run: python3 scripts/verificar_resultado_corrida.py --modo largo
 
-      # Días de "descanso" del video largo: se publica UN Short
-      # independiente con contenido completo y propio, alineado a un video
-      # largo ya existente (estrategia de crecimiento acordada 16-ago-2026:
-      # presencia diaria en el feed de Shorts, el canal de descubrimiento
-      # real de un canal nuevo, sin aumentar la frecuencia de largos).
-      # El candado de doble corrida del mismo día lo cubre el propio
-      # orquestador: solo corre cuando ya_publico == 'true' (no tocaba
-      # largo) y el paso guarda su propia marca del día en estado.json.
-      - name: Short independiente (días sin video largo)
+      # Días sin video largo: ANTES de publicar un Short independiente,
+      # revisar si quedó pendiente el Short derivado de un largo ya
+      # publicado. Esto rescata casos "largo sí, short no" sin volver a
+      # generar otro largo y evita que el canal publique un Short no
+      # relacionado mientras el largo anterior sigue huérfano.
+      - name: Detectar si hay Short derivado pendiente
         if: steps.candado.outputs.ya_publico == 'true'
+        id: short_pendiente
+        run: python3 scripts/detectar_short_pendiente.py
+
+      - name: Reintentar Short derivado pendiente (si existe)
+        if: steps.candado.outputs.ya_publico == 'true' && steps.short_pendiente.outputs.hay_pendiente == 'true'
+        run: python3 orchestrator.py --solo-short-pendiente
+
+      - name: Verificar que el Short derivado pendiente produjo resultado real
+        if: steps.candado.outputs.ya_publico == 'true' && steps.short_pendiente.outputs.hay_pendiente == 'true'
+        run: python3 scripts/verificar_resultado_corrida.py --modo short-pendiente
+
+      # Solo si NO había ningún Short pendiente por rescatar, publicar el
+      # Short independiente normal del día.
+      - name: Short independiente (días sin video largo)
+        if: steps.candado.outputs.ya_publico == 'true' && steps.short_pendiente.outputs.hay_pendiente != 'true'
         run: python3 orchestrator.py --solo-short-independiente
 
       - name: Verificar que la corrida de Short independiente produjo resultado real
-        if: steps.candado.outputs.ya_publico == 'true'
+        if: steps.candado.outputs.ya_publico == 'true' && steps.short_pendiente.outputs.hay_pendiente != 'true'
         run: python3 scripts/verificar_resultado_corrida.py --modo short-independiente
 
       - name: Responder comentarios de espectadores (interacción = algoritmo)
