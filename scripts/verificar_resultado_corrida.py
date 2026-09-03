@@ -24,7 +24,7 @@ def _cargar():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--modo", choices=["largo", "short-independiente"], required=True)
+    ap.add_argument("--modo", choices=["largo", "short-independiente", "short-pendiente"], required=True)
     args = ap.parse_args()
 
     try:
@@ -55,6 +55,25 @@ def main():
             print("❌ La corrida larga debía publicar el Short derivado, pero no devolvió short_id.")
             return 1
         print("✅ Verificación final OK: hubo largo y Short con evidencia mínima.")
+        return 0
+
+    if args.modo == "short-pendiente":
+        if data.get("modo") != "short_pendiente":
+            print("❌ El resultado de corrida no corresponde al modo 'short_pendiente'.")
+            return 1
+        if data.get("status") == "sin_pendientes":
+            print("✅ Verificación final OK: no había ningún Short pendiente por recuperar.")
+            return 0
+        if data.get("status") != "ok":
+            print("❌ La corrida de Short pendiente NO terminó en estado 'ok'.")
+            return 1
+        if not data.get("video_id"):
+            print("❌ El Short pendiente no indica a qué video largo quedó vinculado.")
+            return 1
+        if not data.get("short_id"):
+            print("❌ El Short pendiente no devolvió short_id.")
+            return 1
+        print("✅ Verificación final OK: el Short pendiente quedó recuperado con evidencia mínima.")
         return 0
 
     if data.get("modo") != "short_independiente":

@@ -1,179 +1,141 @@
-# PAQUETE LISTO — hotfix + menos riesgo de cuota + horario 3:00 am
+# PAQUETE LISTO — rescate del Short faltante del video largo
 
-Este paquete ya viene preparado para que usted solo reemplace archivos en GitHub.
+Este paquete está hecho para corregir exactamente este problema:
 
-## Qué corrige este paquete
-Trae 3 cosas importantes juntas:
-
-### 1) Corrige el error que tumbó la última corrida
-Se arregló en `orchestrator.py`:
-
-- error visto: `NameError: name 're' is not defined`
-- arreglo aplicado: se agregó `import re`
-
-### 2) Reduce el riesgo de volver a gastar demasiada cuota en búsquedas
-Se mejoró `agents/trend_scout.py`:
-
-- antes podía recorrer demasiadas búsquedas del config
-- ahora pone un **tope duro de seguridad por corrida**
-- ahora **se detiene apenas ya tiene suficientes candidatos**
-- ahora si detecta `429` / `quota exceeded`, **deja de golpear la API**
-
-En palabras simples:
-**ya no se pone a insistir tantas veces cuando la cuota está baja o agotada**.
-
-### 3) Deja confirmado el arranque automático temprano
-Se incluye `.github/workflows/fabrica_videos.yml` con el horario:
-
-- inicio principal: **3:00 am Colombia**
-- respaldo: **5:15 am Colombia**
-- publicación sigue preparada para las **2:30 pm**
+- el video largo **sí** quedó publicado
+- pero su **Short derivado no quedó publicado**
+- en este caso concreto: el largo de **cortisol** quedó sin su Short
 
 ---
 
-## Archivos que trae este paquete
-Debe subir exactamente estos archivos en estas rutas del repositorio:
+## Qué hace este paquete
+Trae una mejora nueva para que el sistema haga esto:
+
+### 1) Detectar un largo publicado sin Short
+Si encuentra un video largo publicado que quedó con `short_id` vacío, lo marca como pendiente.
+
+### 2) Reintentar SOLO el Short faltante
+Ya no toca volver a generar otro video largo.
+
+### 3) Priorizar ese rescate antes de un Short independiente
+O sea:
+- primero intenta sacar el **Short faltante del largo**
+- solo si no hay ningún faltante, entonces publica el **Short independiente normal**
+
+### 4) Dejar evidencia clara en GitHub Actions
+Ahora el workflow muestra pasos específicos para eso.
+
+---
+
+## Este paquete sirve también para el caso actual del cortisol
+Sí.
+
+Este paquete está pensado para que, después de subirlo y lanzar una corrida manual:
+
+- el sistema detecte que el largo de cortisol ya existe
+- vea que ese largo no tiene `short_id`
+- e intente crear/publicar **solo ese Short faltante**
+
+---
+
+## Archivos que debe subir al repositorio
+Suba estos archivos exactamente en estas rutas:
 
 - `orchestrator.py`
-- `agents/trend_scout.py`
+- `scripts/verificar_resultado_corrida.py`
+- `scripts/detectar_short_pendiente.py`
 - `.github/workflows/fabrica_videos.yml`
 
 Repositorio:
-
 - `https://github.com/albertodouat-netizen/fabrica-de-videos`
 
 ---
 
-## Cómo subirlo paso a paso
+## Cómo subirlo paso por paso
 
-### Paso 1: descargar y descomprimir
-1. Descargue este ZIP.
-2. Descomprímalo en su computador.
-3. Abra la carpeta descomprimida.
+### Paso 1
+Descargue el ZIP y descomprímalo.
 
-### Paso 2: entrar al repositorio
-1. Abra este enlace:
-   - `https://github.com/albertodouat-netizen/fabrica-de-videos`
-2. Verifique que arriba diga rama `main`.
+### Paso 2
+Abra su repositorio GitHub.
 
-### Paso 3: subir `orchestrator.py`
-1. En el repo, abra el archivo `orchestrator.py`.
-2. Pulse el ícono del lápiz **Edit this file**.
-3. Borre todo lo que está allí.
-4. Abra el `orchestrator.py` de este paquete en su computador.
-5. Copie todo.
-6. Péguelo completo en GitHub.
-7. Todavía no haga el commit final si va a cambiar los otros archivos también.
+### Paso 3
+Suba/reemplace estos 4 archivos uno por uno:
 
-### Paso 4: subir `agents/trend_scout.py`
-1. En el repo, entre a la carpeta `agents`.
-2. Abra `trend_scout.py`.
-3. Pulse **Edit this file**.
-4. Borre todo.
-5. Abra el `trend_scout.py` de este paquete.
-6. Copie todo.
-7. Péguelo completo en GitHub.
+#### Archivo 1
+- Ruta: `orchestrator.py`
 
-### Paso 5: subir `.github/workflows/fabrica_videos.yml`
-1. En el repo, entre a la carpeta `.github`.
-2. Luego entre a `workflows`.
-3. Abra `fabrica_videos.yml`.
-4. Pulse **Edit this file**.
-5. Borre todo.
-6. Abra el `fabrica_videos.yml` de este paquete.
-7. Copie todo.
-8. Péguelo completo en GitHub.
+#### Archivo 2
+- Ruta: `scripts/verificar_resultado_corrida.py`
 
-### Paso 6: hacer el commit
-1. Baje al final de la página en GitHub.
-2. En el mensaje del commit escriba esto:
+#### Archivo 3
+- Ruta: `scripts/detectar_short_pendiente.py`
+
+#### Archivo 4
+- Ruta: `.github/workflows/fabrica_videos.yml`
+
+### Paso 4
+Haga el commit con un mensaje como este:
 
 ```text
-Hotfix: import re + control de cuota + horario 3am
+Rescate: reintentar short faltante de largo publicado
 ```
-
-3. Pulse **Commit changes**.
 
 ---
 
-## Cómo revisar que sí quedó bien
+## Qué debe hacer después de subirlo
+Después de subir el paquete, haga una corrida manual.
 
-### Revisión 1: `orchestrator.py`
-Abra:
-- `https://github.com/albertodouat-netizen/fabrica-de-videos/blob/main/orchestrator.py`
-
-Arriba, en los imports, debe aparecer:
-
-```python
-import re
-```
-
-### Revisión 2: `trend_scout.py`
-Abra:
-- `https://github.com/albertodouat-netizen/fabrica-de-videos/blob/main/agents/trend_scout.py`
-
-Debe verse una parte parecida a esta:
-
-```python
-MAX_BUSQUEDAS_YOUTUBE_POR_CORRIDA = 6
-```
-
-### Revisión 3: workflow
-Abra:
-- `https://github.com/albertodouat-netizen/fabrica-de-videos/blob/main/.github/workflows/fabrica_videos.yml`
-
-Debe verse esta línea:
-
-```yaml
-- cron: "0 8 * * *"
-```
-
-Eso significa 3:00 am Colombia.
-
----
-
-## Muy importante sobre la cuota
-Este paquete **reduce el riesgo** y mejora el comportamiento cuando la cuota está baja.
-
-Pero hay que decirlo claro:
-**ningún paquete puede inventar cuota nueva si la cuota diaria ya está agotada**.
-
-Entonces lo correcto es:
-
-1. Subir este paquete.
-2. Esperar a que la cuota diaria de YouTube API se recupere.
-3. Luego lanzar la corrida manual.
-
----
-
-## Cómo lanzar la prueba manual
-1. Abra:
+### Pasos
+1. Entre a:
    - `https://github.com/albertodouat-netizen/fabrica-de-videos/actions`
-2. Entre al workflow de la fábrica.
-3. Pulse **Run workflow**.
-4. Elija la rama `main`.
-5. Ejecútelo.
+2. Abra el workflow:
+   - `Fabrica de Videos YouTube (100% gratis y automatico)`
+3. Pulse **Run workflow**
+4. Elija la rama `main`
+5. Pulse **Run workflow** otra vez
 
 ---
 
-## Qué debería pasar después
-Lo esperado ahora es esto:
+## Qué debería pasar en esta corrida
+Como hoy ya existe el largo de cortisol, el sistema **no debería crear otro largo**.
 
-- ya no debe caerse por el bug de `import re`
-- la búsqueda de tendencias ya no debe insistir tanto cuando la cuota esté mal
-- el sistema mantiene el arranque temprano de 3:00 am
+Debería hacer esto:
 
-Si aun así falla por otro motivo real, eso también sirve, porque ahora el sistema ya está mostrando el error real en rojo.
+1. detectar que ya hubo largo
+2. detectar que hay un **Short derivado pendiente**
+3. intentar publicar **solo el Short faltante del cortisol**
+4. no publicar el Short independiente mientras exista ese faltante
 
-Usted solo me manda la captura y yo le preparo el siguiente paquete.
+---
+
+## Cómo reconocer en GitHub que sí hizo lo correcto
+En la corrida deberían aparecer pasos como estos:
+
+- `Detectar si hay Short derivado pendiente`
+- `Reintentar Short derivado pendiente (si existe)`
+- `Verificar que el Short derivado pendiente produjo resultado real`
+
+Si ve esos pasos, el paquete quedó funcionando.
+
+---
+
+## Resultado esperado
+### Si sale bien
+Debe quedar:
+- el largo de cortisol ya publicado
+- y ahora también su **Short faltante** publicado
+
+### Si falla
+No pasa nada: me manda la captura del error y yo le preparo el siguiente arreglo.
 
 ---
 
 ## Resumen corto
 Haga esto en este orden:
 
-1. Suba los 3 archivos de este paquete.
-2. Haga el commit.
-3. Espere cuota disponible.
-4. Lance **Run workflow**.
-5. Si falla, me manda la captura y yo sigo.
+1. Suba los 4 archivos del paquete
+2. Haga commit
+3. Lance **Run workflow**
+4. El sistema debe intentar recuperar el **Short faltante del cortisol**
+5. Si falla, me manda captura

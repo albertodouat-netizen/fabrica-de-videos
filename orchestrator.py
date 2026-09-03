@@ -131,6 +131,121 @@ def _checkpoint_short_independiente_publicado(resultado: dict, short_id: str):
     save_state(estado)
 
 
+def _obtener_shorts_derivados_pendientes(estado: dict) -> list:
+    """Compatibilidad: acepta el formato nuevo (lista) y uno viejo (dict)."""
+    pendientes = estado.get("shorts_derivados_pendientes")
+    if isinstance(pendientes, list):
+        return pendientes
+    uno = estado.get("short_derivado_pendiente")
+    if isinstance(uno, dict) and uno.get("video_id"):
+        return [uno]
+    return []
+
+
+def _guardar_lista_shorts_derivados_pendientes(estado: dict, pendientes: list):
+    estado["shorts_derivados_pendientes"] = pendientes
+    estado.pop("short_derivado_pendiente", None)
+
+
+def _upsert_short_derivado_pendiente(estado: dict, registro: dict):
+    pendientes = _obtener_shorts_derivados_pendientes(estado)
+    idx = None
+    for i, p in enumerate(pendientes):
+        if registro.get("video_id") and p.get("video_id") == registro.get("video_id"):
+            idx = i
+            break
+    if idx is None:
+        pendientes.append(registro)
+    else:
+        actual = pendientes[idx]
+        for k, val in registro.items():
+            if val not in (None, "", [], {}):
+                actual[k] = val
+    _guardar_lista_shorts_derivados_pendientes(estado, pendientes)
+
+
+def _quitar_short_derivado_pendiente(estado: dict, video_id: str):
+    pendientes = [p for p in _obtener_shorts_derivados_pendientes(estado)
+                  if p.get("video_id") != video_id]
+    _guardar_lista_shorts_derivados_pendientes(estado, pendientes)
+
+
+def _guardar_short_derivado_pendiente_registro(registro: dict):
+    """Guarda todo lo necesario para reintentar SOLO el Short faltante.
+
+    Si el largo ya quedó publicado pero el Short falla, esta copia permite
+    rearmar/publicar el Short después sin tener que repetir el video largo."""
+    if not registro.get("video_id"):
+        return
+    estado = load_state()
+    ahora = dt.datetime.now().isoformat()
+    data = {
+        "video_id": registro.get("video_id", ""),
+        "titulo_largo": registro.get("titulo_largo", ""),
+        "idea_origen": registro.get("idea_origen", ""),
+        "ruta_video": registro.get("ruta_video", ""),
+        "ruta_miniatura": registro.get("ruta_miniatura", ""),
+        "descripcion_largo": registro.get("descripcion_largo", ""),
+        "guion": registro.get("guion") or {},
+        "titulo_short_override": registro.get("titulo_short_override", ""),
+        "formato_reintento": registro.get("formato_reintento", ""),
+        "origen": registro.get("origen", "largo_publicado_sin_short"),
+        "fecha_largo": registro.get("fecha_largo", ahora),
+        "fecha_ultima_actualizacion": ahora,
+        "reintentos": int(registro.get("reintentos", 0)),
+    }
+    _upsert_short_derivado_pendiente(estado, data)
+    estado["ultima_ejecucion"] = ahora
+    save_state(estado)
+
+
+def _guardar_short_derivado_pendiente(idea: dict, guion: dict, ruta_video: str,
+                                      ruta_miniatura: str, video_id: str,
+                                      descripcion_final: str,
+                                      titulo_short_override: str = ""):
+    _guardar_short_derivado_pendiente_registro({
+        "video_id": video_id,
+        "titulo_largo": guion.get("titulo", ""),
+        "idea_origen": idea.get("titulo", ""),
+        "ruta_video": ruta_video,
+        "ruta_miniatura": ruta_miniatura,
+        "descripcion_largo": descripcion_final,
+        "guion": guion,
+        "titulo_short_override": titulo_short_override,
+        "origen": "largo_publicado_sin_short",
+    })
+
+
+def _video_publicado_ya_tiene_short(estado: dict, video_id: str) -> bool:
+    for v in estado.get("videos_publicados", []):
+        if v.get("video_id") == video_id and v.get("short_id"):
+            return True
+    return False
+
+
+def _buscar_video_largo_sin_short(estado: dict):
+    """Respaldo para casos ya publicados antes de existir la cola pendiente."""
+    videos = list(estado.get("videos_publicados", []))
+    for v in reversed(videos):
+        if v.get("video_id") and not v.get("short_id"):
+            return v
+    return None
+
+
+def _adjuntar_short_a_largo_existente(video_id_largo: str, ruta_short: str, short_id: str):
+    estado = load_state()
+    ahora = dt.datetime.now().isoformat()
+    _upsert_video_publicado(estado, {
+        "video_id": video_id_largo,
+        "ruta_short": ruta_short,
+        "short_id": short_id,
+        "fecha": ahora,
+    })
+    _quitar_short_derivado_pendiente(estado, video_id_largo)
+    estado["ultima_ejecucion"] = ahora
+    save_state(estado)
+
+
 def _registrar_final_largo(idea: dict, guion: dict, ruta_video: str, ruta_miniatura: str,
                            video_id: str, ruta_short: str, short_id: str,
                            descripcion_final: str):
@@ -641,6 +756,8 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
         if video_id:
             resultado_corrida["video_id"] = video_id
             _checkpoint_largo_subido(idea, guion, ruta_video, ruta_miniatura, video_id, descripcion_final)
+            _guardar_short_derivado_pendiente(idea, guion, ruta_video, ruta_miniatura, video_id,
+                                              descripcion_final)
             _guardar_resultado_corrida({**resultado_corrida,
                                         "status": "largo_publicado",
                                         "ruta_video": ruta_video,
@@ -753,6 +870,7 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
                 short_id = publicar_video(ruta_short, miniatura_short, guion_short, descripcion_short)
                 if short_id:
                     resultado_corrida["short_id"] = short_id
+                    _adjuntar_short_a_largo_existente(video_id, ruta_short, short_id)
                     _guardar_resultado_corrida({**resultado_corrida,
                                                 "status": "short_publicado",
                                                 "ruta_video": ruta_video,
@@ -851,6 +969,160 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
                        "short_id": short_id}
     _guardar_resultado_corrida(resultado_final)
     return resultado_final
+
+
+def _reconstruir_short_pendiente_desde_largo_registrado(registro_largo: dict) -> dict:
+    """Si existe un largo ya publicado sin short_id, arma un reemplazo.
+
+    Esto rescata casos anteriores al parche, donde no quedó guardado el
+    guion fuente para el Short derivado."""
+    cfg = load_config()
+    estado = load_state()
+    tema = (registro_largo.get("titulo") or registro_largo.get("titulo_largo") or "").strip()
+    if not tema:
+        raise RuntimeError("No hay título del video largo para reconstruir el Short pendiente.")
+
+    from agents.short_independiente import _generar_guion_short, _titulo_short, CIERRES, FORMATOS
+    import random as _rnd
+
+    ultimo_formato = estado.get("ultimo_formato_short", "")
+    formatos_posibles = [f for f in FORMATOS if f != ultimo_formato] or FORMATOS
+    formato = _rnd.choice(formatos_posibles)
+    guion = _generar_guion_short(tema, formato, cfg)
+    if not guion:
+        raise RuntimeError("No se pudo reconstruir un guion útil para el Short faltante.")
+
+    _tipo_cierre, texto_cierre = _rnd.choice(CIERRES)
+    guion["capitulos"][0]["beats"].append({
+        "texto": texto_cierre,
+        "visual": "smiling person in bright natural setting",
+    })
+    guion["gancho"] = ""
+    titulo_short = _titulo_short(tema, formato)
+
+    data = {
+        "video_id": registro_largo.get("video_id", ""),
+        "titulo_largo": tema,
+        "idea_origen": registro_largo.get("idea_origen", tema),
+        "ruta_video": registro_largo.get("ruta_video", ""),
+        "ruta_miniatura": registro_largo.get("ruta_miniatura", ""),
+        "descripcion_largo": registro_largo.get("descripcion", registro_largo.get("descripcion_largo", "")),
+        "guion": guion,
+        "titulo_short_override": titulo_short,
+        "formato_reintento": formato,
+        "origen": "reconstruido_desde_largo_sin_short",
+        "fecha_largo": registro_largo.get("fecha", dt.datetime.now().isoformat()),
+    }
+    _guardar_short_derivado_pendiente_registro(data)
+    return data
+
+
+def publicar_short_pendiente():
+    """Reintenta SOLO el Short faltante de un largo que ya quedó publicado."""
+    _guardar_resultado_corrida({
+        "modo": "short_pendiente",
+        "status": "iniciada",
+        "fecha_inicio": dt.datetime.now().isoformat(),
+        "short_id": None,
+    })
+
+    estado = load_state()
+    pendientes = _obtener_shorts_derivados_pendientes(estado)
+    pendientes = [p for p in pendientes if p.get("video_id") and not _video_publicado_ya_tiene_short(estado, p.get("video_id", ""))]
+    if pendientes:
+        pendientes.sort(key=lambda p: p.get("fecha_largo") or p.get("fecha_ultima_actualizacion") or "")
+        pendiente = pendientes[0]
+    else:
+        huerfano = _buscar_video_largo_sin_short(estado)
+        if not huerfano:
+            data = {
+                "modo": "short_pendiente",
+                "status": "sin_pendientes",
+                "fecha_fin": dt.datetime.now().isoformat(),
+            }
+            _guardar_resultado_corrida(data)
+            log(AGENT, "No hay ningún Short derivado pendiente por recuperar.")
+            return data
+        pendiente = _reconstruir_short_pendiente_desde_largo_registrado(huerfano)
+        log(AGENT, f"Se detectó un largo publicado sin Short derivado y se reconstruirá el faltante: "
+                    f"{pendiente.get('titulo_largo', '')[:80]}")
+
+    guion = pendiente.get("guion") or {}
+    if not guion.get("capitulos"):
+        raise RuntimeError("El Short pendiente no tiene un guion válido para regenerarse.")
+
+    cfg = load_config()
+    from agents.promocion_cruzada import url_con_playlist, publicar_comentario_cruzado, comentario_conversacion
+    from agents.shorts_creator import crear_short
+    from agents.publisher import publicar_video
+
+    nombre_base = slugify((guion.get("titulo") or pendiente.get("titulo_largo") or "short_pendiente"))
+    nombre_base += "_retry_" + dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+    url_largo = url_con_playlist(pendiente.get("video_id", ""), cfg) if pendiente.get("video_id") else ""
+
+    log(AGENT, "Regenerando el Short derivado pendiente...")
+    ruta_short, titulo_short, descripcion_short, miniatura_short = crear_short(
+        guion,
+        "output/video",
+        nombre_base,
+        url_video_largo=url_largo,
+        titulo_short_override=pendiente.get("titulo_short_override", ""),
+    )
+
+    guion_short = {
+        "titulo": titulo_short,
+        "tags": (guion.get("tags", []) + ["Shorts"])[:10],
+        "disclaimer": guion.get("disclaimer", ""),
+    }
+    log(AGENT, "Publicando el Short derivado pendiente en YouTube...")
+    short_id = publicar_video(ruta_short, miniatura_short, guion_short, descripcion_short)
+    if not short_id:
+        _guardar_resultado_corrida({
+            "modo": "short_pendiente",
+            "status": "error",
+            "fecha_fin": dt.datetime.now().isoformat(),
+            "ruta_short": ruta_short,
+            "video_id": pendiente.get("video_id", ""),
+            "error": "El publicador no devolvió short_id",
+        })
+        raise RuntimeError("El Short derivado pendiente no quedó publicado/programado: el publicador no devolvió short_id.")
+
+    if pendiente.get("video_id"):
+        try:
+            publicar_comentario_cruzado(
+                short_id,
+                comentario_conversacion(
+                    pendiente.get("titulo_largo", guion.get("titulo", "")),
+                    url_extra=url_largo,
+                    etiqueta_url="👉 Mira el video COMPLETO aquí ▶️",
+                ),
+            )
+        except Exception as e:
+            log(AGENT, f"Aviso: no se pudo publicar el comentario del Short pendiente ({e}).")
+        try:
+            from agents.playlist_manager import agregar_a_playlist
+            agregar_a_playlist(short_id, cfg["canal"]["nicho"].title())
+        except Exception as e:
+            log(AGENT, f"Aviso: no se pudo añadir el Short pendiente a la playlist ({e}).")
+        try:
+            _anotar_tarea_video_relacionado(short_id, pendiente["video_id"],
+                                            pendiente.get("titulo_largo", guion.get("titulo", "")))
+        except Exception:
+            pass
+
+    _adjuntar_short_a_largo_existente(pendiente.get("video_id", ""), ruta_short, short_id)
+    data = {
+        "modo": "short_pendiente",
+        "status": "ok",
+        "fecha_fin": dt.datetime.now().isoformat(),
+        "video_id": pendiente.get("video_id", ""),
+        "short_id": short_id,
+        "ruta_short": ruta_short,
+        "titulo_largo": pendiente.get("titulo_largo", guion.get("titulo", "")),
+        "origen": pendiente.get("origen", "largo_publicado_sin_short"),
+    }
+    _guardar_resultado_corrida(data)
+    return data
 
 
 def publicar_short_independiente():
@@ -952,7 +1224,24 @@ def main():
     parser.add_argument("--sin-short", action="store_true", help="No generar el Short, solo el video largo")
     parser.add_argument("--solo-short-independiente", action="store_true",
                         help="Publicar solo un Short independiente (días sin video largo)")
+    parser.add_argument("--solo-short-pendiente", action="store_true",
+                        help="Reintentar solo el Short derivado que faltó después de un largo ya publicado")
     args = parser.parse_args()
+
+    if args.solo_short_pendiente:
+        try:
+            publicar_short_pendiente()
+        except Exception as e:
+            _guardar_resultado_corrida({
+                "modo": "short_pendiente",
+                "status": "error",
+                "fecha_fin": dt.datetime.now().isoformat(),
+                "error": f"{type(e).__name__}: {e}",
+            })
+            log(AGENT, "❌ Error publicando el Short pendiente:")
+            traceback.print_exc()
+            sys.exit(1)
+        return
 
     if args.solo_short_independiente:
         try:
