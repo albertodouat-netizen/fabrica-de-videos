@@ -16,34 +16,31 @@ on:
     # Hora elegida con base en investigación real de comportamiento de
     # audiencia en YouTube (agosto 2026): la ventana con mejor tráfico para
     # una audiencia hispanohablante es entre semana, 2pm-4pm hora LOCAL del
-    # espectador, publicando 2-3 horas ANTES del pico de la tarde/noche (para
-    # que el algoritmo ya tenga señales de interacción cuando llega ese pico).
-    # 19:30 UTC = 14:30 en Bogotá/Lima/Quito, 13:30 en Ciudad de México,
-    # 15:30 en Buenos Aires/Santiago: cae justo en esa ventana para la
-    # audiencia hispanohablante más grande (Latinoamérica). Ajusta este
-    # valor si en el futuro tu YouTube Analytics muestra otro patrón real
-    # para TU audiencia específica (Estudio > Audiencia > "Cuándo tus
-    # espectadores están en YouTube" tiene la última palabra).
-    # FRECUENCIA: 1 video CADA 2 DÍAS (decisión del usuario, 16-ago-2026,
-    # para alejarse del perfil de "contenido producido en masa" de la
-    # REPROGRAMADO 27-ago-2026 (pedido del usuario): la GENERACIÓN arranca
-    # a las 15:00 UTC (10:00 am Colombia) para tener horas de margen si se
-    # demora; la PUBLICACIÓN la hace YouTube solo, EXACTA a las 19:30 UTC
-    # (2:30 pm Colombia), porque el video se sube PRIVADO con publishAt
-    # (ver agents/publisher.py y publicacion.programar_para_hora_pico).
-    # política de contenido inauténtico de YouTube). El cron corre todos
-    # los días, pero el candado (scripts/verificar_si_ya_publico_hoy.py)
-    # solo deja publicar si han pasado al menos 2 días desde el último
-    # video. Así el día exacto no depende de si GitHub saltó un cron.
-    - cron: "0 16 * * *"
-    # Horario de RESPALDO (añadido 15-ago-2026): los cron de GitHub Actions
-    # NO están garantizados -- en horas de alta carga se retrasan o se
-    # SALTAN por completo (limitación documentada de GitHub; pasó de verdad
-    # el 15-ago-2026: no hubo ninguna corrida a las 19:30). Si el primer
-    # horario corrió bien, este segundo se da cuenta (candado de abajo,
-    # paso "Evitar doble publicación") y termina sin publicar nada.
-    - cron: "15 18 * * *"
+    # espectador. La PUBLICACIÓN la sigue haciendo YouTube solo, EXACTA a
+    # las 19:30 UTC = 2:30 pm Colombia, mediante publishAt.
+    #
+    # REPROGRAMADO 31-ago-2026 (pedido explícito del usuario): la
+    # GENERACIÓN debe arrancar MUCHO más temprano, a las 3:00 am Colombia,
+    # para darle a la fábrica toda la madrugada y buena parte de la mañana.
+    # 3:00 am Colombia = 08:00 UTC.
+    #
+    # FRECUENCIA: 1 video CADA 2 DÍAS. El cron corre todos los días, pero el
+    # candado (scripts/verificar_si_ya_publico_hoy.py) solo deja publicar si
+    # han pasado al menos 2 días desde el último largo.
+    - cron: "0 8 * * *"
+    # RESPALDO TEMPRANO: si GitHub se salta la corrida principal o la retrasa,
+    # reintentar aún de madrugada/mañana conserva muchísimo margen antes de
+    # las 2:30 pm. 10:15 UTC = 5:15 am Colombia.
+    - cron: "15 10 * * *"
   workflow_dispatch: {}   # también puedes lanzarlo manualmente desde la pestaña "Actions"
+
+# Evita corridas superpuestas del mismo workflow. Si la principal sigue viva
+# cuando llega el horario de respaldo, la segunda queda en cola y arrancará
+# solo cuando termine la primera. Esto evita duplicados y carreras entre dos
+# generadores largos el mismo día.
+concurrency:
+  group: fabrica-videos-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: write   # necesario para que el robot recuerde qué ideas ya usó (commit automático)
@@ -55,7 +52,7 @@ jobs:
     # "exceeded the maximum execution time of 1h50m0s" ensamblando el video;
     # los videos de 15+ min con las correcciones tardan más que los de 6-8
     # min de antes). Límite duro de GitHub por job: 6h.
-    timeout-minutes: 300
+    timeout-minutes: 360
     steps:
       - name: Clonar repositorio
         uses: actions/checkout@v4
@@ -72,10 +69,12 @@ jobs:
 
       - name: Restaurar credenciales secretas (nunca se suben al repo)
         env:
-          # Reloj global (31-ago-2026): presupuesto de GENERACIÓN en minutos.
-          # Al agotarse, los agentes entran en modo apurado (sin reintentos
-          # ni extras) y el pipeline corre directo a render + publicación.
-          PRESUPUESTO_MINUTOS: "90"
+          # Reloj global (01-sep-2026): más margen real para generar antes
+          # de entrar en modo apurado. OJO: GitHub Actions jamás permite
+          # tiempo ilimitado; el máximo duro del job son 6h. Por eso este
+          # presupuesto se sube a 240 min: 4h de trabajo pesado y ~2h de
+          # colchón para render + subida antes de pegar contra el límite.
+          PRESUPUESTO_MINUTOS: "240"
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
@@ -112,6 +111,10 @@ jobs:
         if: steps.candado.outputs.ya_publico != 'true'
         run: python3 orchestrator.py --videos 1
 
+      - name: Verificar que la corrida larga produjo publicación real
+        if: steps.candado.outputs.ya_publico != 'true'
+        run: python3 scripts/verificar_resultado_corrida.py --modo largo
+
       # Días de "descanso" del video largo: se publica UN Short
       # independiente con contenido completo y propio, alineado a un video
       # largo ya existente (estrategia de crecimiento acordada 16-ago-2026:
@@ -122,8 +125,11 @@ jobs:
       # largo) y el paso guarda su propia marca del día en estado.json.
       - name: Short independiente (días sin video largo)
         if: steps.candado.outputs.ya_publico == 'true'
-        continue-on-error: true
         run: python3 orchestrator.py --solo-short-independiente
+
+      - name: Verificar que la corrida de Short independiente produjo resultado real
+        if: steps.candado.outputs.ya_publico == 'true'
+        run: python3 scripts/verificar_resultado_corrida.py --modo short-independiente
 
       - name: Responder comentarios de espectadores (interacción = algoritmo)
         if: always()
@@ -141,6 +147,7 @@ jobs:
           # video ya está en YouTube; aquí solo memoria, miniatura y logs.
           path: |
             data/estado.json
+            output/resultado_corrida.json
             output/thumbnails/**
           retention-days: 5
 
