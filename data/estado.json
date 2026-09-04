@@ -37,10 +37,10 @@
       "idea_origen": "Always Waking Up at Night? - 1 TBSP Lowers Cortisol FAST To Fall Back Asleep | Senior Health Tips"
     }
   ],
-  "ultima_ejecucion": "2026-09-03T23:55:24.771527",
+  "ultima_ejecucion": "2026-09-04T00:14:45.683616",
   "uso_gemini": {
-    "fecha": "2026-09-03",
-    "usados": 254
+    "fecha": "2026-09-04",
+    "usados": 7
   },
   "comentarios_respondidos": [],
   "playlist_canal_id": "PLOm1dX9uH38g",
@@ -48,15 +48,17 @@
     "estrés y ansiedad"
   ],
   "shorts_independientes_por_video": {
-    "HacgBVYqXtw": "2026-09-01T08:15:39.436819"
+    "HacgBVYqXtw": "2026-09-01T08:15:39.436819",
+    "_iGDFJ7L1f0": "2026-09-04T00:14:45.683616"
   },
-  "ultimo_formato_short": "consejo_practico",
-  "ultimo_short_independiente": "2026-09-01",
-  "ultimo_short_independiente_video_id": "0ZEv-hcbtCk",
-  "ultimo_short_independiente_largo_id": "HacgBVYqXtw",
+  "ultimo_formato_short": "dato_sorprendente",
+  "ultimo_short_independiente": "2026-09-04",
+  "ultimo_short_independiente_video_id": "cjiYrQIB88I",
+  "ultimo_short_independiente_largo_id": "_iGDFJ7L1f0",
   "videos_programados": {
     "0ZEv-hcbtCk": "2026-09-01T19:30:00.0Z",
-    "_iGDFJ7L1f0": "2026-09-03T19:30:00.0Z"
+    "_iGDFJ7L1f0": "2026-09-03T19:30:00.0Z",
+    "cjiYrQIB88I": "2026-09-04T19:30:00.0Z"
   },
   "tareas_video_relacionado": [
     {
@@ -68,6 +70,11 @@
       "short": "ps4F295cmXU",
       "largo": "_iGDFJ7L1f0",
       "url": "https://studio.youtube.com/video/ps4F295cmXU/edit"
+    },
+    {
+      "short": "cjiYrQIB88I",
+      "largo": "_iGDFJ7L1f0",
+      "url": "https://studio.youtube.com/video/cjiYrQIB88I/edit"
     }
   ],
   "ultimo_largo_confirmado": {
@@ -75,5 +82,9 @@
     "titulo": "Cortisol Para Dormir: El Error Que Te Despierta",
     "fecha": "2026-09-03T13:46:18.368184"
   },
-  "shorts_derivados_pendientes": []
+  "shorts_derivados_pendientes": [],
+  "zsky_sesion": {
+    "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6IjVick9YeVhUK0pPZUlWSDciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3lya2ZwdXRrdmlvanNodG5ndXd0LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIxZTQ2ZTU5MC04YzEzLTRhY2EtYTM0ZS1hY2U5ZTU2M2QwYTMiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg4NDg0MzMzLCJpYXQiOjE3ODg0ODA3MzMsImVtYWlsIjoiIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnt9LCJ1c2VyX21ldGFkYXRhIjp7fSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJhbm9ueW1vdXMiLCJ0aW1lc3RhbXAiOjE3ODg0ODAyNzV9XSwic2Vzc2lvbl9pZCI6Ijc2ZmZlM2ViLWY4MzYtNDViYy1iOTBiLTA4Njg5YjEyZDc4ZSIsImlzX2Fub255bW91cyI6dHJ1ZX0.aIE64T5_LmbUp-j_YMcHDvlPWaTl8UTcYpn6sC632MQ",
+    "refresh_token": "rqzzxzgh647g"
+  }
 }
