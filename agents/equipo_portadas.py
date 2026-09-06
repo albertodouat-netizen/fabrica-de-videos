@@ -55,6 +55,7 @@ import requests
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 
 from agents.utils import log, load_config
+from agents.control_calidad_idioma import normalizar_lineas_portada
 
 TAMANO = (1280, 720)
 
@@ -90,6 +91,50 @@ def _fuente(tam):
     return ImageFont.load_default()
 
 
+def _prompt_tematica_base(titulo: str, keyword: str) -> str:
+    """Prompt de fondo con prioridad al TEMA, no a un rostro genérico.
+
+    Regla pedida por el usuario el 03-sep-2026: la portada debe mostrar algo
+    claramente relacionado con el tema y de alto impacto. Si aparece una
+    persona, debe reforzar el tema, no sustituirlo."""
+    texto = f"{keyword} {titulo}".lower()
+    if any(x in texto for x in ["seta", "setas", "hongo", "hongos", "ostra", "mushroom"]):
+        return ("extreme macro professional photo of fresh oyster mushrooms, single mushroom cluster as the main subject, "
+                "dramatic warm side lighting, dark clean background on the left, vivid saturated colors, appetizing texture, no text, no watermark")
+    if any(x in texto for x in ["magnesio", "magnesium"]):
+        return ("close-up professional photo of magnesium capsules and magnesium powder on a spoon next to a glass of water, "
+                "supplement as the main subject on the right half of the frame, dark clean background on the left, vivid saturated colors, no text, no watermark")
+    if any(x in texto for x in ["intestino", "intestinal", "digest", "microbioma"]):
+        return ("close-up professional photo of yogurt kefir oats berries and chia seeds in a bowl, digestive health concept, "
+                "bowl as the main subject on the right half of the frame, dark clean background on the left, vivid saturated colors, appetizing natural lighting, no text, no watermark")
+    if any(x in texto for x in ["pierna", "piernas", "circul", "remolacha", "beet", "jengibre", "ginger"]):
+        return ("professional photo of a vivid beet or ginger drink in the foreground with older adult legs walking in soft focus behind it, "
+                "drink as the main subject on the right half of the frame, dark clean background on the left, vivid saturated colors, no text, no watermark")
+    if any(x in texto for x in ["cortisol", "dormir", "sueño", "sueno", "insomnio"]):
+        return ("dramatic professional photo of a glowing digital alarm clock showing 3:00 AM on a bedside table, sleepless older adult blurred in bed behind it, "
+                "alarm clock as the main subject on the right half of the frame, dark clean background on the left, vivid saturated colors, no text, no watermark")
+    if any(x in texto for x in ["música", "musica", "frecuencia", "frecuencias", "sonido", "sonidos", "estrés", "estres", "relajante"]):
+        return ("professional photo of large headphones and a smartphone with a calm audio interface on a bedside table, older adult resting in soft focus behind, "
+                "headphones as the main subject on the right half of the frame, dark clean background on the left, vivid saturated colors, no text, no watermark")
+    if any(x in texto for x in ["ojo", "ojos", "visión", "vision", "vista"]):
+        return ("professional photo of colorful vegetables rich in carotenoids beside a sharp close-up eye reflection, "
+                "vegetables as the main subject, dark clean background, vivid saturated colors, no text, no watermark")
+    if any(x in texto for x in ["miel", "honey", "ajo", "garlic", "cúrcuma", "curcuma", "té", "infusión", "infusion", "bebida", "jugo", "drink"]):
+        return (f"extreme close-up professional photo clearly showing {keyword or titulo}, food or drink as the single main subject, "
+                "dark clean background, vivid saturated colors, appetizing detail, no text, no watermark")
+    return (f"professional photo clearly representing {keyword or titulo}, main topic element as the single hero subject, "
+            "optional older adult only as secondary support, dark clean background, vivid saturated colors, high contrast, no text, no watermark")
+
+
+def _fusionar_prompt_fondo(prompt_llm: str, titulo: str, keyword: str) -> str:
+    base = _prompt_tematica_base(titulo, keyword)
+    extra = (prompt_llm or "").strip()
+    if not extra:
+        return base
+    return (f"{base}. {extra}. IMPORTANT: the main visible subject must be the topic element, "
+            f"never a generic face-only portrait. Human optional and secondary.")
+
+
 # ---------------------------------------------------------------------------
 # AGENTE 38: DIRECTOR DE PORTADA
 # ---------------------------------------------------------------------------
@@ -99,10 +144,12 @@ _PROMPT_DIRECTOR = """Eres el director de arte de miniaturas de un canal de YouT
 
 PATRONES VALIDADOS CON DATOS REALES (estudio 28-ago-2026 de 151 videos ganadores de canales pequeños):
 - Texto GIGANTE de 4 a 7 palabras TOTALES repartidas en 2-3 líneas cortas (máx 3 palabras por línea, mejor 1-2).
-- Las palabras deben abrir CURIOSIDAD sin repetir el título: "AÑADE ESTO", "STOP", "NUNCA HAGAS", "SOLO 1 CUCHARADA", "ELIMINA EL DOLOR".
+- Las palabras deben abrir CURIOSIDAD sin repetir el título: "AÑADE ESTO", "ALTO", "NUNCA HAGAS", "SOLO 1 CUCHARADA", "ESTE ERROR".
+- TODO el texto visible de la portada debe estar 100% en español. PROHIBIDO usar palabras en inglés como STOP, SLEEP, STRESS, SOUND o similares.
 - Si el tema tiene una CIFRA potente (edad, %, cantidad), destácala.
-- El fondo muestra UN SOLO protagonista: o el alimento/remedio en primer plano macro apetitoso, o una persona mayor hispana feliz/sorprendida. Nada de collages.
-- PROHIBIDO: frases genéricas ("salud natural", "bienestar"), más de 7 palabras, revelar toda la respuesta.
+- El fondo muestra UN SOLO protagonista y debe estar claramente relacionado con el tema.
+- Si el tema menciona un alimento, bebida, suplemento, parte del cuerpo u objeto concreto, ESE elemento debe ser el protagonista del fondo. Una persona puede aparecer solo como apoyo secundario, nunca como retrato genérico único.
+- PROHIBIDO: frases genéricas ("salud natural", "bienestar"), más de 7 palabras, revelar toda la respuesta, o portadas de solo rostro cuando el tema permite mostrar algo más concreto.
 
 TITULO DEL VIDEO: "{titulo}"
 TEMA/PALABRA CLAVE: "{keyword}"
@@ -117,7 +164,8 @@ Reglas del JSON:
 - "lineas": 2 o 3 líneas, cada una de 1 a 3 palabras, EN MAYÚSCULAS, español.
 - "linea_destacada": índice (0-based) de la línea que va en bloque amarillo.
 - "cifra": solo si el estilo es cifra_gigante (un número corto, ej "60", "90%", "1"). Si no, "".
-- "prompt_fondo": en inglés, foto realista, sujeto a la DERECHA del encuadre, fondo simple oscuro a la izquierda, colores vivos, sin texto, persona completamente vestida si aparece alguien, apto para todo público."""
+- "prompt_fondo": en inglés, foto realista, sujeto a la DERECHA del encuadre, fondo simple oscuro a la izquierda, colores vivos, sin texto, persona completamente vestida si aparece alguien, apto para todo público.
+- En "prompt_fondo" el protagonista debe ser el ELEMENTO DEL TEMA; una persona sola no basta si el tema permite mostrar un objeto, alimento, bebida, suplemento o parte del cuerpo."""
 
 
 def _extraer_json(texto: str):
@@ -151,15 +199,11 @@ def _concepto_local(titulo: str, keyword: str):
             lineas.append(fuertes[3])
     else:
         lineas = [fuertes[0], " ".join(fuertes[1:])] if len(fuertes) > 1 else [fuertes[0]]
-    lineas = [l for l in lineas if l.strip()][:3]
+    lineas = normalizar_lineas_portada([l for l in lineas if l.strip()][:3])
+    if not lineas:
+        lineas = ["ESTE TEMA"]
     m = re.search(r"\b(\d{1,3}%?)\b", titulo)
-    base = (keyword or titulo).strip()
-    prompt_fondo = (
-        f"extreme close-up professional photo of {base}, single main subject "
-        f"positioned on the right half of the frame, dark simple background on "
-        f"the left half, vivid saturated colors, dramatic warm lighting, "
-        f"appetizing, high detail, no text, no watermark, family friendly"
-    )
+    prompt_fondo = _prompt_tematica_base(titulo, keyword)
     variantes = [
         {"estilo": "bloque_amarillo", "lineas": lineas,
          "linea_destacada": min(1, len(lineas) - 1), "cifra": "",
@@ -195,6 +239,7 @@ def disenar_conceptos(titulo: str, keyword: str) -> dict:
                 total += len(pal)
                 if pal:
                     recortadas.append(" ".join(pal))
+            recortadas = normalizar_lineas_portada(recortadas)
             if not recortadas:
                 continue
             limpias.append({
@@ -202,7 +247,7 @@ def disenar_conceptos(titulo: str, keyword: str) -> dict:
                 "lineas": recortadas,
                 "linea_destacada": min(int(v.get("linea_destacada", 0) or 0), len(recortadas) - 1),
                 "cifra": str(v.get("cifra", "") or "")[:4],
-                "prompt_fondo": str(v.get("prompt_fondo", "") or "")[:600],
+                "prompt_fondo": _fusionar_prompt_fondo(str(v.get("prompt_fondo", "") or "")[:600], titulo, keyword),
             })
         if limpias:
             log(AGENT_DIRECTOR, f"{len(limpias)} concepto(s) diseñados por la cascada LLM.")
@@ -602,15 +647,15 @@ def generar_portada_elite(guion, imagen_base: str, salida_png: str,
 # INCRUSTAR PORTADA EN EL VIDEO (solución para la pestaña Shorts)
 # ---------------------------------------------------------------------------
 def incrustar_portada_como_primer_frame(ruta_video: str, ruta_portada: str,
-                                         segundos: float = 0.45) -> bool:
+                                         segundos: float = 2.2) -> bool:
     """Hallazgo verificado (29-ago-2026, con evidencia del CDN): la pestaña
     /shorts del canal y el feed de Shorts NO usan la miniatura personalizada
     (thumbnails.set): usan un FOTOGRAMA del propio video (frame0.jpg del
     CDN), y la API no permite elegirlo. Solución: superponer la portada
-    élite sobre los primeros ~0.45s del video. Así frame0 = portada, y el
-    espectador apenas percibe un 'flash' de portada al arrancar (que además
-    actúa de gancho visual). El audio no se toca (-c:a copy) y la duración
-    no cambia (es un overlay, no una inserción)."""
+    élite sobre los primeros ~2s del video. Así frame0 y varios frames
+    siguientes siguen siendo la MISMA portada, incluso si YouTube o el
+    selector manual eligen un fotograma posterior. El audio no se toca
+    (-c:a copy) y la duración no cambia (es un overlay, no una inserción)."""
     import subprocess
     if not (os.path.exists(ruta_video) and os.path.exists(ruta_portada)):
         return False

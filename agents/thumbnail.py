@@ -96,18 +96,16 @@ def _generar_fondo_ia_miniatura(keyword_principal: str, titulo: str, destino_jpg
     se verifica con Gemini Vision antes de aceptarla (ver
     agents.visuals._imagen_es_segura_gemini), con reintentos si falla."""
     base = keyword_principal.strip() or titulo
-    prompt = (
-        f"fotografía editorial realista relacionada con {base}, primer plano de una "
-        f"persona real sana y sonriente mirando a la cámara con expresión de alivio y "
-        f"bienestar genuino, luz natural cálida de mañana, piel con textura realista, "
-        f"fotografía de revista de salud, colores vibrantes, alto contraste, fondo "
-        f"simple desenfocado, composición centrada tipo miniatura de youtube, "
-        f"fotografía profesional de alta resolución, 8k, sin texto en la imagen, "
-        f"sin logotipos, sin marca de agua, encuadre de los hombros hacia arriba, "
-        f"persona completamente vestida con cuello alto o camiseta cerrada, sin "
-        f"escote, sin piel descubierta más allá del rostro y el cuello, sin "
-        f"desnudos, contenido apto para todo público, familiar, profesional"
-    )
+    try:
+        from agents.equipo_portadas import _prompt_tematica_base
+        prompt = _prompt_tematica_base(titulo, keyword_principal)
+    except Exception:
+        prompt = (
+            f"fotografía editorial realista claramente relacionada con {base}, mostrando el elemento principal del tema "
+            f"en primer plano. Si aparece una persona, debe ser secundaria y apoyar el tema, nunca un retrato genérico. "
+            f"Fotografía de revista de salud, colores vibrantes, alto contraste, fondo simple, composición tipo miniatura "
+            f"de YouTube, alta resolución, sin texto, sin logotipos, sin marca de agua, contenido apto para todo público"
+        )
     prompt_codificado = urllib.parse.quote(prompt)
 
     for intento in range(3):

@@ -21,6 +21,7 @@ import googleapiclient.http
 import google.auth.transport.requests
 
 from agents.utils import load_config, log
+from agents.control_calidad_idioma import tiene_ingles_visible
 
 AGENT = "Publicador"
 SCOPES = ["https://www.googleapis.com/auth/youtube.upload",
@@ -85,14 +86,33 @@ def publicar_video(ruta_video: str, ruta_miniatura: str, guion: dict, descripcio
     creds = _obtener_credenciales(cfg)
     youtube = googleapiclient.discovery.build("youtube", "v3", credentials=creds)
 
-    from agents.viral_strategist import construir_tags_seo
+    from agents.viral_strategist import construir_tags_seo, construir_descripcion_publicacion
     descripcion = descripcion_final if descripcion_final else (
         guion.get("descripcion", "") + "\n\n" + guion.get("disclaimer", "")
     )
 
+    # Candado de idioma visible: si el texto humano sale mezclado con inglés,
+    # se reescribe a una versión segura en español antes de subir.
+    if tiene_ingles_visible(descripcion):
+        try:
+            descripcion = construir_descripcion_publicacion(guion, [], cfg["canal"].get("nombre", ""),
+                                                            url_canal=cfg["canal"].get("url", ""))
+            log(AGENT, "Descripción regenerada en español para evitar mezcla con inglés antes de publicar.")
+        except Exception:
+            tema = (guion.get("keyword_principal") or guion.get("titulo") or "este tema").strip(" .")
+            descripcion = (
+                f"En este video te explicamos en español qué dice la evidencia sobre {tema} y cómo aplicarlo con seguridad.\n\n"
+                f"⚠️ {guion.get('disclaimer', 'Este contenido es informativo y no sustituye el consejo de tu profesional de salud.') }"
+            )
+    titulo_publico = (guion.get("titulo", "") or "").replace("#Shorts", "#VideoCorto")
+    if tiene_ingles_visible(titulo_publico):
+        tema = (guion.get("keyword_principal") or "salud natural").strip(" .")
+        titulo_publico = f"{tema.title()}: Lo Que Debes Saber"[:100]
+        log(AGENT, "Título reemplazado por una versión segura en español antes de publicar.")
+
     body = {
         "snippet": {
-            "title": guion["titulo"][:100],
+            "title": titulo_publico[:100],
             "description": descripcion[:5000],  # YouTube limita la descripción a 5000 caracteres
             "tags": construir_tags_seo(guion, cfg["canal"].get("nombre", "")),
             "categoryId": cfg["publicacion"].get("categoria_youtube", "22"),

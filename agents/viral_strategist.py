@@ -25,6 +25,8 @@ Fuentes de las reglas (resumen; ver conversación/README para detalle):
 
 import re
 
+from agents.control_calidad_idioma import tiene_ingles_visible
+
 # --- Parámetros de ritmo (todo esto es configurable y basado en la
 #     investigación resumida arriba) ---
 DURACION_MIN_CORTE_SEG = 3.0     # ningún corte visual dura menos de esto (evita caos)
@@ -32,6 +34,57 @@ DURACION_MAX_CORTE_SEG = 9.0     # ningún corte visual dura más de esto (evita
 DURACION_GANCHO_SEG_OBJETIVO = 12  # el "hook" debe leerse en ~10-15s
 PALABRAS_MAX_POR_FRASE = 20        # frases cortas = mejor ritmo y subtítulos más legibles
 MINUTOS_ENTRE_MINI_GANCHOS = 3     # cada cuánto insertar un "reset" de atención
+
+
+def _resumen_humano_desde_guion(guion: dict) -> str:
+    """Construye un resumen limpio y natural para la descripción.
+
+    31-ago-2026: dejamos de confiar ciegamente en el resumen SEO del LLM,
+    porque un video real publicó un primer párrafo con keyword stuffing y
+    frases raras en inglés. Este resumen usa solo datos del propio guion y
+    mantiene tono humano, útil y creíble."""
+    keyword = (guion.get("keyword_principal") or guion.get("titulo") or "este tema").strip(" .")
+    caps = []
+    for cap in guion.get("capitulos", []):
+        nombre = (cap.get("nombre") or "").strip()
+        if not nombre:
+            continue
+        nombre_l = nombre.lower()
+        if any(x in nombre_l for x in ["suscr", "coment", "interacción", "interaccion"]):
+            continue
+        caps.append(nombre)
+        if len(caps) >= 4:
+            break
+
+    base = (f"En este video te explico de forma clara qué dice la evidencia sobre {keyword} "
+            f"y cómo aplicarlo con seguridad en la vida real.")
+    if caps:
+        if len(caps) == 1:
+            detalle = caps[0].lower()
+        elif len(caps) == 2:
+            detalle = f"{caps[0].lower()} y {caps[1].lower()}"
+        else:
+            detalle = ", ".join(c.lower() for c in caps[:-1]) + f" y {caps[-1].lower()}"
+        base += f" Verás {detalle}."
+    base += " Al final tendrás pasos concretos para empezar hoy mismo sin complicarte de más."
+    return re.sub(r"\s+", " ", base).strip()
+
+
+def _referencia_humana_en_espanol(referencia: dict, tema: str) -> str:
+    """Evita meter títulos de papers en inglés dentro de la descripción.
+
+    El usuario pidió cero mezcla español/inglés en textos visibles. Los
+    nombres oficiales de los estudios suelen venir en inglés, así que aquí
+    se presenta una versión humana en español manteniendo autor, revista,
+    año y URL verificable."""
+    autores = (referencia.get("autores") or "").strip()
+    autor_corto = autores.split(",")[0] if autores else "Autores no especificados"
+    revista = (referencia.get("revista") or "revista científica").strip()
+    anio = str(referencia.get("anio", "")).strip()
+    url = (referencia.get("url") or "").strip()
+    tema = (tema or "este tema").strip(" .")
+    sufijo_anio = f" ({anio})" if anio else ""
+    return f"• Estudio científico sobre {tema} — {autor_corto} et al., {revista}{sufijo_anio}: {url}"
 
 
 REGLAS_PARA_GUIONISTA = f"""
@@ -324,15 +377,16 @@ def construir_descripcion_publicacion(guion: dict, timestamps_capitulos: list, n
       - 3-5 hashtags al final (los primeros 3 se muestran arriba del título).
     timestamps_capitulos: lista de tuplas (nombre_capitulo, segundos_inicio).
     """
-    resumen = guion.get("descripcion", "").strip()
+    resumen = _resumen_humano_desde_guion(guion)
     gancho = guion.get("gancho", "").strip()
     keyword_principal = guion.get("keyword_principal", "").strip()
 
     lineas = []
 
-    # Primeros ~150 caracteres: gancho + keyword principal si no viene ya incluida
-    primer_bloque = gancho if gancho else resumen
-    if keyword_principal and keyword_principal.lower() not in primer_bloque.lower():
+    # Primeros ~150 caracteres: gancho + keyword principal si no viene ya incluida.
+    # Si el gancho viene contaminado con inglés, se cae al resumen humano seguro.
+    primer_bloque = gancho if gancho and not tiene_ingles_visible(gancho) else resumen
+    if keyword_principal and not tiene_ingles_visible(keyword_principal) and keyword_principal.lower() not in primer_bloque.lower():
         primer_bloque = f"{primer_bloque} {keyword_principal}."
     lineas.append(f"🔥 {primer_bloque}")
     lineas.append("")
@@ -357,10 +411,7 @@ def construir_descripcion_publicacion(guion: dict, timestamps_capitulos: list, n
     if referencias:
         lineas.append("📚 REFERENCIAS CIENTÍFICAS (verificadas, revísalas tú mismo):")
         for r in referencias:
-            autores = r.get("autores", "").strip()
-            autor_corto = autores.split(",")[0] if autores else ""
-            lineas.append(f"• {r['titulo']} — {autor_corto} et al., {r.get('revista','')} "
-                          f"({r.get('anio','')}): {r['url']}")
+            lineas.append(_referencia_humana_en_espanol(r, keyword_principal or guion.get("titulo", "")))
         lineas.append("")
 
     if bloque_afiliados:
@@ -395,12 +446,18 @@ def construir_descripcion_publicacion(guion: dict, timestamps_capitulos: list, n
         # un hashtag roto tipo "#saludnatural,alternativa,(...)"; ahora se
         # limpia todo lo que no sea letra/número antes de armar el hashtag.
         hashtags_validos = []
-        for t in ordenados[:8]:
+        for t in ordenados[:12]:
+            if tiene_ingles_visible(t):
+                continue
             limpio = re.sub(r"[^0-9A-Za-zÁÉÍÓÚÑáéíóúñ]", "", t)
             if limpio:
                 hashtags_validos.append(f"#{limpio}")
             if len(hashtags_validos) >= 5:
                 break
+        if not hashtags_validos and keyword_principal and not tiene_ingles_visible(keyword_principal):
+            limpio_kw = re.sub(r"[^0-9A-Za-zÁÉÍÓÚÑáéíóúñ]", "", keyword_principal)
+            if limpio_kw:
+                hashtags_validos.append(f"#{limpio_kw}")
         if hashtags_validos:
             lineas.append(" ".join(hashtags_validos))
             lineas.append("")

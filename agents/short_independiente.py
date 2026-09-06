@@ -38,6 +38,7 @@ import re
 import requests
 
 from agents.utils import load_config, load_state, save_state, log, limpiar_texto_para_voz, modelo_groq
+from agents.control_calidad_idioma import tiene_ingles_visible
 
 AGENT = "ShortIndependiente"
 
@@ -82,6 +83,7 @@ REGLAS DE HUMANIZACIÓN (muy importantes, esto debe sonar a persona real, no a r
 - Nada de lenguaje de folleto ("descubre los increíbles beneficios") ni de jerga técnica sin explicar.
 - PROHIBIDO: saludos genéricos ("hola amigos"), presentar el canal, pedir suscripción (el cierre lo pongo yo).
 - El primer segundo es TODO: arranca directo con el dato/pregunta más fuerte.
+- TODO el texto visible o narrado debe quedar 100% en español. La única excepción permitida en inglés es el campo interno "visual".
 
 REGLA DE LOS PRIMEROS 3 SEGUNDOS (añadida 19-ago-2026 con datos REALES del canal:
 un Short llegó a 710 personas pero el 66% deslizó en los primeros ~9 segundos;
@@ -107,6 +109,9 @@ REGLAS VISUALES DEL SHORT (obligatorias):
   pantallas con texto, gráficos, documentos vacíos, fondos lisos o dibujos.
 - Cada visual debe ser una escena REAL, filmable y preferiblemente con una
   persona, un objeto claro o una acción concreta.
+- Si el tema menciona un alimento, bebida, suplemento, parte del cuerpo u
+  objeto concreto, ese elemento debe ser el protagonista del visual; evita
+  pedir solo un rostro genérico cuando el tema permite mostrar algo más claro.
 
 FORMATO DE RESPUESTA (JSON estricto, sin nada más):
 {{"beats": [{{"texto": "...", "visual": "english visual keyword here"}}, ...]}}
@@ -287,9 +292,9 @@ def _titulo_short(tema: str, formato: str) -> str:
     }
     pref = random.choice(prefijos[formato])
     titulo = f"{pref} {base}"[:85]
-    # Hashtags en el título: x1.8 de vistas promedio en el estudio de 1.630
-    # videos (28-ago-2026). 2 hashtags de nicho + #Shorts.
-    return titulo + " #salud #Shorts"
+    # Hashtags en el título: mantenemos el patrón corto de nicho, pero el
+    # texto visible queda 100% en español.
+    return titulo + " #salud #VideoCorto"
 
 
 def crear_short_independiente() -> dict:
@@ -360,11 +365,15 @@ def crear_short_independiente() -> dict:
         titulo_short_override=titulo,
     )
 
+    primer_texto = (guion['capitulos'][0]['beats'][0].get('texto', '') or '').strip()
+    if not primer_texto or tiene_ingles_visible(primer_texto):
+        base_desc = (guion.get("titulo") or elegido["titulo"] or "este tema").strip(" .")
+        primer_texto = f"Resumen rápido en español sobre {base_desc}."
     descripcion = (
-        f"{guion['capitulos'][0]['beats'][0]['texto']}\n\n"
+        f"{primer_texto}\n\n"
         f"👉 El video COMPLETO del tema está en el PRIMER COMENTARIO 📌\n"
         f"También en el canal: {url_largo}\n\n"
-        f"#Shorts #SaludNatural"
+        f"#VideoCorto #SaludNatural"
     )
 
     # IMPORTANTE (02-sep-2026): la marca de "short independiente ya

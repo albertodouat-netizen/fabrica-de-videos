@@ -132,7 +132,8 @@ def construir_bloque_mas_videos(videos_relacionados: list) -> str:
         return ""
     lineas = ["🔎 TAMBIÉN TE PUEDE INTERESAR:"]
     for v in videos_relacionados:
-        lineas.append(f"• {v['titulo']}: {url_con_playlist(v['video_id'])}")
+        titulo = re.sub(r"#\w+", "", (v.get('titulo') or '')).strip(" .:-")
+        lineas.append(f"• {titulo}: {url_con_playlist(v['video_id'])}")
     lineas.append("")
     return "\n".join(lineas)
 

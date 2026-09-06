@@ -1,112 +1,119 @@
-# HOTFIX listo — corrige el fallo del rescate del Short pendiente
+# PAQUETE 3 — Auditoría + blindaje de idioma y portadas
 
-## Qué pasó
-La corrida manual nueva sí detectó correctamente que había un **Short derivado pendiente** del video largo de cortisol.
+Fecha: 03-sep-2026
 
-Pero falló por este error:
+## ¿Para qué sirve este paquete?
+Este paquete corrige 2 problemas que encontré al revisar el canal públicamente:
 
-- `TypeError: crear_short() got an unexpected keyword argument 'titulo_short_override'`
+1. **Mezcla español/inglés** en descripciones y textos visibles.
+2. **Portadas demasiado centradas en personas**, en vez de mostrar con fuerza el tema real.
 
-## Causa real
-Había una **mezcla de versiones** en GitHub:
-
-- `orchestrator.py` ya estaba actualizado
-- pero `agents/shorts_creator.py` seguía en una versión anterior
-
-Entonces el orquestador nuevo intentó usar una función del Short que el archivo viejo todavía no tenía.
+Además, dentro del paquete va una **auditoría escrita** del canal y un **script** para repetir la auditoría en el futuro.
 
 ---
 
-## Qué corrige este paquete
-Este paquete corrige eso de dos formas:
+## Qué trae este paquete
 
-### 1) Actualiza `agents/shorts_creator.py`
-Sube la versión correcta y completa del creador de Shorts.
-
-### 2) Refuerza `orchestrator.py`
-Ahora quedó **compatible** con versiones viejas y nuevas del creador de Shorts.
-
-En palabras simples:
-si alguna vez vuelve a quedar un archivo mezclado, el sistema ya no debería romperse tan fácil por ese desfase.
-
----
-
-## Archivos que trae este paquete
-Suba estos 2 archivos al repositorio:
-
-- `orchestrator.py`
+### Archivos de código corregidos
+- `agents/control_calidad_idioma.py`
+- `agents/scriptwriter.py`
+- `agents/viral_strategist.py`
 - `agents/shorts_creator.py`
+- `agents/short_independiente.py`
+- `agents/equipo_portadas.py`
+- `agents/thumbnail.py`
+- `agents/promocion_cruzada.py`
+- `agents/publisher.py`
+- `scripts/auditar_canal_publico.py`
 
-Repositorio:
-- `https://github.com/albertodouat-netizen/fabrica-de-videos`
+### Evidencia de la revisión
+- `AUDITORIA_MINUCIOSA_IDIOMA_PORTADAS_03sep2026.md`
+- `evidencia_publica/AUDITORIA_PUBLICA.md`
+- `evidencia_publica/metadata.json`
+- `evidencia_publica/english_audit.json`
+- `evidencia_publica/contactsheet_videos.jpg`
+- `evidencia_publica/contactsheet_shorts.jpg`
 
 ---
 
-## Cómo subirlo paso a paso
+## Qué corrige exactamente
 
-### Archivo 1
-- Ruta: `orchestrator.py`
-- Reemplace el archivo actual por el de este paquete
+### 1) Idioma
+- ya no se toman sugerencias SEO en inglés para meterlas tal cual en el texto visible;
+- el guionista ahora tiene una regla dura: **todo lo visible y narrado debe quedar en español**;
+- si una descripción sale contaminada, el publicador la reconstruye en español antes de subir;
+- las referencias científicas públicas ya no muestran el título del estudio en inglés dentro de la descripción;
+- los Shorts pasan a usar `#VideoCorto` en la descripción en vez de `#Shorts`.
 
-### Archivo 2
-- Ruta: `agents/shorts_creator.py`
-- Reemplace el archivo actual por el de este paquete
+### 2) Portadas
+- la portada ahora debe priorizar el **tema** como protagonista;
+- si el tema tiene un objeto concreto, bebida, suplemento, alimento o parte del cuerpo, eso va primero;
+- se evita el patrón de “solo una cara/persona” cuando el tema permite algo mejor;
+- se reemplaza el uso visible de palabras inglesas como `STOP` en el texto de portada;
+- incluso el generador de respaldo dejó de pedir automáticamente una persona sonriente.
 
-### Commit
-Use este mensaje:
+---
 
-```text
-Hotfix: sincronizar shorts_creator con rescate de short pendiente
+## Cómo instalarlo en GitHub (paso a paso, muy simple)
+
+### Opción A — la más fácil
+1. Descarga el archivo ZIP:
+   - `paquete_AUDITORIA_IDIOMA_PORTADAS_03sep2026.zip`
+2. Descomprímelo en tu computador.
+3. Entra a tu repositorio de GitHub.
+4. Sube **reemplazando** los archivos con el mismo nombre.
+5. Haz el commit.
+
+### Opción B — arrastrar carpeta por carpeta
+Copia al repo exactamente estas rutas:
+- `agents/...`
+- `scripts/auditar_canal_publico.py`
+- `AUDITORIA_MINUCIOSA_IDIOMA_PORTADAS_03sep2026.md`
+- carpeta `evidencia_publica/`
+
+---
+
+## Cómo comprobar que quedó bien
+Después de subirlo:
+
+1. Ejecuta manualmente GitHub Actions una vez.
+2. Cuando termine una corrida nueva, revisa:
+   - que la descripción no tenga frases en inglés metidas dentro del texto normal;
+   - que la portada no diga `STOP` ni muestre solo una persona si el tema permite algo más claro;
+   - que el tema principal sí se vea (ejemplo: reloj 3:00 am para cortisol, magnesio visible para magnesio, bebida visible para circulación).
+
+---
+
+## Cómo repetir la auditoría más adelante
+Si quieres volver a revisar el canal con evidencia automática, usa:
+
+```bash
+python3 -m pip install yt-dlp requests pillow
+python3 scripts/auditar_canal_publico.py --canal https://www.youtube.com/@SaludNaturalDiaria
 ```
 
----
-
-## Qué hacer después
-Después de subir estos 2 archivos:
-
-1. Vaya a **GitHub > Actions**
-2. Abra el workflow **Fabrica de Videos YouTube (100% gratis y automatico)**
-3. Pulse **Run workflow**
-4. Elija la rama `main`
-5. Ejecútelo
+Eso te dejará una carpeta con:
+- miniaturas descargadas,
+- metadata,
+- lista de posibles mezclas español/inglés,
+- hojas de contacto para revisar visualmente.
 
 ---
 
-## Qué debe pasar ahora
-Como ya existe un largo de cortisol sin Short, el sistema debe hacer esto:
+## Hallazgo importante de esta revisión
+Durante esta auditoría pública ya apareció un **Short de cortisol** en el canal:
+- `ps4F295cmXU`
 
-1. detectar el Short derivado pendiente
-2. reintentar solo ese Short faltante
-3. no crear otro video largo
-4. no publicar un Short independiente mientras exista ese pendiente
+O sea: **el Short faltante parece ya existir públicamente**.
 
 ---
 
-## Qué debe mirar en la corrida
-Debe ver pasos como estos:
+## Archivo principal para leer primero
+Abre este:
+- `AUDITORIA_MINUCIOSA_IDIOMA_PORTADAS_03sep2026.md`
 
-- `Detectar si hay Short derivado pendiente`
-- `Reintentar Short derivado pendiente (si existe)`
-- `Verificar que el Short derivado pendiente produjo resultado real`
-
-Si esos pasos salen bien, entonces se recuperó el Short faltante del cortisol.
-
----
-
-## Importante
-En la captura también apareció un aviso de traducción `429` de Google Translate.
-Eso **no fue la causa principal del fallo**.
-El bloqueo real fue el desfase entre:
-
-- `orchestrator.py`
-- `agents/shorts_creator.py`
-
----
-
-## Resumen corto
-Haga esto:
-
-1. suba estos 2 archivos
-2. haga commit
-3. corra **Run workflow**
-4. me manda el resultado
+Ahí te dejé, en palabras simples:
+- qué encontré,
+- cuáles videos están mal,
+- cuáles están mejor,
+- y qué conviene arreglar primero.

@@ -25,6 +25,7 @@ from agents.utils import load_config, log, limpiar_texto_para_voz
 from agents.video_editor import _clip_desde_visual, _fondo_respaldo_simple, _ajustar_duraciones_a_ritmo
 from agents.visuals import obtener_visuales_para_guion
 from agents.voice import narrar_guion
+from agents.control_calidad_idioma import tiene_ingles_visible
 
 AGENT = "ShortsCreator"
 RESOLUCION_SHORT = (720, 1280)   # 720p vertical: se ve nítido en móvil y usa mucha menos RAM/CPU
@@ -207,7 +208,7 @@ def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_la
         _tema = guion["titulo"].split(":")[0].split("(")[0].strip()
     _prefijos = ["Lo Que Nadie Te Dice De", "El Error Más Común Con",
                  "La Verdad Sobre", "Esto Cambia Todo Sobre"]
-    titulo_short = (titulo_short_override or (f"{_rnd.choice(_prefijos)} {_tema}"[:85] + " #Shorts")).strip()
+    titulo_short = (titulo_short_override or (f"{_rnd.choice(_prefijos)} {_tema}"[:80] + " #VideoCorto")).strip()
     titulo_portada = re.sub(r"\s+#\w+.*$", "", titulo_short).strip()
 
     mini_guion = _armar_mini_guion(guion)
@@ -418,12 +419,18 @@ def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_la
     hashtag_tema = re.sub(r"[^0-9A-Za-zÁÉÍÓÚÑáéíóúñ]", "", (_tema or "SaludNaturalDiaria"))[:24]
     if not hashtag_tema:
         hashtag_tema = "SaludNaturalDiaria"
+    resumen_visible = (guion.get('gancho', '') or '').strip()
+    if not resumen_visible and beats:
+        resumen_visible = (beats[0].get('texto', '') or '').strip()
+    if not resumen_visible or tiene_ingles_visible(resumen_visible):
+        tema_desc = (guion.get("keyword_principal") or titulo_portada or guion.get("titulo", "este tema")).strip(" .")
+        resumen_visible = f"Resumen rápido en español sobre {tema_desc}."
     descripcion_short = (
-        f"{guion.get('gancho', '')}\n\n"
+        f"{resumen_visible}\n\n"
         f"👉 El video COMPLETO está en el PRIMER COMENTARIO FIJADO.\n"
         f"También puedes verlo aquí: {url_video_largo}\n"
         f"📲 Suscríbete gratis para ver el largo completo: https://www.youtube.com/@saludnaturaldiaria\n\n"
-        f"#Shorts #{hashtag_tema}"
+        f"#VideoCorto #{hashtag_tema}"
     )
 
     log(AGENT, "Render del Short completado.")
