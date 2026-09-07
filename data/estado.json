@@ -51,8 +51,8 @@
   ],
   "ultima_ejecucion": "2026-09-06T08:13:38.570955",
   "uso_gemini": {
-    "fecha": "2026-09-06",
-    "usados": 7
+    "fecha": "2026-09-07",
+    "usados": 382
   },
   "comentarios_respondidos": [],
   "playlist_canal_id": "PLOm1dX9uH38g",
@@ -111,8 +111,8 @@
   },
   "shorts_derivados_pendientes": [],
   "zsky_sesion": {
-    "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6IjVick9YeVhUK0pPZUlWSDciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3lya2ZwdXRrdmlvanNodG5ndXd0LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIwYWY0NmE3OC1hMTEyLTRhNjYtYWIyYy0wYTA5M2FhNzQyY2UiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg4Njg1NTI5LCJpYXQiOjE3ODg2ODE5MjksImVtYWlsIjoiIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnt9LCJ1c2VyX21ldGFkYXRhIjp7fSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJhbm9ueW1vdXMiLCJ0aW1lc3RhbXAiOjE3ODg2ODE3OTB9XSwic2Vzc2lvbl9pZCI6IjEwYzE0NTIzLTc0MjktNDFiNS04NDgxLTUzOTgyMGY3M2M2NiIsImlzX2Fub255bW91cyI6dHJ1ZX0.uE4uIYUzoSSfF6oOpl-JF-T1X48xa7xs24F7CoqKVDQ",
-    "refresh_token": "4zsvwmoap6s6"
+    "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6IjVick9YeVhUK0pPZUlWSDciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3lya2ZwdXRrdmlvanNodG5ndXd0LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIwYWY0NmE3OC1hMTEyLTRhNjYtYWIyYy0wYTA5M2FhNzQyY2UiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg4Nzc1NDkzLCJpYXQiOjE3ODg3NzE4OTMsImVtYWlsIjoiIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnt9LCJ1c2VyX21ldGFkYXRhIjp7fSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJhbm9ueW1vdXMiLCJ0aW1lc3RhbXAiOjE3ODg2ODE3OTB9XSwic2Vzc2lvbl9pZCI6IjEwYzE0NTIzLTc0MjktNDFiNS04NDgxLTUzOTgyMGY3M2M2NiIsImlzX2Fub255bW91cyI6dHJ1ZX0.ba3Zvgp6XNbARmfBlkWQ3QfdjMaOIiRNxY0vSHe2jPI",
+    "refresh_token": "hywcgbiggqda"
   },
   "comentarios_cruzados_pendientes": []
 }
