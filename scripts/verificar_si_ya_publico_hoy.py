@@ -40,6 +40,11 @@ CHANNEL_ID = "UCp96gCIthtbOAnhFpezcAHg"
 RSS_URL = f"https://www.youtube.com/feeds/videos.xml?channel_id={CHANNEL_ID}"
 
 
+def _es_short_por_titulo(titulo: str) -> bool:
+    t = (titulo or "").lower()
+    return any(tag in t for tag in ["#shorts", "#videocorto", "#video_corto"])
+
+
 def _ultimo_largo_desde_rss():
     """Fecha del último video LARGO (no Short) según el feed público.
 
@@ -57,7 +62,7 @@ def _ultimo_largo_desde_rss():
         m_fecha = re.search(r"<published>([^<]+)</published>", bloque)
         if not m_titulo or not m_fecha:
             continue
-        if "#shorts" in m_titulo.group(1).lower():
+        if _es_short_por_titulo(m_titulo.group(1)):
             continue
         try:
             d = dt.datetime.fromisoformat(m_fecha.group(1)).date()

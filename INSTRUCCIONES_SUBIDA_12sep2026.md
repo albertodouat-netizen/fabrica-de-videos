@@ -1,32 +1,26 @@
 # Instrucciones muy simples
 
 ## Qué corrige este paquete
-Corrige el candado que decide si hoy toca:
-- video largo + Short derivado
-o si toca solo:
-- Short independiente
+Corrige el segundo bug del candado.
 
-## Problema encontrado
-El sistema estaba usando `ultima_ejecucion` como si siempre fuera la fecha del último video largo.
-Pero ese campo también se actualiza cuando publica un Short independiente.
+## Problema exacto
+El sistema ya no confundía `ultima_ejecucion` con un video largo.
+Pero todavía seguía leyendo mal el RSS del canal:
+- ignoraba `#Shorts`
+- PERO NO ignoraba `#VideoCorto`
 
-Resultado:
-- el robot cree que ya hubo “actividad reciente”
-- bloquea el video largo por error
-- y vuelve a sacar otro Short independiente
+Como ahora tus Shorts nuevos usan `#VideoCorto`,
+el sistema los estaba contando como si fueran videos largos.
 
 ## Archivo que debes reemplazar
 - `scripts/verificar_si_ya_publico_hoy.py`
 
-## Qué cambia después
-El candado ahora mirará en este orden:
-1. `ultimo_largo_confirmado.fecha`
-2. `videos_publicados`
-3. `ultima_ejecucion` solo como último recurso
+## Qué deberías ver después
+En la siguiente corrida correcta:
+- paso 8 = se ejecuta
+- paso 13 = skipped
 
-## Qué deberías ver después de subirlo
-Si ya pasaron 2 días desde el último largo real,
-el siguiente día correcto volverá a ejecutar:
-- **video largo + Short derivado**
-
-y dejará de quedarse pegado publicando solo Shorts independientes.
+Eso significará:
+- sí generó video largo
+- sí generó su Short derivado
+- ya no se fue por la ruta de solo Short independiente
