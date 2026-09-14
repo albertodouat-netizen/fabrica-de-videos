@@ -29,6 +29,7 @@ except ImportError:
 from googleapiclient.discovery import build
 
 from agents.utils import load_config, log
+from agents.estrategia_audiencia import combinar_ejes_con_audiencia, puntaje_tema_para_audiencia
 
 AGENT = "TrendScout"
 
@@ -111,14 +112,22 @@ def _demo_resultados(cfg):
 
 
 def _obtener_ejes_tematicos(cfg):
-    """Lee la lista de ejes temáticos (categoría + palabras clave) del
-    config. Soporta también el formato viejo (lista plana de palabras
-    clave sin categoría), para no romper configuraciones anteriores."""
+    """Lee la lista de ejes temáticos y la refuerza con la estrategia de
+    audiencia real del canal.
+
+    Desde 14-sep-2026 la prioridad NO es "salud general" en abstracto, sino
+    problemas frecuentes en mujeres 55+/65+ que además ya demostraron tirar
+    del canal (sueño/cortisol, piernas/circulación, inflamación, huesos,
+    corazón, vejiga, memoria, etc.). Los ejes del config se conservan, pero
+    se combinan con esa capa de prioridad para no depender de que el usuario
+    edite manualmente el config cada vez que cambian las estadísticas.
+    """
     ejes = cfg["canal"].get("ejes_tematicos")
     if ejes:
-        return ejes
+        return combinar_ejes_con_audiencia(ejes)
     plano = cfg["canal"].get("palabras_clave", [])
-    return [{"categoria": "general", "palabras_clave": plano}] if plano else []
+    base = [{"categoria": "general", "palabras_clave": plano}] if plano else []
+    return combinar_ejes_con_audiencia(base)
 
 
 def buscar_ideas_potenciales(max_resultados=15, categorias_evitar=None):
@@ -208,6 +217,7 @@ def buscar_ideas_potenciales(max_resultados=15, categorias_evitar=None):
                         continue
 
                     ratio = vistas / subs
+                    audiencia_score = puntaje_tema_para_audiencia(v["snippet"]["title"], categoria)
                     item = {
                         "titulo": v["snippet"]["title"],
                         "categoria": categoria,
@@ -216,6 +226,7 @@ def buscar_ideas_potenciales(max_resultados=15, categorias_evitar=None):
                         "vistas": vistas,
                         "duracion_min": round(duracion_min, 1),
                         "ratio_outlier": round(ratio, 1),
+                        "audiencia_score": audiencia_score,
                         "url": f"https://www.youtube.com/watch?v={v['id']}",
                     }
                     casi_candidatos.append(item)
@@ -254,9 +265,20 @@ def buscar_ideas_potenciales(max_resultados=15, categorias_evitar=None):
         log(AGENT, f"Sin resultados reales disponibles: {motivo}. Usando datos DEMO para no detener el pipeline.")
         return _demo_resultados(cfg)
 
+    # Si sí apareció material alineado con la audiencia real, se queda con
+    # ese primero. Si no, mantiene el respaldo general para no vaciar la
+    # corrida por exceso de rigidez.
+    alineados = [c for c in candidatos if c.get("audiencia_score", 0) > 0]
+    if alineados:
+        candidatos = alineados
+
     # Ordena priorizando categorías NO usadas recientemente (variedad real),
-    # y dentro de cada grupo por ratio-outlier (qué tan viral es el ángulo).
-    candidatos.sort(key=lambda x: (x["categoria"] in categorias_evitar, -x["ratio_outlier"]))
+    # y dentro de cada grupo por afinidad con la audiencia y ratio-outlier.
+    candidatos.sort(key=lambda x: (
+        x["categoria"] in categorias_evitar,
+        -x.get("audiencia_score", 0),
+        -x["ratio_outlier"],
+    ))
     return candidatos[:max_resultados]
 
 if __name__ == "__main__":

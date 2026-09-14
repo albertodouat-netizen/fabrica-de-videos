@@ -311,6 +311,12 @@ y guionismo de YouTube; síguelas de forma estricta):
      "puede CONTRIBUIR a", "se ha ASOCIADO con", "puede COMPLEMENTAR
      (nunca reemplazar) las indicaciones de tu médico", "la evidencia
      SUGIERE".
+   - Si el tema es una enfermedad o condición frecuente en mujeres mayores
+     (por ejemplo hipertensión, diabetes, osteoporosis, artritis,
+     incontinencia, apnea del sueño, deterioro cognitivo o enfermedad
+     cardiovascular), enfoca el video en señales, factores de riesgo,
+     hábitos de apoyo, prevención, seguridad y cuándo consultar. Nunca en
+     promesas de reversión ni en atajos milagrosos.
    - Al hablar de cualquier condición médica seria, recuerda de forma
      natural que el video no sustituye al médico tratante.
    - Esta regla está POR ENCIMA de cualquier regla de gancho o retención:

@@ -7,86 +7,83 @@ canal:
   idiomas_seo_adicionales: []
   idioma_doblaje: ''
   nicho: salud natural, alternativa, tradicional y complementaria (con respaldo científico)
+  audiencia_prioritaria:
+    sexo: mujeres
+    edades:
+    - 55-64
+    - 65+
+    paises_principales:
+    - Mexico
+    - Estados Unidos hispano
+    - Espana
+    - Colombia
+    consumo_principal: movil
+    nota: hablarle a una mujer mayor que busca dormir mejor, caminar mejor, inflamarse menos y entender senales del cuerpo
   ejes_tematicos:
-  - categoria: sueño y descanso
+  - categoria: sueño y cortisol nocturno
     palabras_clave:
-    - natural sleep remedies
-    - how to sleep better naturally
-    - insomnia natural treatment
+    - postmenopause insomnia natural support
+    - waking up at 3am women over 60
+    - cortisol sleep women over 60
+  - categoria: piernas, circulación y movilidad
+    palabras_clave:
+    - leg circulation older women symptoms
+    - walking difficulty women over 60
+    - swollen legs older women causes
+  - categoria: inflamación, artritis y dolor articular
+    palabras_clave:
+    - arthritis women over 60 joint pain habits
+    - anti inflammatory habits women over 60
+    - osteoarthritis older women symptoms
+  - categoria: huesos, osteoporosis y caídas
+    palabras_clave:
+    - osteoporosis women over 65 symptoms
+    - fall prevention older women bone health
+    - bone loss after menopause
+  - categoria: presión, corazón, colesterol e ictus
+    palabras_clave:
+    - high blood pressure older women symptoms
+    - heart disease women after menopause
+    - stroke warning signs women over 60
+  - categoria: azúcar, prediabetes y diabetes
+    palabras_clave:
+    - prediabetes older women symptoms
+    - type 2 diabetes women over 60 signs
+    - diabetes fatigue older women
+  - categoria: vejiga, incontinencia y nocturia
+    palabras_clave:
+    - urinary incontinence older women symptoms
+    - nocturia women over 60 causes
+    - overactive bladder postmenopausal women
+  - categoria: memoria y deterioro cognitivo
+    palabras_clave:
+    - memory changes women over 65
+    - alzheimer risk women after menopause
+    - mild cognitive impairment older women
+  - categoria: menopausia y calidad de vida
+    palabras_clave:
+    - postmenopause health women over 55
+    - hot flashes sleep postmenopause
+    - vaginal dryness menopause support
+  - categoria: tiroides, fatiga y peso
+    palabras_clave:
+    - hypothyroidism older women symptoms
+    - thyroid disease women after menopause
+    - hashimoto women over 50 fatigue
+  - categoria: visión y envejecimiento ocular
+    palabras_clave:
+    - vision changes women over 65
+    - glaucoma older women symptoms
+    - macular degeneration women over 60
   - categoria: salud digestiva e intestinal
     palabras_clave:
-    - gut health tips
-    - natural remedies bloating
-    - improve digestion naturally
-  - categoria: inflamación y dolor articular
-    palabras_clave:
-    - how to reduce inflammation
-    - natural joint pain relief
-    - anti inflammatory habits
-  - categoria: sistema inmunológico
-    palabras_clave:
-    - boost immune system naturally
-    - natural immunity tips
-    - foods that boost immunity
-  - categoria: estrés y ansiedad
-    palabras_clave:
-    - natural stress relief
-    - reduce anxiety naturally
-    - adaptogens for stress
-  - categoria: salud cardiovascular
-    palabras_clave:
-    - natural ways lower blood pressure
-    - heart health natural remedies
-    - lower cholesterol naturally
-  - categoria: salud metabólica y glucosa
-    palabras_clave:
-    - natural ways lower blood sugar
-    - insulin resistance natural remedies
-    - metabolic health tips
-  - categoria: salud de la piel
-    palabras_clave:
-    - natural skin remedies
-    - skin inflammation natural treatment
-    - natural acne remedies
-  - categoria: terapias complementarias con evidencia
-    palabras_clave:
-    - yoga therapy benefits research
-    - meditation clinical benefits
-    - acupuncture evidence based
-  - categoria: remedios tradicionales estudiados científicamente
-    palabras_clave:
-    - turmeric curcumin research
-    - ginger health benefits research
-    - traditional herbal medicine evidence
-  - categoria: salud en adultos mayores
-    palabras_clave:
-    - senior health natural remedies
-    - memory support natural remedies
-    - healthy aging tips
-  - categoria: salud sexual y hormonal
-    palabras_clave:
-    - natural remedies low libido
-    - boost testosterone naturally
-    - erectile dysfunction natural remedies
-  - categoria: enfermedades crónicas
-    palabras_clave:
-    - chronic disease natural management
-    - thyroid health natural remedies
-    - autoimmune diet natural remedies
-  - categoria: salud bucal, capilar y ocular
-    palabras_clave:
-    - natural remedies hair loss
-    - eye health natural foods
-    - oral health natural remedies
-  - categoria: alergias y salud respiratoria
-    palabras_clave:
-    - natural remedies allergies
-    - asthma natural remedies
-    - seasonal allergy natural relief
+    - constipation older women causes
+    - gut health older women symptoms
+    - reflux older women habits
 estrategia:
   videos_por_semana: 4
   duracion_minima_min: 16
-  duracion_objetivo_min: 20
+  duracion_objetivo_min: 29
   max_suscriptores_referencia: 250000
   dias_publicado_max: 365
   ratio_minimo_vistas_subs: 3
@@ -106,6 +103,12 @@ apis:
   cloudflare_api_token: OBTENER_GRATIS_AQUI
   cloudflare_account_id: OBTENER_GRATIS_AQUI
   hf_token: "OBTENER_GRATIS_AQUI"  # huggingface.co - clips de VIDEO IA gratis (Agente 37)
+  pixazo_api_key: OBTENER_AQUI  # Pixazo API; recomendado solo para pruebas o cuenta con derechos comerciales
+  pixazo_modelo_video: flux-3-video  # flux-3-video o seedance-2-5
+  pixazo_resolution_flux: fhd        # hd o fhd
+  pixazo_resolution_seedance: 720p   # 480p o 720p
+  pixazo_duracion_seg: 5             # Flux: 5-20 | Seedance 2.5: 4-30
+  pixazo_timeout_seg: 240
   deepseek_api_key: OBTENER_GRATIS_AQUI
   nvidia_api_key: OBTENER_GRATIS_AQUI
   jamendo_client_id: OBTENER_GRATIS_AQUI

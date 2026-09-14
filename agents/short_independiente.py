@@ -39,6 +39,7 @@ import requests
 
 from agents.utils import load_config, load_state, save_state, log, limpiar_texto_para_voz, modelo_groq
 from agents.control_calidad_idioma import tiene_ingles_visible
+from agents.estrategia_audiencia import bloque_prompt_audiencia, puntaje_tema_para_audiencia
 
 AGENT = "ShortIndependiente"
 
@@ -73,6 +74,8 @@ ningún otro video) de {duracion} segundos aproximadamente ({palabras} palabras 
 
 TEMA BASE (viene de un video largo ya publicado del canal): {tema}
 FORMATO OBLIGATORIO de este Short: {formato_instruccion}
+
+{bloque_audiencia}
 
 {fuentes}
 
@@ -231,6 +234,7 @@ def _generar_guion_short(tema: str, formato: str, cfg: dict) -> dict:
     prompt = PROMPT_SHORT.format(
         duracion=duracion, palabras=palabras, tema=tema,
         formato_instruccion=FORMATO_INSTRUCCIONES[formato],
+        bloque_audiencia=bloque_prompt_audiencia(),
         fuentes=fuentes or "No hay fuentes disponibles: habla en términos generales, sin cifras ni estudios inventados.",
     )
 
@@ -317,11 +321,19 @@ def crear_short_independiente() -> dict:
         log(AGENT, "No hay videos largos publicados aún; no se genera Short independiente.")
         return None
 
-    # Rotación: el largo menos recientemente usado para un Short independiente.
-    # Pero primero se intentan temas NO vetados, para no seguir exprimiendo
-    # clústeres que el usuario decidió enfriar.
+    # Rotación con sesgo INTELIGENTE: no solo el menos usado, sino el más
+    # alineado con la audiencia real del canal. Según las estadísticas de
+    # 14-sep-2026, el motor actual es mujer 55+/65+ y los clusters más
+    # fuertes son sueño/cortisol, piernas/circulación e inflamación.
     usados = estado.get("shorts_independientes_por_video", {})
-    largos_ordenados = sorted(largos, key=lambda v: usados.get(v["video_id"], ""))
+    largos_ordenados = sorted(
+        largos,
+        key=lambda v: (
+            _tema_vetado_para_short(v.get("titulo", "")),
+            -puntaje_tema_para_audiencia(v.get("titulo", "")),
+            usados.get(v["video_id"], ""),
+        ),
+    )
     candidatos = [v for v in largos_ordenados if not _tema_vetado_para_short(v.get("titulo", ""))]
     if not candidatos:
         candidatos = largos_ordenados

@@ -28,6 +28,7 @@ import requests
 from agents.utils import load_config, log, limpiar_texto_para_voz, modelo_groq, load_state
 from agents.viral_strategist import REGLAS_PARA_GUIONISTA, REGLAS_SEO_PARA_GUIONISTA
 from agents.control_calidad_idioma import filtrar_sugerencias_espanol, tiene_ingles_visible
+from agents.estrategia_audiencia import bloque_prompt_audiencia
 
 AGENT = "Guionista"
 
@@ -197,6 +198,8 @@ referencia (no copies frases ni datos inventados que no puedas verificar, y no d
 consejos médicos peligrosos sin matizarlos):
 
 Título de referencia: "{titulo_ref}"
+
+{bloque_audiencia}
 
 {bloque_variedad_titulos}
 
@@ -885,6 +888,7 @@ def generar_guion(idea: dict) -> dict:
 
     prompt = PROMPT_BASE.format(
         nicho=nicho, titulo_ref=idea["titulo"], dur_min=dur_min, dur_max=dur_max,
+        bloque_audiencia=bloque_prompt_audiencia(),
         bloque_variedad_titulos=_bloque_variedad_titulos_recientes(),
         reglas_retencion=REGLAS_PARA_GUIONISTA, reglas_seo=REGLAS_SEO_PARA_GUIONISTA,
         fuentes_cientificas=fuentes_texto, frases_audiencias=frases_audiencias,

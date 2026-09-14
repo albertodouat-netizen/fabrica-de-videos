@@ -1,52 +1,68 @@
-PAQUETE ANTI-REPETICION DE TITULOS Y PORTADAS
-=============================================
+PAQUETE ESTRATEGIA MUJERES 55+ / 65+
+====================================
 
 OBJETIVO
-Que el sistema deje de repetir demasiado palabras como ERROR / STOP / NUNCA,
-y que el texto deje respirar más a la imagen.
+Hacer que la fabrica elija mejores temas para la audiencia real del canal:
+mujeres mayores de 55 años, sobre todo 65+, con foco en enfermedades y
+condiciones mas frecuentes y con mejor potencial de clic.
 
 ARCHIVOS DEL PAQUETE
+- agents/estrategia_audiencia.py
+- data/temas_prioritarios_mujer55plus.json
+- agents/trend_scout.py
 - agents/scriptwriter.py
+- agents/short_independiente.py
 - agents/viral_strategist.py
-- agents/equipo_portadas.py
-- agents/thumbnail.py
-- REVISION_REPETICION_ERROR_PORTADAS_14sep2026.md
+- config/config.example.yaml
+- INVESTIGACION_ENFERMEDADES_MUJERES_55PLUS_14sep2026.md
+- PLAN_TEMAS_MUJERES_55PLUS_14sep2026.md
 
-QUE CORRIGE
-1) frena el sobreuso de la palabra ERROR en titulos recientes
-2) obliga mas variedad de familias de titulo
-3) reduce el texto de portada a 2 lineas maximo
-4) reduce el ancho que ocupa el bloque de texto
-5) hace que la imagen del tema tenga mas protagonismo
-6) aplica el mismo criterio tambien al fallback de miniatura
+QUE MEJORA
+1) prioriza temas frecuentes en mujeres 55+ y 65+
+2) da mas peso a sueno/cortisol, piernas/circulacion, inflamacion/artritis,
+   osteoporosis/caidas, corazon/presion, vejiga/incontinencia, diabetes,
+   memoria, tiroides y vision
+3) baja temas que hoy no encajan igual con tu audiencia real
+4) ayuda a que los Shorts independientes salgan de largos mas prometedores
+5) obliga al guionista a pensar en una mujer mayor real, no en publico general
+6) mantiene enfoque medico seguro: senales, prevencion, apoyo y cuando consultar
 
-PASO 1) SUBIR LOS 4 ARCHIVOS
-Sube cada archivo exactamente a su misma ruta dentro del repositorio.
+PASO 1) SUBIR LOS ARCHIVOS
+Sube todos los archivos exactamente a la misma ruta del paquete.
 
-PASO 2) REVISAR EN GITHUB
-En el archivo agents/equipo_portadas.py revisa que si aparezcan estas ideas:
-- 2 a 4 palabras en total
-- la palabra ERROR sobreusada -> prohibida
-- la imagen protagonista debe ganar a simple vista
+PASO 2) OPCIONAL PERO RECOMENDADO
+Revisa en config/config.yaml si quieres copiar tambien el nuevo bloque de:
+- audiencia_prioritaria
+- ejes_tematicos
+
+Si no lo haces, igual el nuevo codigo ya trae una capa interna de prioridad.
 
 PASO 3) LANZAR UNA CORRIDA MANUAL
-Genera un nuevo video manualmente.
+Haz una generacion manual del workflow.
 
 PASO 4) QUE DEBES MIRAR
-En el video largo nuevo revisa:
-- que el titulo no abra otra vez con El Error
-- que la miniatura no tape media imagen
-- que el elemento del tema se vea mas fuerte que el texto
+A) En GitHub Actions
+- que TrendScout ya busque temas mas cercanos a mujeres mayores
+- que no se vaya otra vez a temas flojos o masculinos
 
-En el Short nuevo revisa:
-- que la portada inicial tenga menos texto
-- que no parezca subtitulo congelado
-- que se entienda en menos de 1 segundo
+B) En el video/Short nuevo
+- que el tema se sienta mas util para mujer 55+ / 65+
+- que hable de senales, habitos, errores, prevencion o cuando consultar
+- que no prometa curas
 
-PASO 5) SI QUIERES MEJORA ADICIONAL
-Tambien conviene cambiar manualmente 3 o 4 miniaturas publicas que hoy mas
-repiten el patron. Yo empezaria por:
-- fatiga cronica
-- habitos antiinflamatorios
-- cortisol para dormir
-- insomnio
+PASO 5) QUE METRICAS VIGILAR
+Para Shorts:
+- se quedaron viendo >= 50%
+- vistas >= 1000 en los temas ganadores
+
+Para largos:
+- duracion media vista > 4 min o porcentaje medio visto > 15%
+
+PASO 6) TEMAS A USAR PRIMERO
+Empieza con estos clusters:
+1. cortisol / despertar nocturno / insomnio
+2. piernas / circulacion / caminar
+3. inflamacion / artritis / rigidez
+4. osteoporosis / huesos / caidas
+5. vejiga / incontinencia / levantarse a orinar
+6. presion alta / corazon

@@ -1,0 +1,218 @@
+{
+  "meta": {
+    "fecha": "2026-09-14",
+    "origen": "estadisticas_canal_y_research_publico"
+  },
+  "audiencia": {
+    "sexo_principal": "mujeres",
+    "edad_principal": ["55-64", "65+"],
+    "dispositivo_principal": "movil",
+    "paises_principales": ["Mexico", "Estados Unidos hispano", "Espana", "Colombia"],
+    "reglas_editoriales": [
+      "Hablar en espanol neutro y muy claro.",
+      "Priorizar problemas frecuentes de calidad de vida, movilidad, sueno, dolor, vejiga, corazon y memoria.",
+      "Evitar angulos masculinos como testosterona o disfuncion erectil salvo que el canal cambie de audiencia.",
+      "No prometer curas ni reemplazo de tratamientos."
+    ]
+  },
+  "clusters": [
+    {
+      "categoria": "sueno_cortisol_nocturno",
+      "prioridad": 10,
+      "terminos": ["sueno", "sueño", "dormir", "insomnio", "cortisol", "3 am", "despertar", "despierta", "night", "sleep", "insomnia", "waking"],
+      "keywords_busqueda": [
+        "postmenopause insomnia natural support",
+        "waking up at 3am women over 60",
+        "cortisol sleep women over 60",
+        "sleep problems menopause women"
+      ],
+      "angulos_seguros": [
+        "que lo empeora",
+        "senales",
+        "rutina nocturna",
+        "cuando consultar",
+        "habitos que ayudan"
+      ]
+    },
+    {
+      "categoria": "piernas_circulacion_movilidad",
+      "prioridad": 10,
+      "terminos": ["piernas", "circulacion", "caminar", "pies", "hinchazon", "edema", "walk", "legs", "circulation", "mobility"],
+      "keywords_busqueda": [
+        "leg circulation older women symptoms",
+        "walking difficulty women over 60",
+        "swollen legs older women causes",
+        "peripheral artery disease women symptoms"
+      ],
+      "angulos_seguros": [
+        "senales tempranas",
+        "habitos diarios",
+        "cuando las piernas se cansan mas",
+        "movilidad segura",
+        "que revisar con el medico"
+      ]
+    },
+    {
+      "categoria": "inflamacion_dolor_articular_artritis",
+      "prioridad": 9,
+      "terminos": ["inflamacion", "antiinflamatorio", "dolor articular", "artritis", "rodilla", "manos", "joints", "arthritis", "inflammation", "joint pain"],
+      "keywords_busqueda": [
+        "arthritis women over 60 joint pain habits",
+        "anti inflammatory habits women over 60",
+        "osteoarthritis older women symptoms",
+        "morning stiffness women over 60"
+      ],
+      "angulos_seguros": [
+        "que la alimenta",
+        "rigidez matutina",
+        "movimiento suave",
+        "errores diarios",
+        "alimentos que complementan"
+      ]
+    },
+    {
+      "categoria": "huesos_osteoporosis_caidas",
+      "prioridad": 9,
+      "terminos": ["osteoporosis", "huesos", "fractura", "caidas", "equilibrio", "calcio", "vitamina d", "bone", "fracture", "falls", "balance"],
+      "keywords_busqueda": [
+        "osteoporosis women over 65 symptoms",
+        "fall prevention older women bone health",
+        "hip fracture risk women over 60",
+        "bone loss after menopause"
+      ],
+      "angulos_seguros": [
+        "senales silenciosas",
+        "habitos de fuerza y equilibrio",
+        "errores que debilitan huesos",
+        "pruebas que conviene preguntar",
+        "prevencion de caidas"
+      ]
+    },
+    {
+      "categoria": "presion_corazon_colesterol_ictus",
+      "prioridad": 9,
+      "terminos": ["presion", "presion alta", "hipertension", "corazon", "cholesterol", "colesterol", "ictus", "stroke", "heart", "blood pressure"],
+      "keywords_busqueda": [
+        "high blood pressure older women symptoms",
+        "heart disease women after menopause",
+        "stroke warning signs women over 60",
+        "cholesterol women over 60"
+      ],
+      "angulos_seguros": [
+        "senales que no debes ignorar",
+        "controles basicos",
+        "habitos diarios",
+        "cuando medir la presion",
+        "cosas que la empeoran"
+      ]
+    },
+    {
+      "categoria": "azucar_prediabetes_diabetes",
+      "prioridad": 8,
+      "terminos": ["glucosa", "azucar", "prediabetes", "diabetes", "sed", "fatiga", "vision borrosa", "blood sugar", "diabetes"],
+      "keywords_busqueda": [
+        "prediabetes older women symptoms",
+        "type 2 diabetes women over 60 signs",
+        "blood sugar habits older women",
+        "diabetes fatigue older women"
+      ],
+      "angulos_seguros": [
+        "senales silenciosas",
+        "fatiga y sed",
+        "que revisar en casa",
+        "habitos de comida y movimiento",
+        "cuando consultar"
+      ]
+    },
+    {
+      "categoria": "vejiga_incontinencia_nocturia",
+      "prioridad": 8,
+      "terminos": ["vejiga", "orina", "incontinencia", "nocturia", "suelo pelvico", "pelvic", "bladder", "urinary", "incontinence"],
+      "keywords_busqueda": [
+        "urinary incontinence older women symptoms",
+        "nocturia women over 60 causes",
+        "overactive bladder postmenopausal women",
+        "pelvic floor older women bladder"
+      ],
+      "angulos_seguros": [
+        "por que pasa",
+        "que la empeora",
+        "habitos utiles",
+        "senales de suelo pelvico debil",
+        "cuando revisar diabetes o infeccion"
+      ]
+    },
+    {
+      "categoria": "memoria_cognicion_demencia",
+      "prioridad": 8,
+      "terminos": ["memoria", "olvidos", "demencia", "alzheimer", "brain fog", "cognition", "memory"],
+      "keywords_busqueda": [
+        "memory changes women over 65",
+        "alzheimer risk women after menopause",
+        "brain fog postmenopause sleep women",
+        "mild cognitive impairment older women"
+      ],
+      "angulos_seguros": [
+        "olvidos normales vs alerta",
+        "sueno y memoria",
+        "habitos protectores",
+        "senales que merecen consulta",
+        "rutina mental y fisica"
+      ]
+    },
+    {
+      "categoria": "menopausia_sintomas_urogenitales",
+      "prioridad": 7,
+      "terminos": ["menopausia", "postmenopausia", "sofocos", "sequedad", "vaginal", "libido", "menopause", "postmenopause", "hot flashes"],
+      "keywords_busqueda": [
+        "postmenopause health women over 55",
+        "vaginal dryness menopause support",
+        "hot flashes sleep postmenopause",
+        "low libido postmenopausal women health"
+      ],
+      "angulos_seguros": [
+        "lo que cambia en el cuerpo",
+        "sueno y sofocos",
+        "sequedad y calidad de vida",
+        "senales que merecen consulta",
+        "mitos frecuentes"
+      ]
+    },
+    {
+      "categoria": "tiroides_fatiga_peso_estrenimiento",
+      "prioridad": 7,
+      "terminos": ["tiroides", "hipotiroidismo", "fatiga", "estrenimiento", "peso", "thyroid", "hashimoto"],
+      "keywords_busqueda": [
+        "hypothyroidism older women symptoms",
+        "thyroid disease women after menopause",
+        "hashimoto women over 50 fatigue",
+        "thyroid and sleep women"
+      ],
+      "angulos_seguros": [
+        "senales silenciosas",
+        "fatiga que no mejora",
+        "estrenimiento y frio",
+        "cuando pedir analitica",
+        "errores al normalizar sintomas"
+      ]
+    },
+    {
+      "categoria": "vision_cataratas_glaucoma_macular",
+      "prioridad": 6,
+      "terminos": ["vision", "ojos", "cataratas", "glaucoma", "macular", "vista", "eye", "eyes"],
+      "keywords_busqueda": [
+        "vision changes women over 65",
+        "glaucoma older women symptoms",
+        "macular degeneration women over 60",
+        "cataracts older adults signs"
+      ],
+      "angulos_seguros": [
+        "senales tempranas",
+        "controles utiles",
+        "habitos protectores",
+        "que no debes ignorar",
+        "diabetes y vision"
+      ]
+    }
+  ]
+}
