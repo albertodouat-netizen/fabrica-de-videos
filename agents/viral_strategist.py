@@ -95,17 +95,30 @@ y guionismo de YouTube; síguelas de forma estricta):
    títulos de curiosidad/mito promedian 674-727 vistas vs 50 de los
    descriptivos; y la investigación del algoritmo 2026 confirma que el
    Browse feed premia especificidad + beneficio claro):
-   - El título DEBE combinar: (a) el ERROR/MITO/SECRETO como gancho +
-     (b) la keyword buscable + (c) el beneficio o consecuencia concreta.
-   - Patrones ganadores: "El Error Que [empeora X] (Y Lo Que Sí Funciona)",
-     "Nadie Te Dijo Esto Sobre [keyword]", "[keyword]: El Mito Que Te Está
-     [costando Y]", "Por Qué [síntoma común] No Mejora (Y Cómo Cambiarlo)".
+   - El título DEBE combinar: (a) una curiosidad real o consecuencia
+     concreta, (b) la keyword buscable y (c) el beneficio o riesgo claro.
+   - VARIEDAD OBLIGATORIA: NO repitas en videos consecutivos la misma
+     familia de título. Debes ROTAR entre pregunta, consecuencia, hábito,
+     señal, comparación, causa oculta, mito o paso práctico.
+   - Evita aperturas quemadas por sobreuso como "El Error...", "La Verdad
+     Sobre...", "Remedio Natural Para..." o "Nunca Hagas..." si ya vienen
+     muy repetidas en el canal.
+   - REGLA NUEVA por auditoría visual del canal (14-sep-2026): si en los
+     últimos videos ya aparece varias veces "error", el nuevo título tiene
+     PROHIBIDO usar "error" otra vez. Rota hacia curiosidad, consecuencia,
+     comparación, señal o paso práctico.
+   - Máximo UNA palabra-gatillo por título. No abuses de "error", "mito",
+     "secreto", "verdad" o "nunca" como muletillas en todos los videos.
+   - Patrones ganadores permitidos: "Por Qué [síntoma común] No Mejora (Y
+     Cómo Cambiarlo)", "¿Qué Pasa Si [acción cotidiana] Todos los Días?",
+     "[keyword]: La Causa Que Casi Nadie Mira", "Así Se Usa [keyword] Sin
+     Cometer El Mismo Fallo", "Señales De Que [hábito] Te Está Perjudicando".
    - PATRONES VALIDADOS 28-AGO-2026 con estudio de 1.630 videos reales de
      canales pequeños (prom. de vistas 1.8-2.6x superior):
      * PREGUNTA: "¿Qué Pasa Si [acción cotidiana] Todos los Días?" (x2.6)
-     * CONTRARIAN: "STOP: Nunca Tomes [X] Sin Saber Esto (ESTO Funciona
-       Mejor)" — siempre con respaldo del estudio citado, jamás alarmismo
-     * RITUAL: "Esto Pasa Si Tomas [X] TODOS los Días" (x1.8)
+     * CONTRARIAN: "Nunca Tomes [X] Sin Saber Esto" — siempre con respaldo
+       del estudio citado, jamás alarmismo.
+     * RITUAL: "Esto Pasa Si Tomas [X] Todos los Días" (x1.8)
      * La audiencia núcleo del nicho es 50+/60+: cuando el tema lo permita,
        nómbrala ("...Después de los 60") — habla DIRECTO a esa persona.
    - PROHIBIDO el título puramente descriptivo tipo "Beneficios de X: Guía".

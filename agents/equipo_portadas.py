@@ -54,7 +54,7 @@ import urllib.parse
 import requests
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 
-from agents.utils import log, load_config
+from agents.utils import log, load_config, load_state, save_state
 from agents.control_calidad_idioma import normalizar_lineas_portada
 
 TAMANO = (1280, 720)
@@ -63,6 +63,18 @@ AMARILLO = (255, 214, 0)
 ROJO = (222, 30, 30)
 NEGRO = (12, 12, 12)
 BLANCO = (255, 255, 255)
+
+_PALABRAS_PORTADA_QUEMADAS = {
+    "ALTO", "ERROR", "NUNCA", "MITO", "SECRETO", "VERDAD", "CUIDADO", "STOP"
+}
+_APERTURAS_TITULO_QUEMADAS = [
+    "el error",
+    "la verdad sobre",
+    "remedio natural para",
+    "nunca hagas",
+    "hábitos",
+    "habitos",
+]
 
 
 # ---------------------------------------------------------------------------
@@ -135,6 +147,113 @@ def _fusionar_prompt_fondo(prompt_llm: str, titulo: str, keyword: str) -> str:
             f"never a generic face-only portrait. Human optional and secondary.")
 
 
+def _titulos_recientes_publicados(limite: int = 8) -> list[str]:
+    try:
+        estado = load_state()
+        videos = estado.get("videos_publicados", []) or []
+        titulos = [str(v.get("titulo", "")).strip() for v in videos if str(v.get("titulo", "")).strip()]
+        return titulos[-limite:]
+    except Exception:
+        return []
+
+
+
+def _ganchos_portada_recientes(limite: int = 8) -> list[str]:
+    try:
+        estado = load_state()
+        historial = estado.get("ultimos_ganchos_portada", []) or []
+        return [str(x).strip().upper() for x in historial if str(x).strip()][-limite:]
+    except Exception:
+        return []
+
+
+
+def _bloque_variedad_portadas() -> str:
+    titulos = _titulos_recientes_publicados(8)
+    ganchos = _ganchos_portada_recientes(10)
+    aperturas = []
+    for t in titulos[-6:]:
+        aperturas.append(" ".join(t.split()[:3]).lower())
+    repetidas = []
+    for base in _APERTURAS_TITULO_QUEMADAS:
+        if sum(1 for a in aperturas if a.startswith(base)) >= 1:
+            repetidas.append(base.title())
+    quemadas = sorted({g.split()[0] for g in ganchos if g.split() and g.split()[0] in _PALABRAS_PORTADA_QUEMADAS})
+    error_reciente = sum(1 for t in titulos[-5:] if "error" in t.lower())
+    partes = [
+        "VARIEDAD OBLIGATORIA DEL CANAL:",
+        "- Evita portadas gemelas o con sensación de plantilla.",
+        "- Ideal: 2 líneas y solo 2 a 4 palabras en total.",
+        "- El texto debe dejar respirar la imagen: no debe tapar más de ~28% del ancho útil en horizontal.",
+        "- La imagen protagonista debe ganar a simple vista; el texto acompaña, no domina.",
+        "- Prefiere consecuencia, acción o señal concreta del tema antes que muletillas genéricas.",
+    ]
+    if repetidas:
+        partes.append(f"- No abras con estas fórmulas ya repetidas en títulos recientes: {', '.join(repetidas)}.")
+    if quemadas:
+        partes.append(f"- No abras la portada con estas palabras ya gastadas: {', '.join(quemadas)}.")
+    if error_reciente >= 2:
+        partes.append("- La palabra ERROR está sobreusada en el canal reciente: PROHIBIDO usarla en esta portada.")
+    return "\n".join(partes)
+
+
+
+def _tema_portada_base(titulo: str, keyword: str) -> str:
+    bruto = (keyword or titulo or "este tema")
+    bruto = re.sub(r"(?i)\b(el|la|los|las|un|una|de|del|para|con|y|que|como|cómo|más|este|esta|estos|estas|error|mito|verdad|secreto|nunca|alto|stop|remedio|natural|causa|solución|solucion|mejor|peoriza)\b", " ", bruto)
+    bruto = re.sub(r"\s+", " ", bruto).strip()
+    palabras = [p.upper() for p in re.findall(r"[A-Za-zÁÉÍÓÚÑáéíóúñ0-9%]+", bruto) if len(p) > 2]
+    if not palabras:
+        palabras = [p.upper() for p in re.findall(r"[A-Za-zÁÉÍÓÚÑáéíóúñ0-9%]+", titulo or keyword or "") if len(p) > 2]
+    if not palabras:
+        return "ESTE TEMA"
+    return " ".join(palabras[:2])
+
+
+
+def _lineas_locales_mas_variadas(titulo: str, keyword: str) -> list[str]:
+    tema = _tema_portada_base(titulo, keyword)
+    texto = f"{titulo} {keyword}".lower()
+    candidatos = []
+    if any(x in texto for x in ["inflam", "antiinflam"]):
+        candidatos = [tema, "LA ALIMENTA"]
+    elif any(x in texto for x in ["fatiga", "energ"]):
+        candidatos = [tema, "TE AGOTA"]
+    elif any(x in texto for x in ["cortisol"]):
+        candidatos = [tema, "SUBE DE NOCHE"]
+    elif any(x in texto for x in ["dormir", "sueño", "sueno", "insomnio"]):
+        candidatos = [tema, "PEOR DE NOCHE"]
+    elif any(x in texto for x in ["magnesio"]):
+        candidatos = [tema, "ASÍ NO"]
+    elif any(x in texto for x in ["hábito", "habito", "rutina"]):
+        candidatos = [tema, "CAMBIA HOY"]
+    elif any(x in texto for x in ["circul", "piernas"]):
+        candidatos = [tema, "MUEVE MÁS"]
+    elif any(x in texto for x in ["música", "musica", "frecuencia", "frecuencias"]):
+        candidatos = [tema, "CUÁNDO AYUDA"]
+    else:
+        candidatos = [tema, "MIRA ESTO"]
+    limpias = normalizar_lineas_portada(candidatos[:2])
+    if not limpias:
+        limpias = [tema]
+    return limpias[:2]
+
+
+
+def _recordar_gancho_portada(lineas: list[str]):
+    try:
+        gancho = " ".join((lineas or [])[:2]).strip().upper()
+        if not gancho:
+            return
+        estado = load_state()
+        hist = estado.get("ultimos_ganchos_portada", []) or []
+        hist.append(gancho)
+        estado["ultimos_ganchos_portada"] = hist[-12:]
+        save_state(estado)
+    except Exception:
+        pass
+
+
 # ---------------------------------------------------------------------------
 # AGENTE 38: DIRECTOR DE PORTADA
 # ---------------------------------------------------------------------------
@@ -143,8 +262,9 @@ AGENT_DIRECTOR = "DirectorPortada"
 _PROMPT_DIRECTOR = """Eres el director de arte de miniaturas de un canal de YouTube de salud natural en español para adultos mayores de 50 años. Diseñas portadas que compiten con las de los canales virales del nicho.
 
 PATRONES VALIDADOS CON DATOS REALES (estudio 28-ago-2026 de 151 videos ganadores de canales pequeños):
-- Texto GIGANTE de 4 a 7 palabras TOTALES repartidas en 2-3 líneas cortas (máx 3 palabras por línea, mejor 1-2).
-- Las palabras deben abrir CURIOSIDAD sin repetir el título: "AÑADE ESTO", "ALTO", "NUNCA HAGAS", "SOLO 1 CUCHARADA", "ESTE ERROR".
+- Texto GIGANTE pero compacto: ideal 2 a 4 palabras TOTALES repartidas en 2 líneas cortas (máx 2 palabras por línea en lo posible).
+- Las palabras deben abrir CURIOSIDAD sin repetir el título, pero sin caer siempre en la misma muletilla. Alterna entre consecuencia, acción, comparación, señal o causa.
+- AUDITORÍA REAL DEL CANAL (14-sep-2026): se detectó sobreuso visual de ERROR, STOP, NUNCA HAGAS y frases largas que tapan la imagen. Por eso aquí están PROHIBIDAS esas fórmulas salvo que sean totalmente inevitables.
 - TODO el texto visible de la portada debe estar 100% en español. PROHIBIDO usar palabras en inglés como STOP, SLEEP, STRESS, SOUND o similares.
 - Si el tema tiene una CIFRA potente (edad, %, cantidad), destácala.
 - El fondo muestra UN SOLO protagonista y debe estar claramente relacionado con el tema.
@@ -154,6 +274,8 @@ PATRONES VALIDADOS CON DATOS REALES (estudio 28-ago-2026 de 151 videos ganadores
 TITULO DEL VIDEO: "{titulo}"
 TEMA/PALABRA CLAVE: "{keyword}"
 
+{bloque_variedad}
+
 Devuelve SOLO un JSON válido (sin markdown, sin explicación) con 2 variantes distintas:
 {{"variantes": [
  {{"estilo": "bloque_amarillo", "lineas": ["LINEA 1", "LINEA 2", "LINEA 3"], "linea_destacada": 1, "cifra": "", "prompt_fondo": "descripcion en INGLES de la foto de fondo, un solo sujeto, subject positioned on the right half of the frame, dark simple background on the left half, vivid saturated colors, professional photography"}},
@@ -161,7 +283,7 @@ Devuelve SOLO un JSON válido (sin markdown, sin explicación) con 2 variantes d
 ]}}
 
 Reglas del JSON:
-- "lineas": 2 o 3 líneas, cada una de 1 a 3 palabras, EN MAYÚSCULAS, español.
+- "lineas": idealmente 2 líneas, cada una de 1 a 2 palabras, EN MAYÚSCULAS, español.
 - "linea_destacada": índice (0-based) de la línea que va en bloque amarillo.
 - "cifra": solo si el estilo es cifra_gigante (un número corto, ej "60", "90%", "1"). Si no, "".
 - "prompt_fondo": en inglés, foto realista, sujeto a la DERECHA del encuadre, fondo simple oscuro a la izquierda, colores vivos, sin texto, persona completamente vestida si aparece alguien, apto para todo público.
@@ -191,15 +313,14 @@ def _concepto_local(titulo: str, keyword: str):
             continue
         vistas.add(p.lower())
         fuertes.append(p.upper())
-    fuertes = fuertes[:4] or [keyword.upper() or "SALUD"]
-    lineas = []
-    if len(fuertes) >= 3:
-        lineas = [" ".join(fuertes[:1]), " ".join(fuertes[1:3])]
-        if len(fuertes) > 3:
-            lineas.append(fuertes[3])
-    else:
-        lineas = [fuertes[0], " ".join(fuertes[1:])] if len(fuertes) > 1 else [fuertes[0]]
-    lineas = normalizar_lineas_portada([l for l in lineas if l.strip()][:3])
+    fuertes = [f for f in fuertes if f not in _PALABRAS_PORTADA_QUEMADAS][:4]
+    lineas = _lineas_locales_mas_variadas(titulo, keyword)
+    if not lineas:
+        if fuertes:
+            lineas = [fuertes[0], " ".join(fuertes[1:3]).strip()]
+        else:
+            lineas = ["ESTE TEMA"]
+    lineas = normalizar_lineas_portada([l for l in lineas if l.strip()][:2])
     if not lineas:
         lineas = ["ESTE TEMA"]
     m = re.search(r"\b(\d{1,3}%?)\b", titulo)
@@ -221,7 +342,8 @@ def disenar_conceptos(titulo: str, keyword: str) -> dict:
     try:
         from agents.llm_cascada import llamar_llm
         respuesta = llamar_llm(
-            _PROMPT_DIRECTOR.format(titulo=titulo, keyword=keyword or titulo),
+            _PROMPT_DIRECTOR.format(titulo=titulo, keyword=keyword or titulo,
+                                   bloque_variedad=_bloque_variedad_portadas()),
             temperatura=0.9,
         )
         data = _extraer_json(respuesta)
@@ -229,13 +351,14 @@ def disenar_conceptos(titulo: str, keyword: str) -> dict:
         limpias = []
         for v in variantes[:2]:
             lineas = [str(l).strip().upper() for l in (v.get("lineas") or []) if str(l).strip()]
-            # regla dura: máx 3 líneas, máx 3 palabras por línea, máx 7 palabras totales
-            lineas = [" ".join(l.split()[:3]) for l in lineas][:3]
+            # regla dura reforzada (14-sep-2026): ideal 2 líneas, máx 2 palabras por línea,
+            # máx 4 palabras totales para que la imagen siga siendo la protagonista.
+            lineas = [" ".join(l.split()[:2]) for l in lineas][:2]
             total = 0
             recortadas = []
             for l in lineas:
                 pal = l.split()
-                pal = pal[:max(0, 7 - total)]
+                pal = pal[:max(0, 4 - total)]
                 total += len(pal)
                 if pal:
                     recortadas.append(" ".join(pal))
@@ -359,8 +482,8 @@ def _preparar_lienzo(fondo_path: str, tamano=TAMANO) -> Image.Image:
         # horizontal: gradiente izquierda oscura (zona de texto), derecha libre
         grad = Image.new("L", (tamano[0], 1), 0)
         for x in range(tamano[0]):
-            t = max(0.0, 1.0 - x / (tamano[0] * 0.62))
-            grad.putpixel((x, 0), int(200 * t))
+            t = max(0.0, 1.0 - x / (tamano[0] * 0.48))
+            grad.putpixel((x, 0), int(190 * t))
     else:
         # vertical (Short): gradiente abajo oscuro (el texto va en el tercio
         # inferior, lejos de la interfaz de Shorts que tapa la parte baja
@@ -395,12 +518,12 @@ def _dibujar_bloques_texto(base, lineas, idx_destacada, color_bloque=AMARILLO,
     texto blanco sobre bloque negro). Texto gigante, legible a 168x94."""
     W, H = base.size
     if max_ancho is None:
-        max_ancho = int(W * 0.58) if W >= H else int(W * 0.90)
-    tam = _ajustar_tamano_fuente(lineas, max_ancho)
+        max_ancho = int(W * 0.28) if W >= H else int(W * 0.72)
+    tam = _ajustar_tamano_fuente(lineas, max_ancho, tam_inicial=150 if W >= H else 138)
     f = _fuente(tam)
     dr = ImageDraw.Draw(base)
     interlinea = int(tam * 1.22)
-    pad = max(10, tam // 9)
+    pad = max(8, tam // 10)
     alto_total = (interlinea + pad) * len(lineas)
     if y_inicio is not None:
         y = y_inicio
@@ -639,6 +762,15 @@ def generar_portada_elite(guion, imagen_base: str, salida_png: str,
             os.remove(r)
         except OSError:
             pass
+    try:
+        usadas = []
+        if ganadora.endswith("_vB.png") and len(conceptos) > 1:
+            usadas = conceptos[1].get("lineas", [])
+        elif conceptos:
+            usadas = conceptos[0].get("lineas", [])
+        _recordar_gancho_portada(usadas)
+    except Exception:
+        pass
     log(AGENT_AUDITOR, f"Portada élite final -> {salida_png}")
     return salida_png
 

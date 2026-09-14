@@ -25,11 +25,170 @@ import time
 import random
 import requests
 
-from agents.utils import load_config, log, limpiar_texto_para_voz, modelo_groq
+from agents.utils import load_config, log, limpiar_texto_para_voz, modelo_groq, load_state
 from agents.viral_strategist import REGLAS_PARA_GUIONISTA, REGLAS_SEO_PARA_GUIONISTA
 from agents.control_calidad_idioma import filtrar_sugerencias_espanol, tiene_ingles_visible
 
 AGENT = "Guionista"
+
+_APERTURAS_TITULO_QUEMADAS = [
+    "el error",
+    "la verdad sobre",
+    "remedio natural para",
+    "nunca hagas",
+    "hábitos",
+    "habitos",
+]
+
+
+def _titulos_recientes_publicados(limite: int = 8) -> list[str]:
+    try:
+        estado = load_state()
+        videos = estado.get("videos_publicados", []) or []
+        titulos = [str(v.get("titulo", "")).strip() for v in videos if str(v.get("titulo", "")).strip()]
+        return titulos[-limite:]
+    except Exception:
+        return []
+
+
+
+def _bloque_variedad_titulos_recientes() -> str:
+    recientes = _titulos_recientes_publicados(8)
+    if not recientes:
+        return (
+            "VARIEDAD OBLIGATORIA DEL CANAL: evita títulos gemelos. No abras todos los videos con "
+            "'El Error', 'La Verdad Sobre', 'Remedio Natural Para' o 'Hábitos'. "
+            "Rota la familia del título entre pregunta, consecuencia, señal, hábito, comparación o causa oculta."
+        )
+
+    aperturas = []
+    for t in recientes[-6:]:
+        apertura = " ".join(t.strip().split()[:3]).lower()
+        if apertura:
+            aperturas.append(apertura)
+    repetidas = []
+    for base in _APERTURAS_TITULO_QUEMADAS:
+        if sum(1 for a in aperturas if a.startswith(base)) >= 1:
+            repetidas.append(base.title())
+    recientes_txt = "; ".join(f'"{t}"' for t in recientes[-4:])
+    sobreuso_error = sum(1 for t in recientes[-5:] if "error" in t.lower()) >= 2
+    if repetidas or sobreuso_error:
+        extras = []
+        if repetidas:
+            extras.append(f"Evita especialmente abrir el nuevo título con: {', '.join(repetidas)}")
+        if sobreuso_error:
+            extras.append("La palabra 'Error' ya está sobreusada en los títulos recientes: NO la uses otra vez salvo que sea imprescindible")
+        return (
+            "VARIEDAD OBLIGATORIA DEL CANAL: estos títulos recientes ya marcan una pauta que NO debes clonar: "
+            f"{recientes_txt}. " + ". ".join(extras) + ". "
+            "Usa una familia distinta: pregunta, consecuencia, señal, causa oculta, comparación o paso práctico."
+        )
+    return (
+        "VARIEDAD OBLIGATORIA DEL CANAL: no copies la forma exacta de los últimos títulos. "
+        f"Referencias recientes: {recientes_txt}. Usa una familia distinta y evita sonar a plantilla."
+    )
+
+
+_SMALL_TITLE_WORDS = {"de", "del", "la", "el", "los", "las", "y", "o", "a", "en", "con", "para", "sin", "por", "que"}
+
+
+def _title_case_es(texto: str) -> str:
+    palabras = []
+    anteriores_termina_en_dos_puntos = False
+    for i, p in enumerate((texto or "").split()):
+        pl = p.lower()
+        if i > 0 and not anteriores_termina_en_dos_puntos and pl in _SMALL_TITLE_WORDS:
+            palabras.append(pl)
+        else:
+            palabras.append(pl[:1].upper() + pl[1:])
+        anteriores_termina_en_dos_puntos = palabras[-1].endswith(":")
+    return " ".join(palabras)
+
+
+
+def _recortar_titulo_60(texto: str, limite: int = 60) -> str:
+    texto = re.sub(r"\s+", " ", (texto or "").strip())
+    if len(texto) <= limite:
+        return texto
+    recorte = texto[:limite].rsplit(" ", 1)[0].strip(" ,;:-")
+    return recorte or texto[:limite].strip(" ,;:-")
+
+
+
+def _candidatos_titulo_alterno(keyword: str) -> list[str]:
+    kw = _title_case_es((keyword or "").strip(" .,:;-"))
+    kw_l = kw.lower()
+    if not kw:
+        return []
+    if any(x in kw_l for x in ["fatiga", "energ"]):
+        return [
+            f"{kw}: Lo Que Está Drenando Tu Energía",
+            f"{kw}: La Causa Que Casi Nadie Mira",
+            f"{kw}: Señales Que No Debes Ignorar",
+        ]
+    if any(x in kw_l for x in ["inflam", "antiinflam"]):
+        return [
+            f"{kw}: Lo Que La Sigue Alimentando",
+            f"{kw}: Qué La Empeora Sin Que Lo Notes",
+            f"{kw}: Lo Primero Que Debes Cambiar Hoy",
+        ]
+    if any(x in kw_l for x in ["cortisol", "dormir", "sueño", "sueno", "insomnio"]):
+        return [
+            f"{kw}: Qué Te Despierta Sin Que Lo Notes",
+            f"{kw}: Lo Que Empeora Tus Noches",
+            f"{kw}: Cuándo Sí Y Cuándo No",
+        ]
+    if any(x in kw_l for x in ["música", "musica", "frecuencia", "frecuencias", "estrés", "estres"]):
+        return [
+            f"{kw}: Cuándo Ayuda Y Cuándo No",
+            f"{kw}: Lo Que Debes Escuchar Primero",
+            f"{kw}: La Diferencia Que Sí Importa",
+        ]
+    if any(x in kw_l for x in ["piernas", "circul", "caminar"]):
+        return [
+            f"{kw}: Lo Primero Que Debes Cambiar Hoy",
+            f"{kw}: Señales Que No Debes Ignorar",
+            f"{kw}: Cuándo Sí Y Cuándo No",
+        ]
+    if any(x in kw_l for x in ["magnesio"]):
+        return [
+            f"{kw}: Cuándo Sí Y Cuándo No",
+            f"{kw}: Lo Primero Que Debes Cambiar Hoy",
+            f"{kw}: Señales Que No Debes Ignorar",
+        ]
+    return [
+        f"{kw}: Lo Que Está Saboteando Tu Progreso",
+        f"{kw}: Lo Primero Que Debes Cambiar Hoy",
+        f"{kw}: Señales Que No Debes Ignorar",
+    ]
+
+
+
+def _forzar_titulo_mas_original(titulo: str, keyword: str) -> str:
+    titulo = re.sub(r"\s+", " ", (titulo or "").strip())
+    if not titulo:
+        return titulo
+    recientes = _titulos_recientes_publicados(8)
+    apertura = " ".join(titulo.lower().split()[:3])
+    error_reciente = sum(1 for t in recientes[-5:] if "error" in t.lower())
+    necesita_reparacion = (
+        any(apertura.startswith(base) for base in _APERTURAS_TITULO_QUEMADAS)
+        or (" error " in f" {titulo.lower()} " and error_reciente >= 2)
+        or titulo.lower().startswith("el error")
+        or titulo.lower().startswith("la verdad sobre")
+        or ": el error" in titulo.lower()
+        or ": la verdad" in titulo.lower()
+        or ", el error" in titulo.lower()
+    )
+    if not necesita_reparacion:
+        return _recortar_titulo_60(_title_case_es(titulo))
+
+    aperturas_recientes = {" ".join((t or "").lower().split()[:3]) for t in recientes[-6:]}
+    for cand in _candidatos_titulo_alterno(keyword):
+        cand = _recortar_titulo_60(_title_case_es(cand))
+        if " ".join(cand.lower().split()[:3]) not in aperturas_recientes:
+            return cand
+    return _recortar_titulo_60(_title_case_es(titulo))
 
 PROMPT_BASE = """Eres guionista experto en videos de YouTube de larga duración (10-18 min) \
 sobre {nicho}, y también experto en retención de audiencia. Vas a escribir un guion \
@@ -38,6 +197,8 @@ referencia (no copies frases ni datos inventados que no puedas verificar, y no d
 consejos médicos peligrosos sin matizarlos):
 
 Título de referencia: "{titulo_ref}"
+
+{bloque_variedad_titulos}
 
 {reglas_retencion}
 
@@ -512,6 +673,7 @@ def _sanitizar_guion(guion: dict) -> dict:
     si vino de un LLM externo o de la plantilla local. Defensa en profundidad."""
     guion["gancho"] = limpiar_texto_para_voz(_quitar_lenguaje_meta(guion.get("gancho", "")))
     guion["titulo"] = (guion.get("titulo", "") or "").replace("*", "").replace("#", "").strip()
+    guion["titulo"] = _forzar_titulo_mas_original(guion.get("titulo", ""), guion.get("keyword_principal", ""))
     for cap in guion.get("capitulos", []):
         cap["nombre"] = re.sub(r"^\s*\d{1,2}:\d{2}(:\d{2})?\s*[-|]\s*", "", cap.get("nombre", ""))
         cap["nombre"] = cap["nombre"].replace("*", "").replace("#", "").strip()
@@ -561,9 +723,9 @@ def _plantilla_local(idea, cfg):
     del sistema."""
     nicho = cfg["canal"]["nicho"]
     titulos_generico = [
-        f"Hábitos Naturales Para Tu {nicho.title()}",
-        f"La Verdad Sobre {nicho.title()}",
-        f"Cambios Simples Para Tu {nicho.title()} Hoy",
+        f"{nicho.title()}: Lo Primero Que Debes Cambiar Hoy",
+        f"{nicho.title()}: Señales Que No Debes Ignorar",
+        f"{nicho.title()}: Lo Que Está Saboteando Tu Progreso",
     ]
     titulo_elegido = random.choice(titulos_generico)
     if len(titulo_elegido) > 60:
@@ -723,6 +885,7 @@ def generar_guion(idea: dict) -> dict:
 
     prompt = PROMPT_BASE.format(
         nicho=nicho, titulo_ref=idea["titulo"], dur_min=dur_min, dur_max=dur_max,
+        bloque_variedad_titulos=_bloque_variedad_titulos_recientes(),
         reglas_retencion=REGLAS_PARA_GUIONISTA, reglas_seo=REGLAS_SEO_PARA_GUIONISTA,
         fuentes_cientificas=fuentes_texto, frases_audiencias=frases_audiencias,
     )

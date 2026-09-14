@@ -33,6 +33,8 @@ from agents.utils import log
 AGENT = "Packaging"
 TAMANO = (1280, 720)
 
+_PALABRAS_PORTADA_QUEMADAS = {"ALTO", "ERROR", "NUNCA", "MITO", "SECRETO", "VERDAD", "CUIDADO", "STOP"}
+
 
 def _fuente(tam, negrita=True):
     rutas = [
@@ -45,29 +47,38 @@ def _fuente(tam, negrita=True):
 
 
 def _frase_corta_para_miniatura(titulo: str, keyword_principal: str = "") -> str:
-    """El título completo casi nunca cabe legible en una miniatura pequeña.
-    MÁXIMO 3 PALABRAS (actualizado 14-ago-2026): recomendación consistente
-    de la investigación real analizada (grupo de grandes creadores citado
-    por experta ex-YouTube: "la miniatura no debe tener más de tres
-    palabras"; comprobado además en la miniatura real del 14-ago, que con
-    5 palabras se veía redundante: "ALIMENTOS VISIÓN MEJORA VISIÓN ESTOS").
-    Se eligen las 3 palabras más 'fuertes' SIN repetir (evitando conectores
-    y duplicados como el doble "visión"). Los números se excluyen porque ya
-    se destacan aparte con la insignia circular (ver _numero_en_titulo)."""
+    """Prioriza una frase MUY corta y menos invasiva.
+
+    Refuerzo 14-sep-2026 tras auditoría visual real del canal:
+    - no repetir muletillas quemadas como ERROR/STOP/NUNCA
+    - máximo 2 líneas / 2 a 4 palabras en total
+    - la imagen debe seguir siendo la protagonista
+    """
+    try:
+        from agents.equipo_portadas import _lineas_locales_mas_variadas
+        lineas = _lineas_locales_mas_variadas(titulo, keyword_principal)
+        frase = " ".join(lineas[:2]).strip()
+        if frase:
+            return frase
+    except Exception:
+        pass
+
     conectores = {"de", "del", "la", "el", "los", "las", "para", "con", "en",
                   "y", "a", "un", "una", "que", "tu", "su", "al", "estos",
-                  "estas", "este", "esta", "como", "cómo", "más", "sin"}
+                  "estas", "este", "esta", "como", "cómo", "más", "sin",
+                  "remedio", "natural", "solución", "solucion", "causa"}
     palabras = re.findall(r"[\wÁÉÍÓÚÑáéíóúñ]+", titulo)
     palabras = [p for p in palabras if not p.isdigit()]
     fuertes, vistas = [], set()
     for p in palabras:
         pl = p.lower()
-        if pl in conectores or pl in vistas:
+        pu = p.upper()
+        if pl in conectores or pl in vistas or pu in _PALABRAS_PORTADA_QUEMADAS:
             continue
         vistas.add(pl)
         fuertes.append(p)
-    elegidas = fuertes[:3] if len(fuertes) >= 2 else palabras[:3]
-    frase = " ".join(elegidas)
+    elegidas = fuertes[:3] if len(fuertes) >= 2 else [p for p in palabras[:3] if p.upper() not in _PALABRAS_PORTADA_QUEMADAS]
+    frase = " ".join(elegidas[:4])
     return frase if frase else titulo[:30]
 
 
@@ -204,14 +215,14 @@ def generar_miniatura(guion, imagen_base: str, salida_png: str) -> str:
     draw = ImageDraw.Draw(base)
     color_acento = random.choice([(255, 210, 0), (255, 255, 255), (0, 230, 160), (255, 80, 60)])
 
-    # --- Texto corto y llamativo (máximo 4-5 palabras, nunca el título completo) ---
+    # --- Texto corto y llamativo, pero menos invasivo (el usuario pidió que no tape demasiada imagen) ---
     texto_miniatura = _frase_corta_para_miniatura(titulo, keyword_principal).upper()
-    font = _fuente(90)
+    font = _fuente(68)
     palabras = texto_miniatura.split()
     linea, lineas = "", []
     for palabra in palabras:
         prueba = (linea + " " + palabra).strip()
-        if draw.textlength(prueba, font=font) > TAMANO[0] * 0.9:
+        if draw.textlength(prueba, font=font) > TAMANO[0] * 0.46:
             lineas.append(linea)
             linea = palabra
         else:
@@ -220,23 +231,23 @@ def generar_miniatura(guion, imagen_base: str, salida_png: str) -> str:
         lineas.append(linea)
     lineas = lineas[:2]
 
-    y = TAMANO[1] - 40 - len(lineas) * 100
+    y = TAMANO[1] - 50 - len(lineas) * 88
     for ln in lineas:
         tw = draw.textlength(ln, font=font)
-        x = (TAMANO[0] - tw) / 2
+        x = 48
         # Franja semitransparente detrás del texto para que resalte en
         # cualquier fondo (recurso clásico de miniaturas virales).
         pad = 14
         franja = Image.new("RGBA", TAMANO, (0, 0, 0, 0))
         draw_franja = ImageDraw.Draw(franja)
-        draw_franja.rectangle([x - pad, y - pad, x + tw + pad, y + font.size + pad], fill=(0, 0, 0, 140))
+        draw_franja.rectangle([x - pad, y - pad, min(TAMANO[0] * 0.52, x + tw + pad), y + font.size + pad], fill=(0, 0, 0, 110))
         base = Image.alpha_composite(base.convert("RGBA"), franja).convert("RGB")
         draw = ImageDraw.Draw(base)
         for dx in (-3, 3):
             for dy in (-3, 3):
                 draw.text((x + dx, y + dy), ln, font=font, fill=(0, 0, 0))
         draw.text((x, y), ln, font=font, fill=color_acento)
-        y += 100
+        y += 88
 
     # --- Insignia circular con número (si el título trae uno, ej. "7 Claves") ---
     numero = _numero_en_titulo(titulo)

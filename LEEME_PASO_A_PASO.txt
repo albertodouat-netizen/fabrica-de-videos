@@ -1,0 +1,52 @@
+PAQUETE ANTI-REPETICION DE TITULOS Y PORTADAS
+=============================================
+
+OBJETIVO
+Que el sistema deje de repetir demasiado palabras como ERROR / STOP / NUNCA,
+y que el texto deje respirar más a la imagen.
+
+ARCHIVOS DEL PAQUETE
+- agents/scriptwriter.py
+- agents/viral_strategist.py
+- agents/equipo_portadas.py
+- agents/thumbnail.py
+- REVISION_REPETICION_ERROR_PORTADAS_14sep2026.md
+
+QUE CORRIGE
+1) frena el sobreuso de la palabra ERROR en titulos recientes
+2) obliga mas variedad de familias de titulo
+3) reduce el texto de portada a 2 lineas maximo
+4) reduce el ancho que ocupa el bloque de texto
+5) hace que la imagen del tema tenga mas protagonismo
+6) aplica el mismo criterio tambien al fallback de miniatura
+
+PASO 1) SUBIR LOS 4 ARCHIVOS
+Sube cada archivo exactamente a su misma ruta dentro del repositorio.
+
+PASO 2) REVISAR EN GITHUB
+En el archivo agents/equipo_portadas.py revisa que si aparezcan estas ideas:
+- 2 a 4 palabras en total
+- la palabra ERROR sobreusada -> prohibida
+- la imagen protagonista debe ganar a simple vista
+
+PASO 3) LANZAR UNA CORRIDA MANUAL
+Genera un nuevo video manualmente.
+
+PASO 4) QUE DEBES MIRAR
+En el video largo nuevo revisa:
+- que el titulo no abra otra vez con El Error
+- que la miniatura no tape media imagen
+- que el elemento del tema se vea mas fuerte que el texto
+
+En el Short nuevo revisa:
+- que la portada inicial tenga menos texto
+- que no parezca subtitulo congelado
+- que se entienda en menos de 1 segundo
+
+PASO 5) SI QUIERES MEJORA ADICIONAL
+Tambien conviene cambiar manualmente 3 o 4 miniaturas publicas que hoy mas
+repiten el patron. Yo empezaria por:
+- fatiga cronica
+- habitos antiinflamatorios
+- cortisol para dormir
+- insomnio
