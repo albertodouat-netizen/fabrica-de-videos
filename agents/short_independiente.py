@@ -24,7 +24,8 @@ Decisiones de diseño pedidas por el usuario:
 Defensas anti-"contenido inauténtico" (investigación 16-ago-2026):
   - 4 formatos que rotan (dato sorprendente / mito vs verdad / top 3 /
     mini consejo práctico).
-  - Duración objetivo variable (20-45s).
+  - Duración objetivo variable (32-44s): suficiente para dejar un dato útil
+    de verdad, sin quedarse tan corto que parezca un simple teaser vacío.
   - Cierres variados (unos llaman al largo, otros a suscribirse, otros
     solo dejan curiosidad).
   - Tema único por Short, con verificación científica cuando hay estudios.
@@ -61,16 +62,17 @@ FORMATOS = ["mito_vs_verdad", "dato_sorprendente", "mito_vs_verdad",
 # curiosidad del gancho (loop narrativo => replay => señal #1 del feed).
 # CTA largo/perfil vive en comentario fijado, no gasta segundos de video.
 CIERRES = [
-    ("loop_largo", "Y eso es solo el comienzo. Lo completo está en mi canal."),
-    ("loop_pregunta", "Ahora vuelve a escuchar el inicio: tiene más sentido, ¿verdad?"),
-    ("interaccion", "¿Ya lo sabías? Cuéntame en los comentarios, te leo."),
-    ("compartir", "Comparte esto con alguien que lo necesite hoy."),
-    ("suscribir", "Sígueme para más datos con respaldo científico real."),
+    ("loop_largo", "Y eso es solo una parte. Si quieres la explicación completa, entra a mi perfil y abre el video de este tema."),
+    ("loop_pregunta", "Ahora vuelve a escuchar el inicio. Y si quieres el paso completo, entra a mi perfil y mira el video largo."),
+    ("interaccion", "Si esto te sirve, dale like y cuéntame en los comentarios si te pasa a ti."),
+    ("compartir", "Dale like y comparte esto con alguien que necesite información real, clara y útil."),
+    ("suscribir", "Sígueme y deja tu like para que sigamos publicando información con respaldo científico real."),
 ]
 
 PROMPT_SHORT = """Eres guionista de YouTube Shorts en español para un canal de salud natural \
 llamado Salud Natural Diaria. Escribe un guion COMPLETO y AUTOCONTENIDO (se entiende sin ver \
 ningún otro video) de {duracion} segundos aproximadamente ({palabras} palabras habladas).
+Debe dejar información útil de verdad, no sonar como teaser vacío.
 
 TEMA BASE (viene de un video largo ya publicado del canal): {tema}
 FORMATO OBLIGATORIO de este Short: {formato_instruccion}
@@ -87,6 +89,8 @@ REGLAS DE HUMANIZACIÓN (muy importantes, esto debe sonar a persona real, no a r
 - PROHIBIDO: saludos genéricos ("hola amigos"), presentar el canal, pedir suscripción (el cierre lo pongo yo).
 - El primer segundo es TODO: arranca directo con el dato/pregunta más fuerte.
 - TODO el texto visible o narrado debe quedar 100% en español. La única excepción permitida en inglés es el campo interno "visual".
+- Debe incluir al menos UNA solución práctica o acción concreta que la persona pueda entender y empezar hoy.
+- Debe dejar abierta UNA razón clara para ver el video largo completo: un paso más profundo, un error clave o una explicación que no cabe completa en el Short.
 
 REGLA DE LOS PRIMEROS 3 SEGUNDOS (añadida 19-ago-2026 con datos REALES del canal:
 un Short llegó a 710 personas pero el 66% deslizó en los primeros ~9 segundos;
@@ -119,7 +123,7 @@ REGLAS VISUALES DEL SHORT (obligatorias):
 FORMATO DE RESPUESTA (JSON estricto, sin nada más):
 {{"beats": [{{"texto": "...", "visual": "english visual keyword here"}}, ...]}}
 
-Entre 3 y 5 beats. Cada "texto" de 1-2 frases narrables. Cada "visual" en INGLÉS, escena real \
+Entre 4 y 6 beats. Cada "texto" de 1-2 frases narrables. Cada "visual" en INGLÉS, escena real \
 filmable relacionada con el texto (nunca 'body figure' ni personas descritas solo por su cuerpo)."""
 
 FORMATO_INSTRUCCIONES = {
@@ -217,8 +221,8 @@ def _suavizar_afirmaciones_no_verificadas(beats: list, estudios: list) -> list:
 def _generar_guion_short(tema: str, formato: str, cfg: dict) -> dict:
     """Genera el mini-guion con Groq/Gemini. Si no hay LLM, usa una
     estructura simple basada en los estudios encontrados."""
-    duracion = random.randint(22, 32)  # duración objetivo variable (humanización)
-    palabras = int(duracion * 2.4)     # ~145 palabras/min hablado
+    duracion = random.randint(32, 44)  # más sustancia útil sin pasarnos del formato
+    palabras = int(duracion * 2.45)    # ~147 palabras/min hablado
 
     # Estudios reales para el dato (si el tema los tiene disponibles)
     fuentes = ""
@@ -268,7 +272,7 @@ def _generar_guion_short(tema: str, formato: str, cfg: dict) -> dict:
     for b in beats:
         b["texto"] = limpiar_texto_para_voz(b.get("texto", ""))
     guion = {"titulo": tema, "capitulos": [{"nombre": "short", "beats": beats}],
-             "referencias": [], "_estudios": estudios}
+             "referencias": [], "_estudios": estudios, "modo_narracion": "short"}
     try:
         from agents.seguridad_medica import verificar_guion_seguro
         guion = verificar_guion_seguro(guion)
@@ -321,23 +325,38 @@ def crear_short_independiente() -> dict:
         log(AGENT, "No hay videos largos publicados aún; no se genera Short independiente.")
         return None
 
-    # Rotación con sesgo INTELIGENTE: no solo el menos usado, sino el más
-    # alineado con la audiencia real del canal. Según las estadísticas de
-    # 14-sep-2026, el motor actual es mujer 55+/65+ y los clusters más
-    # fuertes son sueño/cortisol, piernas/circulación e inflamación.
+    # NUEVA PRIORIDAD DE CALENDARIO (14-sep-2026, pedido del usuario): en el
+    # día sin largo, el Short debe intentar empujar ANTE TODO el largo más
+    # reciente, para crear la secuencia "día con largo + Short" y al día
+    # siguiente "otro Short del largo anterior". Si ese largo ya recibió su
+    # Short de seguimiento, se vuelve al sistema inteligente normal.
     usados = estado.get("shorts_independientes_por_video", {})
-    largos_ordenados = sorted(
-        largos,
-        key=lambda v: (
-            _tema_vetado_para_short(v.get("titulo", "")),
-            -puntaje_tema_para_audiencia(v.get("titulo", "")),
-            usados.get(v["video_id"], ""),
-        ),
-    )
-    candidatos = [v for v in largos_ordenados if not _tema_vetado_para_short(v.get("titulo", ""))]
-    if not candidatos:
-        candidatos = largos_ordenados
-    elegido = candidatos[0]
+    ultimo_largo = (estado.get("ultimo_largo_confirmado") or {}).get("video_id", "")
+    elegido = None
+    if ultimo_largo and ultimo_largo not in usados:
+        for v in largos:
+            if v.get("video_id") == ultimo_largo and not _tema_vetado_para_short(v.get("titulo", "")):
+                elegido = v
+                log(AGENT, "Se prioriza el largo más reciente para el Short de seguimiento del día siguiente.")
+                break
+
+    if elegido is None:
+        # Rotación con sesgo INTELIGENTE: no solo el menos usado, sino el más
+        # alineado con la audiencia real del canal. Según las estadísticas de
+        # 14-sep-2026, el motor actual es mujer 55+/65+ y los clusters más
+        # fuertes son sueño/cortisol, piernas/circulación e inflamación.
+        largos_ordenados = sorted(
+            largos,
+            key=lambda v: (
+                _tema_vetado_para_short(v.get("titulo", "")),
+                -puntaje_tema_para_audiencia(v.get("titulo", "")),
+                usados.get(v["video_id"], ""),
+            ),
+        )
+        candidatos = [v for v in largos_ordenados if not _tema_vetado_para_short(v.get("titulo", ""))]
+        if not candidatos:
+            candidatos = largos_ordenados
+        elegido = candidatos[0]
 
     # Rotación de formatos: nunca repetir el del día anterior
     ultimo_formato = estado.get("ultimo_formato_short", "")
@@ -383,7 +402,9 @@ def crear_short_independiente() -> dict:
         primer_texto = f"Resumen rápido en español sobre {base_desc}."
     descripcion = (
         f"{primer_texto}\n\n"
-        f"👉 El video COMPLETO del tema está en el PRIMER COMENTARIO 📌\n"
+        f"👉 Si quieres la explicación completa, entra a mi perfil y abre el video largo de este tema.\n"
+        f"📌 El enlace también está en el PRIMER COMENTARIO.\n"
+        f"👍 Si te sirve, deja tu like para que sigamos publicando información real y útil.\n"
         f"También en el canal: {url_largo}\n\n"
         f"#VideoCorto #SaludNatural"
     )

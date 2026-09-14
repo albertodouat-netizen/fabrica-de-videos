@@ -36,6 +36,7 @@ VOCES_POOL_DEFECTO = ["es-CO-GonzaloNeural", "es-MX-JorgeNeural", "es-US-AlonsoN
 # Cuando el guion es exclusivo para audiencia femenina (guion["audiencia_exclusiva"]
 # == "mujeres"), se usa SIEMPRE esta voz, sin aleatoriedad, sin excepción.
 VOZ_EXCLUSIVA_MUJERES_DEFECTO = "es-MX-DaliaNeural"
+VOZ_SECUNDARIA_MASCULINA_DEFECTO = "es-CO-GonzaloNeural"
 
 # Pausa real entre beats (segundos): simula la respiración/silencio natural
 # que deja un narrador humano entre una idea y la siguiente. Sin esto, el
@@ -58,6 +59,29 @@ def _elegir_voz(guion: dict, cfg: dict) -> str:
     voz = random.choice(pool)
     log(AGENT, f"Voz elegida al azar para este video (de {len(pool)} disponibles): {voz}")
     return voz
+
+
+def _usar_dos_voces_en_largo(guion: dict, cfg: dict) -> bool:
+    """Activa alternancia hombre/mujer solo en videos LARGOS.
+
+    El usuario pidió esta opción para que el largo no suene tan plano.
+    Se apaga automáticamente en Shorts para no romper el ritmo corto.
+    """
+    if (guion.get("modo_narracion") or "").strip().lower() == "short":
+        return False
+    canal = cfg.get("canal", {}) or {}
+    apis = cfg.get("apis", {}) or {}
+    return bool(canal.get("usar_dos_voces_en_largos", False) or apis.get("usar_dos_voces_en_largos", False))
+
+
+
+def _par_de_voces_para_largo(cfg: dict) -> tuple[str, str]:
+    femenina = cfg["apis"].get("voz_narrador_exclusiva_mujeres", VOZ_EXCLUSIVA_MUJERES_DEFECTO)
+    masculina = cfg["apis"].get("voz_narrador_secundaria_masculina", VOZ_SECUNDARIA_MASCULINA_DEFECTO)
+    if masculina == femenina:
+        masculina = VOZ_SECUNDARIA_MASCULINA_DEFECTO
+    return femenina, masculina
+
 
 
 def _asegurar_puntuacion(texto: str) -> str:
@@ -166,6 +190,10 @@ def _concatenar_con_pausas(rutas_mp3: list, pausas_seg: list, salida_mp3: str) -
 def narrar_guion(guion: dict, carpeta_salida: str, nombre_base: str) -> dict:
     cfg = load_config()
     voz = _elegir_voz(guion, cfg)
+    usar_dos_voces = _usar_dos_voces_en_largo(guion, cfg)
+    voces_largo = _par_de_voces_para_largo(cfg) if usar_dos_voces else ()
+    if usar_dos_voces:
+        log(AGENT, f"Modo dos voces activado para largo: femenina={voces_largo[0]} | masculina={voces_largo[1]} (alternancia por capítulo).")
     rate = cfg["apis"].get("voz_narrador_rate", "-8%")
     # HUMANIZACIÓN (16-ago-2026): pequeña variación aleatoria de velocidad
     # por video (+/-2%). Una voz que narra SIEMPRE a la misma velocidad
@@ -191,8 +219,9 @@ def narrar_guion(guion: dict, carpeta_salida: str, nombre_base: str) -> dict:
         if i == 0 and guion.get("gancho"):
             textos_beats = [_asegurar_puntuacion(guion["gancho"])] + textos_beats
 
+        voz_capitulo = voces_largo[i % 2] if usar_dos_voces else voz
         log(AGENT, f"Narrando capítulo {i+1}/{len(guion['capitulos'])}: {cap['nombre']} "
-                    f"({len(beats)} beats, cada uno por separado con pausas reales)...")
+                    f"({len(beats)} beats, cada uno por separado con pausas reales, voz={voz_capitulo})...")
 
         # Cada beat se sintetiza POR SEPARADO: así la duración de cada uno
         # se MIDE de verdad (no se estima por letras) y se puede insertar
@@ -217,7 +246,7 @@ def narrar_guion(guion: dict, carpeta_salida: str, nombre_base: str) -> dict:
                 femenina = guion.get("audiencia_exclusiva") == "mujeres"
                 usada_premium = _sintetizar_intro_gemini(texto, ruta_beat, femenina)
             if not usada_premium:
-                asyncio.run(_sintetizar(texto, voz, ruta_beat, rate=rate, pitch=pitch))
+                asyncio.run(_sintetizar(texto, voz_capitulo, ruta_beat, rate=rate, pitch=pitch))
             rutas_beats_mp3.append(ruta_beat)
             duraciones_habla.append(_duracion_mp3(ruta_beat))
 
@@ -256,7 +285,8 @@ def narrar_guion(guion: dict, carpeta_salida: str, nombre_base: str) -> dict:
             "duraciones_beats": duraciones_beats,
         })
 
-    return {"capitulos": capitulos_info, "voz_usada": voz}
+    voz_resumen = f"{voces_largo[0]} + {voces_largo[1]}" if usar_dos_voces else voz
+    return {"capitulos": capitulos_info, "voz_usada": voz_resumen}
 
 
 if __name__ == "__main__":

@@ -60,15 +60,17 @@ def _obtener_credenciales(cfg):
     return creds
 
 
-def _publish_at_hora_pico(cfg) -> str:
-    """Devuelve el timestamp ISO-8601 UTC para programar la publicación en
-    la hora pico del día, o None si no aplica (función apagada, o la hora
-    pico ya pasó => publicar de inmediato)."""
+def _publish_at_hora_pico(cfg, hora_override: str = "") -> str:
+    """Devuelve el timestamp ISO-8601 UTC para programar la publicación.
+
+    `hora_override` permite que Shorts y largos usen horas distintas sin
+    tocar la lógica global del canal.
+    """
     import datetime as _dt
     pub = cfg.get("publicacion", {})
     if not pub.get("programar_para_hora_pico", False):
         return None
-    hora_txt = str(pub.get("programar_hora_utc", "19:30")).strip()
+    hora_txt = str(hora_override or pub.get("programar_hora_utc", "19:30")).strip()
     try:
         hh, mm = (int(x) for x in hora_txt.split(":"))
     except Exception:
@@ -140,7 +142,8 @@ def publicar_video(ruta_video: str, ruta_miniatura: str, guion: dict, descripcio
     # Aplicar programación si corresponde (nunca rompe: si algo falla,
     # se publica de inmediato como siempre)
     try:
-        publish_at = _publish_at_hora_pico(cfg)
+        hora_override = str(guion.get("hora_publicacion_utc", "") or "").strip()
+        publish_at = _publish_at_hora_pico(cfg, hora_override=hora_override)
         if publish_at:
             body["status"]["privacyStatus"] = "private"
             body["status"]["publishAt"] = publish_at

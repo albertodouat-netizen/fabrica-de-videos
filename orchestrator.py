@@ -43,6 +43,7 @@ from agents.musica import obtener_musica_fondo
 from agents.monetizacion import seleccionar_productos, construir_bloque_afiliados
 from agents.promocion_cruzada import (
     obtener_videos_relacionados, construir_bloque_mas_videos, agregar_mencion_video_relacionado,
+    comentario_redireccion_desde_short,
 )
 
 
@@ -872,7 +873,8 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
                 from agents.publisher import publicar_video
                 guion_short = {"titulo": titulo_short,
                                "tags": (guion.get("tags", []) + ["Shorts"])[:10],
-                               "disclaimer": guion.get("disclaimer", "")}
+                               "disclaimer": guion.get("disclaimer", ""),
+                               "hora_publicacion_utc": cfg.get("publicacion", {}).get("programar_hora_utc_short_mismo_dia", "22:30")}
                 # Portada vertical élite para el Short (Agentes 38-40): en el
                 # feed de Shorts no se ve, pero en la pestaña del canal, la
                 # búsqueda y los sugeridos SÍ, y ahí compite igual que un
@@ -943,10 +945,9 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
                             guion.get("titulo", ""),
                             url_extra=f"https://youtube.com/shorts/{short_id}",
                             etiqueta_url="🎬 ¿Prefieres el resumen rápido? Mira el Short:")})
-                        cola.append({"video_id": short_id, "texto": comentario_conversacion(
+                        cola.append({"video_id": short_id, "texto": comentario_redireccion_desde_short(
                             guion.get("titulo", ""),
-                            url_extra=url_con_playlist(video_id, cfg),
-                            etiqueta_url="👉 Mira el video COMPLETO aquí ▶️")})
+                            url_con_playlist(video_id, cfg))})
                         save_state(_est)
                         log(AGENT, "Videos programados: comentarios cruzados ENCOLADOS "
                                    "(se publicarán automáticamente cuando el video sea público).")
@@ -960,10 +961,10 @@ def ejecutar_pipeline_para_un_video(intentar_publicar: bool, generar_short: bool
                                 url_extra=f"https://youtube.com/shorts/{short_id}",
                                 etiqueta_url="🎬 ¿Prefieres el resumen rápido? Mira el Short:"))
                         publicar_comentario_cruzado(
-                            short_id, comentario_conversacion(
+                            short_id,
+                            comentario_redireccion_desde_short(
                                 guion.get("titulo", ""),
-                                url_extra=url_con_playlist(video_id, cfg),
-                                etiqueta_url="👉 Mira el video COMPLETO aquí ▶️"))
+                                url_con_playlist(video_id, cfg)))
         except Exception as e:
             error_short = f"{type(e).__name__}: {e}"
             log(AGENT, f"No se pudo generar/publicar el Short: {e}")
@@ -1088,7 +1089,7 @@ def publicar_short_pendiente():
         raise RuntimeError("El Short pendiente no tiene un guion válido para regenerarse.")
 
     cfg = load_config()
-    from agents.promocion_cruzada import url_con_playlist, publicar_comentario_cruzado, comentario_conversacion
+    from agents.promocion_cruzada import url_con_playlist, publicar_comentario_cruzado, comentario_conversacion, comentario_redireccion_desde_short
     from agents.publisher import publicar_video
 
     nombre_base = slugify((guion.get("titulo") or pendiente.get("titulo_largo") or "short_pendiente"))
@@ -1108,6 +1109,7 @@ def publicar_short_pendiente():
         "titulo": titulo_short,
         "tags": (guion.get("tags", []) + ["Shorts"])[:10],
         "disclaimer": guion.get("disclaimer", ""),
+        "hora_publicacion_utc": cfg.get("publicacion", {}).get("programar_hora_utc_short_diario", cfg.get("publicacion", {}).get("programar_hora_utc", "19:30")),
     }
     log(AGENT, "Publicando el Short derivado pendiente en YouTube...")
     short_id = publicar_video(ruta_short, miniatura_short, guion_short, descripcion_short)
@@ -1126,10 +1128,9 @@ def publicar_short_pendiente():
         try:
             publicar_comentario_cruzado(
                 short_id,
-                comentario_conversacion(
+                comentario_redireccion_desde_short(
                     pendiente.get("titulo_largo", guion.get("titulo", "")),
-                    url_extra=url_largo,
-                    etiqueta_url="👉 Mira el video COMPLETO aquí ▶️",
+                    url_largo,
                 ),
             )
         except Exception as e:
@@ -1198,7 +1199,8 @@ def publicar_short_independiente():
     from agents.promocion_cruzada import url_con_playlist
     guion_short = {"titulo": resultado["titulo"],
                    "tags": ["Salud Natural Diaria", "salud natural", "Shorts"],
-                   "disclaimer": "Este contenido es informativo y no sustituye una consulta médica."}
+                   "disclaimer": "Este contenido es informativo y no sustituye una consulta médica.",
+                   "hora_publicacion_utc": cfg.get("publicacion", {}).get("programar_hora_utc_short_diario", cfg.get("publicacion", {}).get("programar_hora_utc", "19:30"))}
     # La miniatura del Short independiente debe ser la MISMA portada que se
     # usó dentro del render. Solo si falta, se regenera una de respaldo.
     miniatura_short = resultado.get("miniatura") if isinstance(resultado, dict) else None
@@ -1230,8 +1232,10 @@ def publicar_short_independiente():
     if resultado.get("video_largo_id"):
         from agents.promocion_cruzada import publicar_comentario_cruzado
         publicar_comentario_cruzado(
-            short_id, f"👉 Mira el video COMPLETO del tema aquí: "
-                      f"{url_con_playlist(resultado['video_largo_id'])}"
+            short_id,
+            comentario_redireccion_desde_short(
+                resultado.get("titulo", ""),
+                url_con_playlist(resultado['video_largo_id']))
         )
         log(AGENT, f"🔗 Short independiente publicado: https://youtube.com/shorts/{short_id}")
         # Tarea a-un-clic para el botón "Vídeo relacionado" (no automatizable

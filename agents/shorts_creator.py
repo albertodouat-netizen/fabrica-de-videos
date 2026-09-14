@@ -29,11 +29,11 @@ from agents.control_calidad_idioma import tiene_ingles_visible
 
 AGENT = "ShortsCreator"
 RESOLUCION_SHORT = (720, 1280)   # 720p vertical: se ve nítido en móvil y usa mucha menos RAM/CPU
-MAX_BEATS_SHORT = 3          # 31-ago-2026: volvemos a 3 beats de contenido
-                             # real. El Short del día quedó en 1:10 y perdió
-                             # ritmo/loop. Con 3 beats + un cierre fuerte se
-                             # queda en la franja agresiva de 30-45s.
-DURACION_MAX_OBJETIVO = 34   # segundos de narración antes de la tarjeta final
+MAX_BEATS_SHORT = 4          # 14-sep-2026: se amplía un poco el contenido
+                             # útil del Short para que no se sienta tan corto
+                             # ni tan poco descriptivo, pero sin volver al
+                             # error de alargarlo demasiado.
+DURACION_MAX_OBJETIVO = 44   # segundos de narración antes de la tarjeta final
 DURACION_MIN_CORTE_SHORT = 1.8
 DURACION_MAX_CORTE_SHORT = 4.0
 PORTADA_INICIAL_SEG = 3.2    # se cubren varios segundos del arranque con la
@@ -96,18 +96,18 @@ def _tarjeta_cta_final(destino_png, titulo_video_largo: str, resolucion=RESOLUCI
     font_grande = _fuente(int(72 * escala))
     font_chica = _fuente(int(40 * escala))
 
-    texto1 = "MIRA EL VIDEO"
-    texto2 = "COMPLETO ⬆️"
+    texto1 = "ENTRA A MI PERFIL"
+    texto2 = "VIDEO COMPLETO ⬆️"
     for i, (texto, font) in enumerate([(texto1, font_grande), (texto2, font_grande)]):
         tw = draw.textlength(texto, font=font)
         draw.text(((resolucion[0]-tw)/2, resolucion[1]/2 - int(220*escala) + i*int(90*escala)), texto,
                    font=font, fill=(255, 210, 0))
 
-    tw = draw.textlength("Y suscríbete, es gratis", font=font_chica)
-    draw.text(((resolucion[0]-tw)/2, resolucion[1]/2 - int(60*escala)), "Y suscríbete, es gratis",
+    tw = draw.textlength("Dale like y suscríbete", font=font_chica)
+    draw.text(((resolucion[0]-tw)/2, resolucion[1]/2 - int(60*escala)), "Dale like y suscríbete",
                font=font_chica, fill=(255, 255, 255))
-    tw2 = draw.textlength("Link en los comentarios", font=font_chica)
-    draw.text(((resolucion[0]-tw2)/2, resolucion[1]/2 + int(10*escala)), "Link en los comentarios",
+    tw2 = draw.textlength("Comentario fijado y perfil", font=font_chica)
+    draw.text(((resolucion[0]-tw2)/2, resolucion[1]/2 + int(10*escala)), "Comentario fijado y perfil",
                font=font_chica, fill=(200, 200, 200))
 
     # título del video largo, envuelto en varias líneas
@@ -159,16 +159,16 @@ def _armar_mini_guion(guion: dict) -> dict:
             "visual": beats_originales[0]["visual"] if beats_originales else "surprised person looking at camera bright room",
         })
     beats_short.extend(beats_originales)
-    # CIERRE CORTO Y AGRESIVO (31-ago-2026): el cierre anterior usaba DOS
-    # beats + tarjeta larga y llevó el Short real a 1:10. Volvemos a un
-    # único beat final: cliffhanger concreto + CTA breve, para proteger el
-    # loop y la retención sin perder la invitación al largo.
+    # CIERRE CORTO PERO MÁS ÚTIL (14-sep-2026): el usuario pidió Shorts un
+    # poco más descriptivos y con un puente más claro hacia el largo. El
+    # cierre sigue siendo UNO solo para no matar el ritmo, pero ahora dice
+    # exactamente qué hacer: entrar al perfil, dejar like y ver el largo.
     import random as _rnd
     tema_cierre = (guion.get("keyword_principal") or guion.get("titulo", "este tema")).split("(")[0].strip()
     cierres = [
-        f"Pero el error que más te roba sueño con {tema_cierre} te lo dejé en el video completo. Suscríbete y míralo en mi canal.",
-        f"Aquí solo viste la punta del iceberg. En el video completo te muestro el paso exacto para usar {tema_cierre} sin fallar.",
-        f"Lo más importante quedó fuera de este Short. Si quieres evitar el error más común con {tema_cierre}, ve ahora al video completo.",
+        f"Si quieres el paso completo y la explicación bien hecha sobre {tema_cierre}, entra a mi perfil y abre el video largo. Y si te sirvió, dale like.",
+        f"Aquí ya te dejé algo útil. Pero la solución completa para {tema_cierre} está en el video largo de mi perfil. Déjame tu like y ve a verlo.",
+        f"Este Short es solo la parte rápida. Si quieres aplicar {tema_cierre} con más detalle y menos errores, entra a mi perfil y mira el video completo.",
     ]
     beats_short.append({
         "texto": limpiar_texto_para_voz(_rnd.choice(cierres)),
@@ -180,6 +180,7 @@ def _armar_mini_guion(guion: dict) -> dict:
     return {
         "titulo": guion["titulo"],
         "capitulos": [{"nombre": "short", "beats": beats_short}],
+        "modo_narracion": "short",
     }
 
 
@@ -427,9 +428,11 @@ def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_la
         resumen_visible = f"Resumen rápido en español sobre {tema_desc}."
     descripcion_short = (
         f"{resumen_visible}\n\n"
-        f"👉 El video COMPLETO está en el PRIMER COMENTARIO FIJADO.\n"
-        f"También puedes verlo aquí: {url_video_largo}\n"
-        f"📲 Suscríbete gratis para ver el largo completo: https://www.youtube.com/@saludnaturaldiaria\n\n"
+        f"👉 Entra a mi perfil para ver el VIDEO COMPLETO.\n"
+        f"📌 También está en el PRIMER COMENTARIO FIJADO.\n"
+        f"🔬 Aquí compartimos información clara y con respaldo científico real.\n"
+        f"👍 Si te sirve, deja tu like y suscríbete: https://www.youtube.com/@saludnaturaldiaria\n"
+        f"También puedes verlo aquí: {url_video_largo}\n\n"
         f"#VideoCorto #{hashtag_tema}"
     )
 

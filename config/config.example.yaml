@@ -7,6 +7,7 @@ canal:
   idiomas_seo_adicionales: []
   idioma_doblaje: ''
   nicho: salud natural, alternativa, tradicional y complementaria (con respaldo científico)
+  usar_dos_voces_en_largos: true
   audiencia_prioritaria:
     sexo: mujeres
     edades:
@@ -133,10 +134,13 @@ apis:
   - es-US-AlonsoNeural
   - es-MX-DaliaNeural
   voz_narrador_exclusiva_mujeres: es-MX-DaliaNeural
+  voz_narrador_secundaria_masculina: es-CO-GonzaloNeural
   voz_narrador_rate: -8%
   voz_narrador_pitch: +0Hz
 publicacion:
   privacidad_default: public
   categoria_youtube: '22'
   programar_hora_utc: '19:30'
+  programar_hora_utc_short_diario: '19:30'
+  programar_hora_utc_short_mismo_dia: '22:30'
   programar_para_hora_pico: true

@@ -46,6 +46,12 @@ PLANTILLAS_COMENTARIO = [
     "Si tienes una pregunta sobre {tema} que no resolví aquí, escríbela en los comentarios y la reviso.",
 ]
 
+PLANTILLAS_LIKE = [
+    "Si te está sirviendo esta información, dale a me gusta para que YouTube sepa que quieres más contenido claro y con respaldo científico.",
+    "Antes de seguir, deja tu like si valoras que este canal comparta soluciones prácticas con base científica real.",
+    "Si quieres que sigamos trayendo información útil y bien investigada, apóyanos con tu like.",
+]
+
 PLANTILLAS_COMPARTIR = [
     "Si conoces a alguien a quien esto sobre {tema} le pueda servir, comparte este video con esa persona.",
     "Comparte este video con alguien que también esté buscando mejorar su {tema}, seguro se lo va a agradecer.",
@@ -64,10 +70,11 @@ def agregar_llamado_interaccion(guion: dict) -> dict:
 
     tema = (guion.get("keyword_principal") or "tu salud").strip()
     pregunta = random.choice(PLANTILLAS_COMENTARIO).format(tema=tema)
+    like = random.choice(PLANTILLAS_LIKE).format(tema=tema)
     compartir = random.choice(PLANTILLAS_COMPARTIR).format(tema=tema)
 
     beat = {
-        "texto": f"{pregunta} {compartir}",
+        "texto": f"{pregunta} {like} {compartir}",
         "visual": "person smiling and typing on smartphone at home",
         "es_llamado_interaccion": True,
     }

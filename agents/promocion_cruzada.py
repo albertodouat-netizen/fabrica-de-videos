@@ -189,6 +189,22 @@ def comentario_conversacion(titulo_video: str, url_extra: str = "",
     return cuerpo
 
 
+def comentario_redireccion_desde_short(titulo_video: str, url_largo: str) -> str:
+    """Comentario corto y frontal para Shorts.
+
+    En móviles la gente decide en segundos. Aquí el enlace al largo no se
+    entierra debajo de varias preguntas: va arriba del todo y además les
+    dice qué hacer si están viendo el Short desde el perfil.
+    """
+    tema = _tema_corto_de(titulo_video)
+    return (
+        f"👉 VIDEO COMPLETO sobre {tema}: {url_largo}\n\n"
+        f"Si estás viendo este Short en el móvil, entra a mi perfil y abre ese video.\n"
+        f"👍 Si te ayudó, deja tu like y dime en comentarios si quieres más temas así."
+    )
+
+
+
 def url_con_playlist(video_id: str, cfg=None, es_short: bool = False) -> str:
     """Construye el link de un video ANCLADO a la playlist del canal
     (idea del usuario, 27-ago-2026: 'que continúe otro video de mi canal

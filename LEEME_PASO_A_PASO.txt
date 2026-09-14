@@ -12,10 +12,17 @@ ARCHIVOS DEL PAQUETE
 - agents/trend_scout.py
 - agents/scriptwriter.py
 - agents/short_independiente.py
+- agents/shorts_creator.py
+- agents/engagement_cta.py
+- agents/promocion_cruzada.py
+- agents/voice.py
+- agents/publisher.py
 - agents/viral_strategist.py
+- orchestrator.py
 - config/config.example.yaml
 - INVESTIGACION_ENFERMEDADES_MUJERES_55PLUS_14sep2026.md
 - PLAN_TEMAS_MUJERES_55PLUS_14sep2026.md
+- AJUSTES_PUBLICACION_Y_SHORTS_14sep2026.md
 
 QUE MEJORA
 1) prioriza temas frecuentes en mujeres 55+ y 65+
@@ -29,6 +36,9 @@ QUE MEJORA
 5) ayuda a que los Shorts independientes salgan de largos mas prometedores
 6) obliga al guionista a pensar en una mujer mayor real, no en publico general
 7) mantiene enfoque medico seguro: senales, prevencion, apoyo y cuando consultar
+8) hace los Shorts un poco mas largos y utiles, no tan vacios
+9) mejora la redireccion Short -> largo con perfil, comentario fijado y CTA mas claro
+10) permite dos voces en largos (mujer + hombre, por capitulo) para sonar menos plano
 
 PASO 1) SUBIR LOS ARCHIVOS
 Sube todos los archivos exactamente a la misma ruta del paquete.

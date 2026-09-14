@@ -171,5 +171,6 @@ def bloque_prompt_audiencia() -> str:
         "- También permite líneas de SALUD + BELLEZA con base real: piel, cabello, rostro, cuello, tono muscular, sarcopenia, menopausia e intimidad sin lenguaje explícito.\n"
         f"- Clusters prioritarios hoy: {top_txt}.\n"
         "- Si el tema no encaja con esta audiencia, NO lo fuerces: busca otro ángulo más útil para una mujer de 55+/65+.\n"
+        "- Da soluciones prácticas, simples y aplicables hoy mismo. No te quedes en teoría.\n"
         "- Evita ángulos masculinos (testosterona, disfunción eréctil) y evita sonar a 'consejo para cualquiera'. Habla a la persona real que hoy te está viendo."
     )
