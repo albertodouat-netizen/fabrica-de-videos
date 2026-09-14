@@ -5,21 +5,45 @@
   },
   "audiencia": {
     "sexo_principal": "mujeres",
-    "edad_principal": ["55-64", "65+"],
+    "edad_principal": [
+      "55-64",
+      "65+"
+    ],
     "dispositivo_principal": "movil",
-    "paises_principales": ["Mexico", "Estados Unidos hispano", "Espana", "Colombia"],
+    "paises_principales": [
+      "Mexico",
+      "Estados Unidos hispano",
+      "Espana",
+      "Colombia"
+    ],
     "reglas_editoriales": [
       "Hablar en espanol neutro y muy claro.",
       "Priorizar problemas frecuentes de calidad de vida, movilidad, sueno, dolor, vejiga, corazon y memoria.",
       "Evitar angulos masculinos como testosterona o disfuncion erectil salvo que el canal cambie de audiencia.",
-      "No prometer curas ni reemplazo de tratamientos."
+      "No prometer curas ni reemplazo de tratamientos.",
+      "Permitir temas de belleza ligada a salud y envejecimiento: piel, cabello, rostro, cuello, tono muscular, menopausia y sexualidad, siempre con enfoque cientifico, natural y respetuoso.",
+      "En sexualidad o intimidad, evitar consejos explicitos, lenguaje vulgar o promesas; priorizar comodidad, sequedad, suelo pelvico, comunicacion y consulta segura.",
+      "En temas esteticos, evitar humillar el cuerpo o prometer rejuvenecimiento milagroso; hablar de cuidado, funcion, fuerza y calidad de vida."
     ]
   },
   "clusters": [
     {
       "categoria": "sueno_cortisol_nocturno",
       "prioridad": 10,
-      "terminos": ["sueno", "sueño", "dormir", "insomnio", "cortisol", "3 am", "despertar", "despierta", "night", "sleep", "insomnia", "waking"],
+      "terminos": [
+        "sueno",
+        "sueño",
+        "dormir",
+        "insomnio",
+        "cortisol",
+        "3 am",
+        "despertar",
+        "despierta",
+        "night",
+        "sleep",
+        "insomnia",
+        "waking"
+      ],
       "keywords_busqueda": [
         "postmenopause insomnia natural support",
         "waking up at 3am women over 60",
@@ -37,7 +61,18 @@
     {
       "categoria": "piernas_circulacion_movilidad",
       "prioridad": 10,
-      "terminos": ["piernas", "circulacion", "caminar", "pies", "hinchazon", "edema", "walk", "legs", "circulation", "mobility"],
+      "terminos": [
+        "piernas",
+        "circulacion",
+        "caminar",
+        "pies",
+        "hinchazon",
+        "edema",
+        "walk",
+        "legs",
+        "circulation",
+        "mobility"
+      ],
       "keywords_busqueda": [
         "leg circulation older women symptoms",
         "walking difficulty women over 60",
@@ -55,7 +90,18 @@
     {
       "categoria": "inflamacion_dolor_articular_artritis",
       "prioridad": 9,
-      "terminos": ["inflamacion", "antiinflamatorio", "dolor articular", "artritis", "rodilla", "manos", "joints", "arthritis", "inflammation", "joint pain"],
+      "terminos": [
+        "inflamacion",
+        "antiinflamatorio",
+        "dolor articular",
+        "artritis",
+        "rodilla",
+        "manos",
+        "joints",
+        "arthritis",
+        "inflammation",
+        "joint pain"
+      ],
       "keywords_busqueda": [
         "arthritis women over 60 joint pain habits",
         "anti inflammatory habits women over 60",
@@ -73,7 +119,19 @@
     {
       "categoria": "huesos_osteoporosis_caidas",
       "prioridad": 9,
-      "terminos": ["osteoporosis", "huesos", "fractura", "caidas", "equilibrio", "calcio", "vitamina d", "bone", "fracture", "falls", "balance"],
+      "terminos": [
+        "osteoporosis",
+        "huesos",
+        "fractura",
+        "caidas",
+        "equilibrio",
+        "calcio",
+        "vitamina d",
+        "bone",
+        "fracture",
+        "falls",
+        "balance"
+      ],
       "keywords_busqueda": [
         "osteoporosis women over 65 symptoms",
         "fall prevention older women bone health",
@@ -91,7 +149,18 @@
     {
       "categoria": "presion_corazon_colesterol_ictus",
       "prioridad": 9,
-      "terminos": ["presion", "presion alta", "hipertension", "corazon", "cholesterol", "colesterol", "ictus", "stroke", "heart", "blood pressure"],
+      "terminos": [
+        "presion",
+        "presion alta",
+        "hipertension",
+        "corazon",
+        "cholesterol",
+        "colesterol",
+        "ictus",
+        "stroke",
+        "heart",
+        "blood pressure"
+      ],
       "keywords_busqueda": [
         "high blood pressure older women symptoms",
         "heart disease women after menopause",
@@ -109,7 +178,17 @@
     {
       "categoria": "azucar_prediabetes_diabetes",
       "prioridad": 8,
-      "terminos": ["glucosa", "azucar", "prediabetes", "diabetes", "sed", "fatiga", "vision borrosa", "blood sugar", "diabetes"],
+      "terminos": [
+        "glucosa",
+        "azucar",
+        "prediabetes",
+        "diabetes",
+        "sed",
+        "fatiga",
+        "vision borrosa",
+        "blood sugar",
+        "diabetes"
+      ],
       "keywords_busqueda": [
         "prediabetes older women symptoms",
         "type 2 diabetes women over 60 signs",
@@ -127,7 +206,17 @@
     {
       "categoria": "vejiga_incontinencia_nocturia",
       "prioridad": 8,
-      "terminos": ["vejiga", "orina", "incontinencia", "nocturia", "suelo pelvico", "pelvic", "bladder", "urinary", "incontinence"],
+      "terminos": [
+        "vejiga",
+        "orina",
+        "incontinencia",
+        "nocturia",
+        "suelo pelvico",
+        "pelvic",
+        "bladder",
+        "urinary",
+        "incontinence"
+      ],
       "keywords_busqueda": [
         "urinary incontinence older women symptoms",
         "nocturia women over 60 causes",
@@ -145,7 +234,15 @@
     {
       "categoria": "memoria_cognicion_demencia",
       "prioridad": 8,
-      "terminos": ["memoria", "olvidos", "demencia", "alzheimer", "brain fog", "cognition", "memory"],
+      "terminos": [
+        "memoria",
+        "olvidos",
+        "demencia",
+        "alzheimer",
+        "brain fog",
+        "cognition",
+        "memory"
+      ],
       "keywords_busqueda": [
         "memory changes women over 65",
         "alzheimer risk women after menopause",
@@ -162,26 +259,89 @@
     },
     {
       "categoria": "menopausia_sintomas_urogenitales",
-      "prioridad": 7,
-      "terminos": ["menopausia", "postmenopausia", "sofocos", "sequedad", "vaginal", "libido", "menopause", "postmenopause", "hot flashes"],
+      "prioridad": 8,
+      "terminos": [
+        "menopausia",
+        "postmenopausia",
+        "sofocos",
+        "sequedad",
+        "vaginal",
+        "libido",
+        "menopause",
+        "postmenopause",
+        "hot flashes",
+        "sexualidad",
+        "intimidad",
+        "dolor al tener relaciones",
+        "atrofia vaginal",
+        "suelo pelvico"
+      ],
       "keywords_busqueda": [
         "postmenopause health women over 55",
         "vaginal dryness menopause support",
         "hot flashes sleep postmenopause",
-        "low libido postmenopausal women health"
+        "low libido postmenopausal women health",
+        "menopause sexuality women official",
+        "pelvic floor postmenopausal women quality of life",
+        "pain during sex menopause women"
       ],
       "angulos_seguros": [
         "lo que cambia en el cuerpo",
         "sueno y sofocos",
         "sequedad y calidad de vida",
         "senales que merecen consulta",
-        "mitos frecuentes"
+        "mitos frecuentes",
+        "sexualidad sin tabues pero sin explicitos",
+        "comodidad e intimidad en postmenopausia",
+        "suelo pelvico y bienestar"
+      ]
+    },
+    {
+      "categoria": "musculo_sarcopenia_fuerza_gluteos",
+      "prioridad": 8,
+      "terminos": [
+        "sarcopenia",
+        "masa muscular",
+        "musculo",
+        "músculo",
+        "fuerza",
+        "debilidad",
+        "tonificacion",
+        "tonificación",
+        "gluteos",
+        "glúteos",
+        "resistencia",
+        "caerse",
+        "levantarse de la silla",
+        "muscle",
+        "strength"
+      ],
+      "keywords_busqueda": [
+        "sarcopenia women over 65 strength",
+        "strength training older women muscle loss",
+        "glute strength older women mobility",
+        "resistance training older women falls"
+      ],
+      "angulos_seguros": [
+        "perdida de fuerza con la edad",
+        "habitos que ayudan a conservar musculo",
+        "ejercicios seguros basicos",
+        "como levantarse mejor, caminar mejor y caerse menos",
+        "proteina, fuerza y movilidad sin exageraciones"
       ]
     },
     {
       "categoria": "tiroides_fatiga_peso_estrenimiento",
       "prioridad": 7,
-      "terminos": ["tiroides", "hipotiroidismo", "fatiga", "estrenimiento", "peso", "thyroid", "hashimoto"],
+      "terminos": [
+        "tiroides",
+        "hipotiroidismo",
+        "fatiga",
+        "estrenimiento",
+        "peso",
+        "thyroid",
+        "hashimoto"
+      ],
       "keywords_busqueda": [
         "hypothyroidism older women symptoms",
         "thyroid disease women after menopause",
@@ -197,9 +357,53 @@
       ]
     },
     {
+      "categoria": "piel_rostro_cuello_cabello_envejecimiento",
+      "prioridad": 7,
+      "terminos": [
+        "piel",
+        "cabello",
+        "rostro",
+        "cara",
+        "parpados",
+        "párpados",
+        "arrugas",
+        "papada",
+        "cuello",
+        "flacidez",
+        "manchas",
+        "sequedad",
+        "dry skin",
+        "wrinkles",
+        "hair",
+        "thinning hair"
+      ],
+      "keywords_busqueda": [
+        "skin aging menopause women official",
+        "dry skin older women causes",
+        "thinning hair women after menopause",
+        "wrinkles neck aging women health"
+      ],
+      "angulos_seguros": [
+        "envejecimiento de piel con salud",
+        "sequedad, manchas y fragilidad de la piel",
+        "cabello fino y causas medicas posibles",
+        "cuello y rostro desde habitos, postura y cuidado",
+        "cuando un cambio cosmetico puede ser una senal de salud"
+      ]
+    },
+    {
       "categoria": "vision_cataratas_glaucoma_macular",
       "prioridad": 6,
-      "terminos": ["vision", "ojos", "cataratas", "glaucoma", "macular", "vista", "eye", "eyes"],
+      "terminos": [
+        "vision",
+        "ojos",
+        "cataratas",
+        "glaucoma",
+        "macular",
+        "vista",
+        "eye",
+        "eyes"
+      ],
       "keywords_busqueda": [
         "vision changes women over 65",
         "glaucoma older women symptoms",
@@ -212,6 +416,35 @@
         "habitos protectores",
         "que no debes ignorar",
         "diabetes y vision"
+      ]
+    },
+    {
+      "categoria": "sexualidad_intimidad_postmenopausia",
+      "prioridad": 6,
+      "terminos": [
+        "sexualidad",
+        "intimidad",
+        "libido",
+        "deseo",
+        "dolor al tener relaciones",
+        "sequedad vaginal",
+        "lubricacion",
+        "dispareunia",
+        "intimacy",
+        "sexual health"
+      ],
+      "keywords_busqueda": [
+        "menopause sexuality women official",
+        "vaginal dryness menopause support official",
+        "pain during sex menopause women official",
+        "pelvic floor intimacy older women"
+      ],
+      "angulos_seguros": [
+        "sequedad y comodidad",
+        "intimidad sin consejos explicitos",
+        "suelo pelvico y calidad de vida",
+        "sueno, estres y deseo",
+        "cuando consultar por dolor o cambios persistentes"
       ]
     }
   ]

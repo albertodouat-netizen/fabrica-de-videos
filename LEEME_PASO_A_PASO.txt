@@ -22,10 +22,13 @@ QUE MEJORA
 2) da mas peso a sueno/cortisol, piernas/circulacion, inflamacion/artritis,
    osteoporosis/caidas, corazon/presion, vejiga/incontinencia, diabetes,
    memoria, tiroides y vision
-3) baja temas que hoy no encajan igual con tu audiencia real
-4) ayuda a que los Shorts independientes salgan de largos mas prometedores
-5) obliga al guionista a pensar en una mujer mayor real, no en publico general
-6) mantiene enfoque medico seguro: senales, prevencion, apoyo y cuando consultar
+3) ahora tambien incorpora salud + belleza con base real:
+   piel, cabello, rostro, cuello, sarcopenia, tono muscular, gluteos,
+   menopausia y sexualidad no explicita
+4) baja temas que hoy no encajan igual con tu audiencia real
+5) ayuda a que los Shorts independientes salgan de largos mas prometedores
+6) obliga al guionista a pensar en una mujer mayor real, no en publico general
+7) mantiene enfoque medico seguro: senales, prevencion, apoyo y cuando consultar
 
 PASO 1) SUBIR LOS ARCHIVOS
 Sube todos los archivos exactamente a la misma ruta del paquete.
@@ -66,3 +69,6 @@ Empieza con estos clusters:
 4. osteoporosis / huesos / caidas
 5. vejiga / incontinencia / levantarse a orinar
 6. presion alta / corazon
+7. sarcopenia / fuerza / gluteos / tonificacion
+8. piel / rostro / cuello / cabello
+9. menopausia / sexualidad / sequedad / suelo pelvico

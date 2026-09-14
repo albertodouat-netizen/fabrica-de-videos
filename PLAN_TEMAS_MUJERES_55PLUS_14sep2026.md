@@ -2,7 +2,7 @@
 
 Fecha: 2026-09-14
 
-## 1) Shorts prioritarios (próximos 10)
+## 1) Shorts prioritarios (próximos 15)
 
 1. Cortisol Para Dormir: Qué Te Despierta Sin Que Lo Notes
 2. Piernas A Los 60: La Señal Que Te Está Frenando
@@ -14,6 +14,11 @@ Fecha: 2026-09-14
 8. Tiroides: La Fatiga Que No Es “Solo La Edad”
 9. Memoria Después De Los 65: Cuándo Es Normal Y Cuándo No
 10. Levantarte A Orinar De Noche: Lo Que Puede Estar Detrás
+11. Sarcopenia: La Señal Que Te Quita Fuerza Sin Avisar
+12. Glúteos Débiles Después De Los 60: Lo Que Cambia Al Caminar
+13. Piel Seca En Menopausia: Lo Que Muchas Confunden
+14. Cabello Fino Después De Los 50: La Causa Que No Siempre Ves
+15. Sexualidad En Menopausia: Lo Que Cambia Y Casi Nadie Explica
 
 ## 2) Largos prioritarios (solo después del Short ganador)
 
@@ -27,6 +32,11 @@ Fecha: 2026-09-14
 8. Tiroides Lenta Después De Los 50: Fatiga, Peso Y Frío
 9. Olvidos Normales O Deterioro Cognitivo: Cómo Notar La Diferencia
 10. Qué Cambia En Tu Sueño Después De La Menopausia
+11. Sarcopenia En Mujeres Mayores: Cómo Notarla Antes De Perder Movilidad
+12. Cómo Recuperar Fuerza En Piernas Y Glúteos Después De Los 60
+13. Piel Y Menopausia: Por Qué Se Seca, Se Afina Y Se Marca Más
+14. Cabello Fino Después De La Menopausia: Cuándo Es Edad Y Cuándo No
+15. Sexualidad Después De La Menopausia: Sequedad, Deseo Y Comodidad
 
 ## 3) Fórmulas de título recomendadas
 
@@ -76,3 +86,21 @@ Fecha: 2026-09-14
 - FATIGA REAL
 - FRÍO Y PESO
 - PISTA TIROIDES
+
+### Sarcopenia / fuerza
+- PIERDES FUERZA
+- TE CUESTA SUBIR
+- GLÚTEO DÉBIL
+- ALERTA MÚSCULO
+
+### Piel / cabello / rostro
+- PIEL MÁS FINA
+- NO ES SOLO EDAD
+- CABELLO CAE
+- MIRA TU CUELLO
+
+### Sexualidad / menopausia
+- CAMBIÓ ESTO
+- SEQUEDAD REAL
+- NO ES TABÚ
+- MIRA LA CAUSA

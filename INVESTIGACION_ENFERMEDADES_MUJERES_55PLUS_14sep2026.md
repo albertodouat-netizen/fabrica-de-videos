@@ -120,6 +120,29 @@ Tema muy útil porque:
 - afecta independencia y miedo a perder autonomía
 - permite Shorts de señales y chequeos
 
+### L. Sarcopenia, fuerza, tono muscular, glúteos, levantarse y caminar mejor
+Este clúster sube mucho de valor porque:
+- conecta salud con imagen y funcionalidad
+- preocupa a mujeres mayores que sienten pérdida de fuerza, flacidez o dificultad al caminar
+- sirve para hablar de fuerza, equilibrio, glúteos, piernas, postura e independencia
+- permite miniaturas visuales y claras
+
+### M. Piel, rostro, cuello, párpados, arrugas, papada y cabello
+Sí conviene incluirlo, pero con un enfoque correcto:
+- no como “vanidad” aislada
+- sino como salud visible del envejecimiento
+- piel más seca y fina
+- cambios de rostro/cuello
+- cabello más fino
+- señales que a veces se mezclan con menopausia, tiroides, deshidratación, sueño o mala nutrición
+
+### N. Sexualidad e intimidad en menopausia y postmenopausia
+También conviene, porque:
+- es una preocupación real pero poco bien explicada
+- puede tratarse con tono elegante, científico y natural
+- conecta con sequedad, dolor, deseo, sueño, suelo pélvico y calidad de vida
+- puede generar mucha identificación sin necesidad de ser explícito
+
 ---
 
 ## PRIORIDAD SECUNDARIA
@@ -166,6 +189,9 @@ Preferir temas de:
 - vejiga
 - corazón
 - memoria
+- fuerza muscular
+- piel y cabello cuando tengan base de salud real
+- sexualidad e intimidad con lenguaje respetuoso y no explícito
 
 ## Regla 3
 Cuando el tema sea una enfermedad o condición, el ángulo debe ser seguro:
@@ -205,6 +231,7 @@ Preparé un paquete más completo para que la fábrica deje de pensar en “salu
 2. **TrendScout reforzado**
    - ahora prioriza ideas alineadas con esta audiencia
    - da más peso a sueño, piernas, inflamación, huesos, corazón, vejiga, memoria, tiroides
+   - ahora también incorpora músculo/sarcopenia, tono muscular, glúteos, piel, cuello, rostro, cabello y sexualidad no explícita
    - baja temas masculinos y ruido tipo música/frecuencias
 
 3. **Guionista reforzado**
@@ -227,7 +254,7 @@ Preparé un paquete más completo para que la fábrica deje de pensar en “salu
 
 La decisión correcta ahora es esta:
 
-> convertir el canal en un canal mucho más especializado en problemas frecuentes de mujeres mayores, especialmente sueño, circulación, inflamación, huesos, vejiga, corazón, azúcar, memoria y tiroides
+> convertir el canal en un canal mucho más especializado en problemas frecuentes de mujeres mayores, especialmente sueño, circulación, inflamación, huesos, vejiga, corazón, azúcar, memoria, tiroides, fuerza muscular/sarcopenia y belleza ligada a salud
 
 Eso encaja mejor con:
 - tu audiencia real

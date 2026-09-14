@@ -44,12 +44,18 @@ _DEFAULT = {
          "terminos": ["vejiga", "orina", "incontinencia", "nocturia", "bladder", "urinary"]},
         {"categoria": "memoria_cognicion_demencia", "prioridad": 8,
          "terminos": ["memoria", "olvidos", "demencia", "alzheimer", "memory", "cognition"]},
-        {"categoria": "menopausia_sintomas_urogenitales", "prioridad": 7,
-         "terminos": ["menopausia", "postmenopausia", "sofocos", "sequedad", "menopause", "postmenopause"]},
+        {"categoria": "menopausia_sintomas_urogenitales", "prioridad": 8,
+         "terminos": ["menopausia", "postmenopausia", "sofocos", "sequedad", "sexualidad", "intimidad", "menopause", "postmenopause"]},
+        {"categoria": "musculo_sarcopenia_fuerza_gluteos", "prioridad": 8,
+         "terminos": ["sarcopenia", "masa muscular", "fuerza", "debilidad", "tonificación", "glúteos", "muscle", "strength"]},
         {"categoria": "tiroides_fatiga_peso_estrenimiento", "prioridad": 7,
          "terminos": ["tiroides", "hipotiroidismo", "fatiga", "estreñimiento", "thyroid", "hashimoto"]},
+        {"categoria": "piel_rostro_cuello_cabello_envejecimiento", "prioridad": 7,
+         "terminos": ["piel", "cabello", "rostro", "arrugas", "cuello", "papada", "párpados", "wrinkles", "hair"]},
         {"categoria": "vision_cataratas_glaucoma_macular", "prioridad": 6,
          "terminos": ["vision", "ojos", "cataratas", "glaucoma", "macular", "eyes"]},
+        {"categoria": "sexualidad_intimidad_postmenopausia", "prioridad": 6,
+         "terminos": ["sexualidad", "intimidad", "libido", "sequedad vaginal", "dolor al tener relaciones", "intimacy"]},
     ],
 }
 
@@ -162,6 +168,7 @@ def bloque_prompt_audiencia() -> str:
         f"- El canal se consume sobre todo en {aud.get('dispositivo_principal', 'movil')}; habla claro, concreto y sin tecnicismos innecesarios.\n"
         f"- Países principales: {', '.join(aud.get('paises_principales', []))}. Usa español neutro.\n"
         "- Prioriza problemas FRECUENTES y muy sentibles para calidad de vida, sueño, movilidad, dolor, vejiga, corazón, azúcar y memoria.\n"
+        "- También permite líneas de SALUD + BELLEZA con base real: piel, cabello, rostro, cuello, tono muscular, sarcopenia, menopausia e intimidad sin lenguaje explícito.\n"
         f"- Clusters prioritarios hoy: {top_txt}.\n"
         "- Si el tema no encaja con esta audiencia, NO lo fuerces: busca otro ángulo más útil para una mujer de 55+/65+.\n"
         "- Evita ángulos masculinos (testosterona, disfunción eréctil) y evita sonar a 'consejo para cualquiera'. Habla a la persona real que hoy te está viendo."

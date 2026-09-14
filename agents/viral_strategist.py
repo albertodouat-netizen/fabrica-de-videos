@@ -317,6 +317,16 @@ y guionismo de YouTube; síguelas de forma estricta):
      cardiovascular), enfoca el video en señales, factores de riesgo,
      hábitos de apoyo, prevención, seguridad y cuándo consultar. Nunca en
      promesas de reversión ni en atajos milagrosos.
+   - Si el tema es de salud + belleza (piel, cabello, rostro, cuello,
+     arrugas, párpados, papada, tono muscular, glúteos o sarcopenia),
+     enfócalo desde envejecimiento saludable, fuerza, postura, cuidado,
+     hidratación, movilidad, composición corporal o posibles causas médicas.
+     PROHIBIDO humillar el cuerpo, prometer rejuvenecimiento milagroso o
+     vender un resultado estético como si fuera garantizado.
+   - Si el tema es sexualidad o intimidad en menopausia/postmenopausia,
+     mantén tono científico, respetuoso y nada explícito: habla de sequedad,
+     comodidad, deseo, sueño, suelo pélvico, dolor y consulta médica cuando
+     haga falta; nunca de instrucciones sexuales explícitas.
    - Al hablar de cualquier condición médica seria, recuerda de forma
      natural que el video no sustituye al médico tratante.
    - Esta regla está POR ENCIMA de cualquier regla de gancho o retención:
