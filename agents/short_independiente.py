@@ -64,9 +64,9 @@ FORMATOS = ["mito_vs_verdad", "dato_sorprendente", "mito_vs_verdad",
 CIERRES = [
     ("loop_largo", "Y eso es solo una parte. Si quieres la explicación completa, entra a mi perfil y abre el video de este tema."),
     ("loop_pregunta", "Ahora vuelve a escuchar el inicio. Y si quieres el paso completo, entra a mi perfil y mira el video largo."),
-    ("interaccion", "Si esto te sirve, dale like y cuéntame en los comentarios si te pasa a ti."),
-    ("compartir", "Dale like y comparte esto con alguien que necesite información real, clara y útil."),
-    ("suscribir", "Sígueme y deja tu like para que sigamos publicando información con respaldo científico real."),
+    ("interaccion", "Si esto te sirve, deja tu me gusta y cuéntame en los comentarios si te pasa a ti."),
+    ("compartir", "Deja tu me gusta y comparte esto con alguien que necesite información real, clara y útil."),
+    ("suscribir", "Sígueme y deja tu me gusta para que sigamos publicando información con respaldo científico real."),
 ]
 
 PROMPT_SHORT = """Eres guionista de YouTube Shorts en español para un canal de salud natural \
@@ -292,14 +292,14 @@ def _titulo_short(tema: str, formato: str) -> str:
         base = _tema_corto_de(tema).title()
     except Exception:
         base = tema.split(":")[0].split("(")[0].strip()
-    prefijos = {
-        "dato_sorprendente": ["El Dato Que No Conocías De", "Lo Que Nadie Te Dijo De"],
-        "mito_vs_verdad": ["El Mito Más Común De", "La Verdad Sobre"],
-        "top_3": ["3 Claves De", "Lo Mejor De"],
-        "consejo_practico": ["Haz Esto Hoy:", "El Consejo Práctico De"],
+    cierres = {
+        "dato_sorprendente": ["Lo Que Casi Nadie Mira", "Lo Que Puede Cambiar Hoy"],
+        "mito_vs_verdad": ["Lo Que Sí Importa", "Cuándo Sí Y Cuándo No"],
+        "top_3": ["3 Claves Que Ayudan", "3 Señales Que Importan"],
+        "consejo_practico": ["Lo Primero Que Debes Probar", "Cómo Empezar Sin Complicarte"],
     }
-    pref = random.choice(prefijos[formato])
-    titulo = f"{pref} {base}"[:85]
+    cierre = random.choice(cierres[formato])
+    titulo = f"{base}: {cierre}"[:85]
     # Hashtags en el título: mantenemos el patrón corto de nicho, pero el
     # texto visible queda 100% en español.
     return titulo + " #salud #VideoCorto"
@@ -404,7 +404,7 @@ def crear_short_independiente() -> dict:
         f"{primer_texto}\n\n"
         f"👉 Si quieres la explicación completa, entra a mi perfil y abre el video largo de este tema.\n"
         f"📌 El enlace también está en el PRIMER COMENTARIO.\n"
-        f"👍 Si te sirve, deja tu like para que sigamos publicando información real y útil.\n"
+        f"👍 Si te sirve, deja tu me gusta para que sigamos publicando información real y útil.\n"
         f"También en el canal: {url_largo}\n\n"
         f"#VideoCorto #SaludNatural"
     )
@@ -421,4 +421,6 @@ def crear_short_independiente() -> dict:
 
 
 if __name__ == "__main__":
+    print(crear_short_independiente())
+
     print(crear_short_independiente())

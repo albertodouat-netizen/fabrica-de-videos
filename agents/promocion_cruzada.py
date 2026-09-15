@@ -200,7 +200,7 @@ def comentario_redireccion_desde_short(titulo_video: str, url_largo: str) -> str
     return (
         f"👉 VIDEO COMPLETO sobre {tema}: {url_largo}\n\n"
         f"Si estás viendo este Short en el móvil, entra a mi perfil y abre ese video.\n"
-        f"👍 Si te ayudó, deja tu like y dime en comentarios si quieres más temas así."
+        f"👍 Si te ayudó, deja tu me gusta y dime en comentarios si quieres más temas así."
     )
 
 

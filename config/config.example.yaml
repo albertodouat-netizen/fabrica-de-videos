@@ -140,7 +140,14 @@ apis:
 publicacion:
   privacidad_default: public
   categoria_youtube: '22'
+  # LARGO: 19:30 UTC = 2:30 pm Colombia = 1:30 pm México = 3:30 pm US Este = 9:30 pm España
+  # Se mantiene porque es la mejor ventana de solapamiento para el mix real del canal:
+  # México + US hispano + España, y deja tiempo para entrar en la franja nocturna de consumo.
   programar_hora_utc: '19:30'
-  programar_hora_utc_short_diario: '19:30'
-  programar_hora_utc_short_mismo_dia: '22:30'
+  # SHORT DEL DÍA SIGUIENTE: un poco antes que el largo, para capturar scroll móvil de tarde
+  # en América y prime time de noche en España sin llegar demasiado tarde.
+  programar_hora_utc_short_diario: '19:00'
+  # SHORT DEL MISMO DÍA DEL LARGO: se adelanta para no caer tan tarde en España y seguir
+  # llegando en buena hora a México / US hispano después de publicado el largo.
+  programar_hora_utc_short_mismo_dia: '21:00'
   programar_para_hora_pico: true

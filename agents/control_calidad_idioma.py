@@ -40,6 +40,7 @@ _PATRONES_INGLES_VISIBLES = [
     (r"\bback\s+asleep\b", "back asleep"),
     (r"\bresearch\b", "research"),
     (r"\bbenefits\b", "benefits"),
+    (r"\blike\b", "like"),
 ]
 
 _REEMPLAZOS_PORTADA = {

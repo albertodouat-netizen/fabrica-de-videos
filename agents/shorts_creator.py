@@ -103,8 +103,8 @@ def _tarjeta_cta_final(destino_png, titulo_video_largo: str, resolucion=RESOLUCI
         draw.text(((resolucion[0]-tw)/2, resolucion[1]/2 - int(220*escala) + i*int(90*escala)), texto,
                    font=font, fill=(255, 210, 0))
 
-    tw = draw.textlength("Dale like y suscríbete", font=font_chica)
-    draw.text(((resolucion[0]-tw)/2, resolucion[1]/2 - int(60*escala)), "Dale like y suscríbete",
+    tw = draw.textlength("Dale me gusta y suscríbete", font=font_chica)
+    draw.text(((resolucion[0]-tw)/2, resolucion[1]/2 - int(60*escala)), "Dale me gusta y suscríbete",
                font=font_chica, fill=(255, 255, 255))
     tw2 = draw.textlength("Comentario fijado y perfil", font=font_chica)
     draw.text(((resolucion[0]-tw2)/2, resolucion[1]/2 + int(10*escala)), "Comentario fijado y perfil",
@@ -162,13 +162,13 @@ def _armar_mini_guion(guion: dict) -> dict:
     # CIERRE CORTO PERO MÁS ÚTIL (14-sep-2026): el usuario pidió Shorts un
     # poco más descriptivos y con un puente más claro hacia el largo. El
     # cierre sigue siendo UNO solo para no matar el ritmo, pero ahora dice
-    # exactamente qué hacer: entrar al perfil, dejar like y ver el largo.
+    # exactamente qué hacer: entrar al perfil, dejar me gusta y ver el largo.
     import random as _rnd
     tema_cierre = (guion.get("keyword_principal") or guion.get("titulo", "este tema")).split("(")[0].strip()
     cierres = [
-        f"Si quieres el paso completo y la explicación bien hecha sobre {tema_cierre}, entra a mi perfil y abre el video largo. Y si te sirvió, dale like.",
-        f"Aquí ya te dejé algo útil. Pero la solución completa para {tema_cierre} está en el video largo de mi perfil. Déjame tu like y ve a verlo.",
-        f"Este Short es solo la parte rápida. Si quieres aplicar {tema_cierre} con más detalle y menos errores, entra a mi perfil y mira el video completo.",
+        f"Si quieres el paso completo y la explicación bien hecha sobre {tema_cierre}, entra a mi perfil y abre el video largo. Y si te sirvió, dale me gusta.",
+        f"Aquí ya te dejé algo útil. Pero la solución completa para {tema_cierre} está en el video largo de mi perfil. Déjame tu me gusta y ve a verlo.",
+        f"Este Short es solo la parte rápida. Si quieres aplicar {tema_cierre} con más detalle y menos errores, entra a mi perfil, mira el video completo y deja tu me gusta.",
     ]
     beats_short.append({
         "texto": limpiar_texto_para_voz(_rnd.choice(cierres)),
@@ -207,9 +207,13 @@ def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_la
         _tema = _tema_corto_de(guion["titulo"]).title()
     except Exception:
         _tema = guion["titulo"].split(":")[0].split("(")[0].strip()
-    _prefijos = ["Lo Que Nadie Te Dice De", "El Error Más Común Con",
-                 "La Verdad Sobre", "Esto Cambia Todo Sobre"]
-    titulo_short = (titulo_short_override or (f"{_rnd.choice(_prefijos)} {_tema}"[:80] + " #VideoCorto")).strip()
+    _cierres_titulo = [
+        "La Señal Que No Debes Ignorar",
+        "Lo Primero Que Debes Saber",
+        "Qué Lo Empeora Sin Que Lo Notes",
+        "Cuándo Sí Y Cuándo No",
+    ]
+    titulo_short = (titulo_short_override or (f"{_tema}: {_rnd.choice(_cierres_titulo)}"[:80] + " #VideoCorto")).strip()
     titulo_portada = re.sub(r"\s+#\w+.*$", "", titulo_short).strip()
 
     mini_guion = _armar_mini_guion(guion)
@@ -431,7 +435,7 @@ def crear_short(guion: dict, carpeta_salida: str, nombre_base: str, url_video_la
         f"👉 Entra a mi perfil para ver el VIDEO COMPLETO.\n"
         f"📌 También está en el PRIMER COMENTARIO FIJADO.\n"
         f"🔬 Aquí compartimos información clara y con respaldo científico real.\n"
-        f"👍 Si te sirve, deja tu like y suscríbete: https://www.youtube.com/@saludnaturaldiaria\n"
+        f"👍 Si te sirve, deja tu me gusta y suscríbete: https://www.youtube.com/@saludnaturaldiaria\n"
         f"También puedes verlo aquí: {url_video_largo}\n\n"
         f"#VideoCorto #{hashtag_tema}"
     )
