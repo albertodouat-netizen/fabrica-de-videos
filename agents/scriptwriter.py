@@ -932,9 +932,27 @@ def generar_guion(idea: dict) -> dict:
     # habilitar anuncios intermedios (8 minutos) y al objetivo configurado.
     try:
         guion = _asegurar_duracion_minima(guion, cfg, idea, fuentes_texto)
+    except RuntimeError:
+        # HOTFIX 15-sep-2026: este era el fallo que el usuario vio en GitHub
+        # Actions. Antes, si la extensión de duración detectaba que el guion
+        # seguía por debajo del mínimo duro, ese error se tragaba aquí y el
+        # pipeline seguía igual. Resultado: el sistema perdía varios minutos
+        # narrando un video inviable y recién fallaba DESPUÉS con el mensaje
+        # "La narración real quedó en 4.7 min...". Ahora el bloqueo de
+        # duración se respeta y la corrida aborta ANTES de narrar.
+        raise
     except Exception as e:
+        palabras_actuales = _contar_palabras_guion(guion)
+        dur_min, _ = _objetivos_duracion(cfg)
+        duracion_estimada = palabras_actuales / PALABRAS_POR_MINUTO_HABLADO
+        if palabras_actuales < int(dur_min * PALABRAS_POR_MINUTO_HABLADO):
+            raise RuntimeError(
+                f"No se pudo extender/verificar la duración del guion ({e}) y el texto quedó en "
+                f"~{duracion_estimada:.1f} min estimados, por debajo del mínimo duro de {dur_min} min. "
+                f"Se aborta ANTES de narrar para ahorrar tiempo y cuota."
+            ) from e
         log(AGENT, f"Aviso: no se pudo verificar/extender la duración del guion ({e}). "
-                    f"El video se genera igual con el guion que ya se tiene.")
+                    f"El video se genera igual porque aun así supera el mínimo duro estimado.")
 
     # Verificación final OBLIGATORIA: cualquier cifra puntual que haya quedado
     # en el guion se confirma contra los resúmenes reales encontrados antes de
@@ -1009,6 +1027,18 @@ def generar_guion(idea: dict) -> dict:
     except Exception as e:
         log(AGENT, f"Aviso: no se pudo ejecutar la revisión de seguridad médica ({e}). "
                     f"Revisa este punto: es la protección contra strikes de salud.")
+
+    # Última verificación determinista ANTES de narrar. Esto deja el error
+    # explicado en la fase correcta y evita volver a gastar 5-10 minutos de
+    # TTS para descubrir demasiado tarde que el largo no alcanzaba el mínimo.
+    palabras_finales = _contar_palabras_guion(guion)
+    dur_min, _ = _objetivos_duracion(cfg)
+    duracion_estimada_final = palabras_finales / PALABRAS_POR_MINUTO_HABLADO
+    if palabras_finales < int(dur_min * PALABRAS_POR_MINUTO_HABLADO):
+        raise RuntimeError(
+            f"Guion final insuficiente antes de narrar: quedó en ~{duracion_estimada_final:.1f} min estimados, "
+            f"por debajo del mínimo duro de {dur_min} min. Se aborta temprano para no perder tiempo ni cuota."
+        )
 
     return guion
 
