@@ -87,8 +87,8 @@
   ],
   "ultima_ejecucion": "2026-09-15T09:56:57.556115",
   "uso_gemini": {
-    "fecha": "2026-09-15",
-    "usados": 306
+    "fecha": "2026-09-16",
+    "usados": 5
   },
   "comentarios_respondidos": [],
   "playlist_canal_id": "PLOm1dX9uH38g",
@@ -205,8 +205,8 @@
   },
   "shorts_derivados_pendientes": [],
   "zsky_sesion": {
-    "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6IjVick9YeVhUK0pPZUlWSDciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3lya2ZwdXRrdmlvanNodG5ndXd0LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJmODJlZDkxZS0wMDI5LTRkYmYtOTYyYS1mZjJjZTMzNWM1ZGIiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg5NTY2ODg1LCJpYXQiOjE3ODk1NjMyODUsImVtYWlsIjoiIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnt9LCJ1c2VyX21ldGFkYXRhIjp7fSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJhbm9ueW1vdXMiLCJ0aW1lc3RhbXAiOjE3ODg5NDIyNTd9XSwic2Vzc2lvbl9pZCI6ImUwMDMyYTQ2LTk4YjEtNGU1MC05OWI3LTE1MGQ0ZjIxZTk5YSIsImlzX2Fub255bW91cyI6dHJ1ZX0.DcY9qdvovijTx1r6Aptqtr36pdQZTGBUdO6EpzKIc5I",
-    "refresh_token": "qqqyp3e5oajl"
+    "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6IjVick9YeVhUK0pPZUlWSDciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3lya2ZwdXRrdmlvanNodG5ndXd0LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJmODJlZDkxZS0wMDI5LTRkYmYtOTYyYS1mZjJjZTMzNWM1ZGIiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg5NTc0NTMzLCJpYXQiOjE3ODk1NzA5MzMsImVtYWlsIjoiIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnt9LCJ1c2VyX21ldGFkYXRhIjp7fSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJhbm9ueW1vdXMiLCJ0aW1lc3RhbXAiOjE3ODg5NDIyNTd9XSwic2Vzc2lvbl9pZCI6ImUwMDMyYTQ2LTk4YjEtNGU1MC05OWI3LTE1MGQ0ZjIxZTk5YSIsImlzX2Fub255bW91cyI6dHJ1ZX0.WgWsKd2_5CP32igAMioRx9wQPPZcYs-WGDSk5ABswlE",
+    "refresh_token": "75id76xmzvdn"
   },
   "comentarios_cruzados_pendientes": [],
   "ultimos_ganchos_portada": [
@@ -214,6 +214,7 @@
     "SEÑAL DORMIR",
     "SUEÑO PROFUNDO GRACIAS CEREZA",
     "CEREZA DORMIR",
-    "SUEÑO INSTANTÁNEO CEREZA ROJA"
+    "SUEÑO INSTANTÁNEO CEREZA ROJA",
+    "DORMIR PROFUNDO CEREZA"
   ]
 }
