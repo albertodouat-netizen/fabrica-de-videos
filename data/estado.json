@@ -99,8 +99,8 @@
   ],
   "ultima_ejecucion": "2026-09-17T18:16:10.475732",
   "uso_gemini": {
-    "fecha": "2026-09-17",
-    "usados": 315
+    "fecha": "2026-09-18",
+    "usados": 13
   },
   "comentarios_respondidos": [],
   "playlist_canal_id": "PLOm1dX9uH38g",
@@ -228,16 +228,7 @@
     "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6IjVick9YeVhUK0pPZUlWSDciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3lya2ZwdXRrdmlvanNodG5ndXd0LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJmODJlZDkxZS0wMDI5LTRkYmYtOTYyYS1mZjJjZTMzNWM1ZGIiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg5NjU0MTA2LCJpYXQiOjE3ODk2NTA1MDYsImVtYWlsIjoiIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnt9LCJ1c2VyX21ldGFkYXRhIjp7fSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJhbm9ueW1vdXMiLCJ0aW1lc3RhbXAiOjE3ODg5NDIyNTd9XSwic2Vzc2lvbl9pZCI6ImUwMDMyYTQ2LTk4YjEtNGU1MC05OWI3LTE1MGQ0ZjIxZTk5YSIsImlzX2Fub255bW91cyI6dHJ1ZX0.zVj99VOe7Vto1dvrs6sYQYhfHSoHLcXwxBSovPRHJMk",
     "refresh_token": "tgfhdmneq746"
   },
-  "comentarios_cruzados_pendientes": [
-    {
-      "video_id": "jryI1eEKW0E",
-      "texto": "💬 CUÉNTAME TU EXPERIENCIA 👇\n\n1️⃣ ¿Tu familia también sufre de esto? Cuéntame, ¿a quién le vas a compartir este video?\n2️⃣ Si pudieras hacerle UNA pregunta a un especialista sobre piernas hinchadas después de los sesenta, ¿cuál sería? La investigo y hago un video 🎬\n3️⃣ ¿A qué edad empezaste a notar cambios con piernas hinchadas después de los sesenta? Tu experiencia puede ayudar a otra persona 💚\n\nLeo y respondo todos los comentarios 💚\n\n🎬 ¿Prefieres el resumen rápido? Mira el Short: https://youtube.com/shorts/T3OLGG6WLA4"
-    },
-    {
-      "video_id": "T3OLGG6WLA4",
-      "texto": "👉 VIDEO COMPLETO sobre piernas hinchadas después de los sesenta: https://www.youtube.com/watch?v=jryI1eEKW0E&list=PLOm1dX9uH38g\n\nSi estás viendo este Short en el móvil, entra a mi perfil y abre ese video.\n👍 Si te ayudó, deja tu me gusta y dime en comentarios si quieres más temas así."
-    }
-  ],
+  "comentarios_cruzados_pendientes": [],
   "ultimos_ganchos_portada": [
     "CEREZA NOCHE MENOS CORTISOL",
     "SEÑAL DORMIR",
@@ -246,6 +237,7 @@
     "SUEÑO INSTANTÁNEO CEREZA ROJA",
     "DORMIR PROFUNDO CEREZA",
     "PIERNAS EN ALERTA",
-    "PIERNAS HINCHADAS"
+    "PIERNAS HINCHADAS",
+    "60+ HINCHADAS"
   ]
 }
