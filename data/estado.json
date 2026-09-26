@@ -123,8 +123,8 @@
   ],
   "ultima_ejecucion": "2026-09-25T17:44:52.131418",
   "uso_gemini": {
-    "fecha": "2026-09-25",
-    "usados": 180
+    "fecha": "2026-09-26",
+    "usados": 10
   },
   "comentarios_respondidos": [],
   "playlist_canal_id": "PLOm1dX9uH38g",
@@ -265,21 +265,11 @@
   },
   "shorts_derivados_pendientes": [],
   "zsky_sesion": {
-    "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6IjVick9YeVhUK0pPZUlWSDciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3lya2ZwdXRrdmlvanNodG5ndXd0LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJmODJlZDkxZS0wMDI5LTRkYmYtOTYyYS1mZjJjZTMzNWM1ZGIiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzkwMDEyNzA1LCJpYXQiOjE3OTAwMDkxMDUsImVtYWlsIjoiIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnt9LCJ1c2VyX21ldGFkYXRhIjp7fSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJhbm9ueW1vdXMiLCJ0aW1lc3RhbXAiOjE3ODg5NDIyNTd9XSwic2Vzc2lvbl9pZCI6ImUwMDMyYTQ2LTk4YjEtNGU1MC05OWI3LTE1MGQ0ZjIxZTk5YSIsImlzX2Fub255bW91cyI6dHJ1ZX0.XoGJRL5N576tcAHAwLLevejoQ61SboEDu_WU-gaqud4",
-    "refresh_token": "zodc2t353u4y"
+    "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6IjVick9YeVhUK0pPZUlWSDciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3lya2ZwdXRrdmlvanNodG5ndXd0LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJmODJlZDkxZS0wMDI5LTRkYmYtOTYyYS1mZjJjZTMzNWM1ZGIiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzkwNDMwNDAzLCJpYXQiOjE3OTA0MjY4MDMsImVtYWlsIjoiIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnt9LCJ1c2VyX21ldGFkYXRhIjp7fSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJhbm9ueW1vdXMiLCJ0aW1lc3RhbXAiOjE3ODg5NDIyNTd9XSwic2Vzc2lvbl9pZCI6ImUwMDMyYTQ2LTk4YjEtNGU1MC05OWI3LTE1MGQ0ZjIxZTk5YSIsImlzX2Fub255bW91cyI6dHJ1ZX0.Mihk-ibUT6N0Nga0mvefYEaRRrJPOXgySXP78b6lPH8",
+    "refresh_token": "pqpmg6l6utkx"
   },
-  "comentarios_cruzados_pendientes": [
-    {
-      "video_id": "ZHz37llUdG0",
-      "texto": "💬 CUÉNTAME TU EXPERIENCIA 👇\n\n1️⃣ ¿Ya probaste algo parecido para circulación piernas? ¿Qué te funcionó y qué no?\n2️⃣ ¿Qué remedio casero te enseñaron tus abuelos para circulación piernas? Me encanta leer esas historias 🌿\n3️⃣ Si pudieras hacerle UNA pregunta a un especialista sobre circulación piernas, ¿cuál sería? La investigo y hago un video 🎬\n\nLeo y respondo todos los comentarios 💚\n\n🎬 ¿Prefieres el resumen rápido? Mira el Short: https://youtube.com/shorts/qKPVMqXonas"
-    },
-    {
-      "video_id": "qKPVMqXonas",
-      "texto": "👉 VIDEO COMPLETO sobre circulación piernas: https://www.youtube.com/watch?v=ZHz37llUdG0&list=PLOm1dX9uH38g\n\nSi estás viendo este Short en el móvil, entra a mi perfil y abre ese video.\n👍 Si te ayudó, deja tu me gusta y dime en comentarios si quieres más temas así."
-    }
-  ],
+  "comentarios_cruzados_pendientes": [],
   "ultimos_ganchos_portada": [
-    "SUEÑO INSTANTÁNEO CEREZA ROJA",
     "DORMIR PROFUNDO CEREZA",
     "PIERNAS EN ALERTA",
     "PIERNAS HINCHADAS",
@@ -290,6 +280,7 @@
     "HIDRATACIÓN INSTANTÁNEA",
     "ADIOS SEQUEDAD EN DÍAS",
     "MEJORA CIRCULACIÓN",
-    "PIERNAS LIGERAS"
+    "PIERNAS LIGERAS",
+    "RIESGO ALTO"
   ]
 }
