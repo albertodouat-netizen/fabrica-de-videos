@@ -328,18 +328,8 @@
     "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6IjVick9YeVhUK0pPZUlWSDciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3lya2ZwdXRrdmlvanNodG5ndXd0LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJmODJlZDkxZS0wMDI5LTRkYmYtOTYyYS1mZjJjZTMzNWM1ZGIiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzkwOTYyNDExLCJpYXQiOjE3OTA5NTg4MTEsImVtYWlsIjoiIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnt9LCJ1c2VyX21ldGFkYXRhIjp7fSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJhbm9ueW1vdXMiLCJ0aW1lc3RhbXAiOjE3ODg5NDIyNTd9XSwic2Vzc2lvbl9pZCI6ImUwMDMyYTQ2LTk4YjEtNGU1MC05OWI3LTE1MGQ0ZjIxZTk5YSIsImlzX2Fub255bW91cyI6dHJ1ZX0.ZkKOr8SLcyagAw5ISEnQas90F6qPv3M9r0i4NaZ4QVs",
     "refresh_token": "s22bh372a53l"
   },
-  "comentarios_cruzados_pendientes": [
-    {
-      "video_id": "k-D_Ga_xVgg",
-      "texto": "💬 CUÉNTAME TU EXPERIENCIA 👇\n\n1️⃣ ¿Qué remedio casero te enseñaron tus abuelos para síntomas insuficiencia cardíaca en piernas? Me encanta leer esas historias 🌿\n2️⃣ ¿Tu familia también sufre de esto? Cuéntame, ¿a quién le vas a compartir este video?\n3️⃣ ¿Ya probaste algo parecido para síntomas insuficiencia cardíaca en piernas? ¿Qué te funcionó y qué no?\n\nLeo y respondo todos los comentarios 💚\n\n🎬 ¿Prefieres el resumen rápido? Mira el Short: https://youtube.com/shorts/eWwd89_8RuU"
-    },
-    {
-      "video_id": "eWwd89_8RuU",
-      "texto": "👉 VIDEO COMPLETO sobre síntomas insuficiencia cardíaca en piernas: https://www.youtube.com/watch?v=k-D_Ga_xVgg&list=PLOm1dX9uH38g\n\nSi estás viendo este Short en el móvil, entra a mi perfil y abre ese video.\n👍 Si te ayudó, deja tu me gusta y dime en comentarios si quieres más temas así."
-    }
-  ],
+  "comentarios_cruzados_pendientes": [],
   "ultimos_ganchos_portada": [
-    "RIESGO ALTO",
     "80% FLUJO MEJORADO",
     "RIESGO A LOS",
     "RIESGO INVISIBLE",
@@ -350,6 +340,7 @@
     "CORTISOL BAJO CUÁNDO",
     "MENOS CORTISOL",
     "PIERNA HINCHADA",
-    "PIERNA ALERTA"
+    "PIERNA ALERTA",
+    "PIERNA EN ALERTA"
   ]
 }
