@@ -172,7 +172,7 @@
   "ultima_ejecucion": "2026-10-04T14:51:04.006194",
   "uso_gemini": {
     "fecha": "2026-10-05",
-    "usados": 1
+    "usados": 3
   },
   "comentarios_respondidos": [],
   "playlist_canal_id": "PLOm1dX9uH38g",
@@ -350,7 +350,6 @@
   },
   "comentarios_cruzados_pendientes": [],
   "ultimos_ganchos_portada": [
-    "CAMBIO HOY",
     "CORTISOL 70%",
     "CORTISOL ALTO",
     "CORTISOL BAJO CUÁNDO",
@@ -361,6 +360,7 @@
     "ENERGÍA BAJA",
     "FATIGA OCULTA",
     "MENOPAUSA FATIGA",
-    "MENOPAUSA SIN FATIGA"
+    "MENOPAUSA SIN FATIGA",
+    "FATIGA COMÚN"
   ]
 }
