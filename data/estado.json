@@ -171,8 +171,8 @@
   ],
   "ultima_ejecucion": "2026-10-04T14:51:04.006194",
   "uso_gemini": {
-    "fecha": "2026-10-04",
-    "usados": 91
+    "fecha": "2026-10-05",
+    "usados": 1
   },
   "comentarios_respondidos": [],
   "playlist_canal_id": "PLOm1dX9uH38g",
@@ -348,18 +348,8 @@
     "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6IjVick9YeVhUK0pPZUlWSDciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3lya2ZwdXRrdmlvanNodG5ndXd0LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJmODJlZDkxZS0wMDI5LTRkYmYtOTYyYS1mZjJjZTMzNWM1ZGIiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzkxMTMxMDUzLCJpYXQiOjE3OTExMjc0NTMsImVtYWlsIjoiIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnt9LCJ1c2VyX21ldGFkYXRhIjp7fSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJhbm9ueW1vdXMiLCJ0aW1lc3RhbXAiOjE3ODg5NDIyNTd9XSwic2Vzc2lvbl9pZCI6ImUwMDMyYTQ2LTk4YjEtNGU1MC05OWI3LTE1MGQ0ZjIxZTk5YSIsImlzX2Fub255bW91cyI6dHJ1ZX0.rolSFDrkmcTHOJSi5fDqNk09AKcUqSjWQ-Yu7VlDb_Q",
     "refresh_token": "u3ncvq2xbtit"
   },
-  "comentarios_cruzados_pendientes": [
-    {
-      "video_id": "80gI0R_lJ_4",
-      "texto": "💬 CUÉNTAME TU EXPERIENCIA 👇\n\n1️⃣ ¿Tu familia también sufre de esto? Cuéntame, ¿a quién le vas a compartir este video?\n2️⃣ ¿A qué edad empezaste a notar cambios con cansancio en la menopausia? Tu experiencia puede ayudar a otra persona 💚\n3️⃣ ¿Qué remedio casero te enseñaron tus abuelos para cansancio en la menopausia? Me encanta leer esas historias 🌿\n\nLeo y respondo todos los comentarios 💚\n\n🎬 ¿Prefieres el resumen rápido? Mira el Short: https://youtube.com/shorts/IrDMo-NYrQw"
-    },
-    {
-      "video_id": "IrDMo-NYrQw",
-      "texto": "👉 VIDEO COMPLETO sobre cansancio en la menopausia: https://www.youtube.com/watch?v=80gI0R_lJ_4&list=PLOm1dX9uH38g\n\nSi estás viendo este Short en el móvil, entra a mi perfil y abre ese video.\n👍 Si te ayudó, deja tu me gusta y dime en comentarios si quieres más temas así."
-    }
-  ],
+  "comentarios_cruzados_pendientes": [],
   "ultimos_ganchos_portada": [
-    "ALTO RIESGO",
     "CAMBIO HOY",
     "CORTISOL 70%",
     "CORTISOL ALTO",
@@ -370,6 +360,7 @@
     "PIERNA EN ALERTA",
     "ENERGÍA BAJA",
     "FATIGA OCULTA",
-    "MENOPAUSA FATIGA"
+    "MENOPAUSA FATIGA",
+    "MENOPAUSA SIN FATIGA"
   ]
 }
