@@ -388,16 +388,7 @@
     "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6IjVick9YeVhUK0pPZUlWSDciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3lya2ZwdXRrdmlvanNodG5ndXd0LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJmODJlZDkxZS0wMDI5LTRkYmYtOTYyYS1mZjJjZTMzNWM1ZGIiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzkxMTMxMDUzLCJpYXQiOjE3OTExMjc0NTMsImVtYWlsIjoiIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnt9LCJ1c2VyX21ldGFkYXRhIjp7fSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJhbm9ueW1vdXMiLCJ0aW1lc3RhbXAiOjE3ODg5NDIyNTd9XSwic2Vzc2lvbl9pZCI6ImUwMDMyYTQ2LTk4YjEtNGU1MC05OWI3LTE1MGQ0ZjIxZTk5YSIsImlzX2Fub255bW91cyI6dHJ1ZX0.rolSFDrkmcTHOJSi5fDqNk09AKcUqSjWQ-Yu7VlDb_Q",
     "refresh_token": "u3ncvq2xbtit"
   },
-  "comentarios_cruzados_pendientes": [
-    {
-      "video_id": "vVoMVKRJNWc",
-      "texto": "💬 CUÉNTAME TU EXPERIENCIA 👇\n\n1️⃣ ¿Cuánto tiempo llevas lidiando con esto? Comparte tu historia 👇\n2️⃣ ¿Ya probaste algo parecido para minutos que evitan caídas? ¿Qué te funcionó y qué no?\n3️⃣ Si pudieras hacerle UNA pregunta a un especialista sobre minutos que evitan caídas, ¿cuál sería? La investigo y hago un video 🎬\n\nLeo y respondo todos los comentarios 💚\n\n🎬 ¿Prefieres el resumen rápido? Mira el Short: https://youtube.com/shorts/CgIVN_eE7Wk"
-    },
-    {
-      "video_id": "CgIVN_eE7Wk",
-      "texto": "👉 VIDEO COMPLETO sobre minutos que evitan caídas: https://www.youtube.com/watch?v=vVoMVKRJNWc&list=PLOm1dX9uH38g\n\nSi estás viendo este Short en el móvil, entra a mi perfil y abre ese video.\n👍 Si te ayudó, deja tu me gusta y dime en comentarios si quieres más temas así."
-    }
-  ],
+  "comentarios_cruzados_pendientes": [],
   "ultimos_ganchos_portada": [
     "PIERNA EN ALERTA",
     "ENERGÍA BAJA",
