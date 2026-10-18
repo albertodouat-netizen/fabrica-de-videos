@@ -232,7 +232,7 @@
   "ultima_ejecucion": "2026-10-17T13:36:25.975846",
   "uso_gemini": {
     "fecha": "2026-10-18",
-    "usados": 2
+    "usados": 6
   },
   "comentarios_respondidos": [],
   "playlist_canal_id": "PLOm1dX9uH38g",
@@ -450,7 +450,6 @@
   },
   "comentarios_cruzados_pendientes": [],
   "ultimos_ganchos_portada": [
-    "IGNORA RIESGO",
     "ALERTA NOCHE",
     "MENOS DESPIERTOS",
     "VEJIGA EN ALERTA",
@@ -461,6 +460,7 @@
     "FATIGA OCULTA",
     "FATIGA MENOPAUSA",
     "FATIGA OCULTA",
-    "MENOPAUSIA CANSANCIO"
+    "MENOPAUSIA CANSANCIO",
+    "MENOPAUSA FATIGA"
   ]
 }
